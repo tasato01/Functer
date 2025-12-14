@@ -190,17 +190,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                         </div>
                     )}
 
-                    {/* Debug Info */}
-                    <div className="mt-2 text-[10px] font-mono text-gray-500 border-t border-white/10 pt-1">
-                        <details>
-                            <summary className="cursor-pointer hover:text-white mb-1">Debug Info</summary>
-                            <div className="pl-2 border-l border-gray-700">
-                                <div>MathJS: <span className="text-green-400">{gFunc.mathJs || 'N/A'}</span></div>
-                                <div>Native: {gFunc.native ? 'Yes' : 'No'}</div>
-                                {gFunc.error && <div className="text-red-400 break-words">{gFunc.error}</div>}
-                            </div>
-                        </details>
-                    </div>
+
 
                 </div>
 
