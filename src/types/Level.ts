@@ -40,7 +40,7 @@ export interface LevelConfig {
     waypoints: Point[]; // Ordered checkpoints
 
     // Constraints
-    constraints: string[]; // Legacy Inequality strings (e.g. "y > 5")
+    constraints: string[][]; // Groups (OR) of Conditions (AND)
     shapes: (CircleConstraint | RectConstraint)[];
 
     // Physics

@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import 'mathlive';
 import { MathfieldElement } from 'mathlive';
 
+
+
 interface MathInputProps {
     value: string;
     onChange: (latex: string) => void;
@@ -30,17 +32,30 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, label }) 
             onChange(mf.getValue());
         };
 
+        mf.setOptions({
+            onKeystroke: (mf, keystroke, ev) => {
+                // Intercept ' (Shift+7 on JP Keyboard)
+                if (keystroke === "'" || (ev.code === 'Digit7' && ev.shiftKey)) {
+                    mf.executeCommand(['insert', '^{\\prime}']);
+                    return false; // Stop default handling
+                }
+                return true; // Continue default
+            }
+        });
+
         mf.addEventListener('input', handleInput);
         return () => {
             mf.removeEventListener('input', handleInput);
         };
     }, [onChange]);
 
+    // Use alias to bypass JSX intrinsic element check
+    const MathFieldTag = 'math-field' as any;
+
     return (
         <div className="w-full">
             {label && <label className="block text-neon-blue text-sm font-bold mb-1">{label}</label>}
-            {/* @ts-ignore */}
-            <math-field
+            <MathFieldTag
                 ref={mfRef}
                 className="w-full bg-black/50 border border-neon-blue/30 rounded p-2 text-white block"
                 style={{
@@ -53,7 +68,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, label }) 
                 }}
             >
                 {value}
-            </math-field>
+            </MathFieldTag>
         </div>
     );
 };

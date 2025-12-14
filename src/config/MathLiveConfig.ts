@@ -3,7 +3,8 @@ import 'mathlive';
 export const setupMathLive = () => {
     if (!window.mathVirtualKeyboard) return;
 
-    window.mathVirtualKeyboard.layouts = {
+    // @ts-ignore
+    (window.mathVirtualKeyboard.layouts as any) = {
         "functer-layout": {
             label: "Functer",
             tooltip: "Functer Keyboard",
@@ -64,5 +65,6 @@ export const setupMathLive = () => {
             }]
         }
     };
+    // @ts-ignore
     window.mathVirtualKeyboard.currentLayout = "functer-layout";
 };

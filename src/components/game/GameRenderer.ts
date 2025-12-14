@@ -14,75 +14,99 @@ const COLORS = {
     GRID_TEXT: '#888'
 };
 
+// Constraints Overlay
 export function drawConstraintsOverlay(
-    ctx: CanvasRenderingContext2D, w: number, h: number,
-    toWorldX: (sx: number) => number,
-    toWorldY: (sy: number) => number,
-    constraints: string[], t: number
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    toWorldX: (x: number) => number,
+    toWorldY: (y: number) => number,
+    constraints: string[][],
+    t: number,
+    pX: number,
+    pY: number
 ) {
-    if (constraints.length === 0) return;
+    if (!constraints || constraints.length === 0) return;
 
-    // Optimize: Pre-compile constraints to avoid parsing every pixel
-    // Note: In a real app, caching compiled functions outside render loop is better.
-    const compiledConstraints = constraints
-        .filter(c => c && c.trim())
-        .map(c => MathEngine.compile(c));
+    // Optimization: Pre-compile constraints to avoid parsing every pixel!
+    const compiledGroups = constraints.map(group =>
+        group
+            .filter(c => c && c.trim())
+            .map(c => MathEngine.compile(c))
+            .filter(f => f.isValid)
+    ).filter(group => group.length > 0);
 
-    if (compiledConstraints.length === 0) return;
+    if (compiledGroups.length === 0) return;
 
-    const STEP = 8;
-    const rows = Math.ceil(h / STEP);
-    const cols = Math.ceil(w / STEP);
-    const grid = new Uint8Array(rows * cols); // 0 = safe, 1 = forbidden
+    // Modest resolution
+    // Stride 4 is good balance for Native optimization (1/16th pixels)
+    const stride = 4;
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)'; // Semi-transparent red
 
-    // 1. Fill Grid
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-            const sx = c * STEP;
-            const sy = r * STEP;
-            const x = toWorldX(sx + STEP / 2);
-            const y = toWorldY(sy + STEP / 2);
-            let forbidden = false;
-            const scope = { x, y, X: x, Y: y, T: t, t };
+    // Reusable scope
+    // Initialize with player positions for X, Y
+    const scope = { x: 0, y: 0, X: pX, Y: pY, T: t, t: t };
 
-            for (const func of compiledConstraints) {
-                if (func.isValid && func.compiled(scope)) {
-                    forbidden = true;
+    const startTime = performance.now();
+    const TIMEOUT_MS = 100;
+
+    for (let py = 0; py < height; py += stride) {
+        if (performance.now() - startTime > TIMEOUT_MS) {
+            // Safety break
+            break;
+        }
+
+        for (let px = 0; px < width; px += stride) {
+            const wx = toWorldX(px);
+            const wy = toWorldY(py);
+
+            // Update scope - ONLY Update variables x, y
+            scope.x = wx;
+            scope.y = wy;
+            // X and Y remain fixed as Player Position (pX, pY)
+
+            let hit = false;
+            for (const group of compiledGroups) {
+                let groupActive = true;
+                for (const func of group) {
+                    try {
+                        // Priority 1: Native JS (Fastest)
+                        if (func.native) {
+                            if (!func.native(scope)) {
+                                groupActive = false;
+                                break;
+                            }
+                        }
+                        // Priority 2: MathJS Compiled Code (Fast)
+                        else if (func.code) {
+                            if (!func.code.evaluate(scope)) {
+                                groupActive = false;
+                                break;
+                            }
+                        }
+                        // Priority 3: Wrapper (Slowest)
+                        else {
+                            if (!func.compiled(scope)) {
+                                groupActive = false;
+                                break;
+                            }
+                        }
+                    } catch {
+                        groupActive = false;
+                        break;
+                    }
+                }
+                if (groupActive) {
+                    hit = true;
                     break;
                 }
             }
-            if (forbidden) grid[r * cols + c] = 1;
-        }
-    }
 
-    // 2. Draw Fill & Borders
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#ff0000';
-    ctx.fillStyle = 'rgba(255, 50, 50, 0.15)';
-
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-            if (grid[r * cols + c]) {
-                ctx.fillRect(c * STEP, r * STEP, STEP, STEP);
+            if (hit) {
+                ctx.fillRect(px, py, stride, stride);
             }
         }
     }
-
-    ctx.beginPath();
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-            if (grid[r * cols + c]) {
-                const sx = c * STEP;
-                const sy = r * STEP;
-                // Simple edge detection
-                if (r > 0 && !grid[(r - 1) * cols + c]) { ctx.moveTo(sx, sy); ctx.lineTo(sx + STEP, sy); }
-                if (r < rows - 1 && !grid[(r + 1) * cols + c]) { ctx.moveTo(sx, sy + STEP); ctx.lineTo(sx + STEP, sy + STEP); }
-                if (c > 0 && !grid[r * cols + (c - 1)]) { ctx.moveTo(sx, sy); ctx.lineTo(sx, sy + STEP); }
-                if (c < cols - 1 && !grid[r * cols + (c + 1)]) { ctx.moveTo(sx + STEP, sy); ctx.lineTo(sx + STEP, sy + STEP); }
-            }
-        }
-    }
-    ctx.stroke();
 }
 
 export function drawGrid(
@@ -159,7 +183,12 @@ export function drawFunction(
         let y = NaN;
         try {
             const fx = f.compiled({ x, t, T: t });
-            y = g.compiled({ f: fx, x, X: pX, Y: pY, t, T: t });
+            // Expose F for integration inside g
+            const F = (val: number) => {
+                try { return f.compiled({ x: val, t, T: t }); } catch { return 0; }
+            };
+            const derivative_f = (val: number) => MathEngine.numericalDerivative(F, val);
+            y = g.compiled({ f: fx, x, X: pX, Y: pY, t, T: t, F, derivative_f });
         } catch { y = NaN; }
 
         if (isNaN(y) || !isFinite(y)) { first = true; continue; }

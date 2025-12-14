@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { MathFunction } from '../core/math/MathEngine';
 import { MathEngine } from '../core/math/MathEngine';
-import type { LevelConfig, Point } from '../types/Level';
+import type { LevelConfig } from '../types/Level';
 
 interface GameState {
     isPlaying: boolean;
@@ -14,18 +14,7 @@ interface GameState {
 }
 
 // Helper: Point in Polygon (Ray Casting)
-function isPointInPoly(p: Point, vertices: Point[]): boolean {
-    let inside = false;
-    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
-        const xi = vertices[i].x, yi = vertices[i].y;
-        const xj = vertices[j].x, yj = vertices[j].y;
 
-        const intersect = ((yi > p.y) !== (yj > p.y))
-            && (p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
-    }
-    return inside;
-}
 
 export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig) => {
     const [gameState, setGameState] = useState<GameState>({
@@ -69,13 +58,8 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
     const startGame = useCallback(() => {
         let startY = 0;
         try {
-            const fx = f.compiled({ x: level.startPoint.x, T: 0 });
-            startY = g.compiled({
-                f: fx,
-                x: level.startPoint.x,
-                X: level.startPoint.x,
-                T: 0
-            });
+            // Use evaluateChain
+            startY = MathEngine.evaluateChain(g, f, level.startPoint.x, 0);
         } catch { startY = 0; }
 
         setGameState({
@@ -144,16 +128,25 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
 
         let nextY = 0;
         try {
-            const fx = f.compiled({ x, T: t });
-            nextY = g.compiled({ f: fx, x, X: x, T: t });
+            // Use evaluateChain
+            nextY = MathEngine.evaluateChain(g, f, x, t);
         } catch { nextY = NaN; }
         y = nextY;
 
         const scope = { x, y, X: x, Y: y, T: t };
 
         let hitConstraint = false;
-        for (const condition of level.constraints) {
-            if (MathEngine.evaluateCondition(condition, scope)) {
+        // Check Inequality Constraints (OR of ANDs)
+        for (const group of level.constraints) {
+            let groupActive = true;
+            // All conditions in a group must be true for the group to be active (Forbidden)
+            for (const condition of group) {
+                if (!MathEngine.evaluateCondition(condition, scope)) {
+                    groupActive = false;
+                    break;
+                }
+            }
+            if (groupActive && group.length > 0) {
                 hitConstraint = true;
                 break;
             }

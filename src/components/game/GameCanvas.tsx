@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import type { MathFunction } from '../../core/math/MathEngine';
-import { MathEngine } from '../../core/math/MathEngine';
+import { MathEngine, type MathFunction } from '../../core/math/MathEngine';
+
 import type { LevelConfig, Point, CircleConstraint, RectConstraint } from '../../types/Level';
 import {
     drawGrid, drawFunction, drawShape, drawWaypoint, drawEntities,
@@ -84,6 +84,74 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const toWorldX = (sx: number) => (sx - ORIGIN_X) / scale;
     const toWorldY = (sy: number) => (ORIGIN_Y - sy) / scale;
 
+    const staticCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+    // Filter Constraints
+    const staticGroupsRef = useRef<string[][]>([]);
+    const dynamicGroupsRef = useRef<string[][]>([]);
+
+    useEffect(() => {
+        // Initialize offscreen canvas once
+        if (!staticCanvasRef.current) {
+            staticCanvasRef.current = document.createElement('canvas');
+        }
+    }, []);
+
+    // 1. Separate Static/Dynamic Constraints
+    useEffect(() => {
+        if (!level.constraints) {
+            staticGroupsRef.current = [];
+            dynamicGroupsRef.current = [];
+            return;
+        }
+
+        const s: string[][] = [];
+        const d: string[][] = [];
+
+        level.constraints.forEach(group => {
+            // If ANY condition in a group is dynamic, the whole group is dynamic (because logic AND).
+            // Actually, static definition: NONE of the conditions depend on T.
+            const isDynamic = group.some(c => !MathEngine.isStatic(c));
+            if (isDynamic) d.push(group);
+            else s.push(group);
+        });
+
+        staticGroupsRef.current = s;
+        dynamicGroupsRef.current = d;
+
+        // Trigger a redraw of static canvas
+        updateStaticCanvas();
+    }, [level.constraints]); // Only when constraints change definition
+
+    // 2. Render Static Canvas Cache
+    // We also need to update this when View Offset/Scale or Screen Size changes.
+    const updateStaticCanvas = () => {
+        const sc = staticCanvasRef.current;
+        if (!sc || !rotation.w || !rotation.h) return;
+
+        // Resize if needed (Canvas size should match visual size to avoid blur or huge memory usage)
+        if (sc.width !== rotation.w || sc.height !== rotation.h) {
+            sc.width = rotation.w;
+            sc.height = rotation.h;
+        }
+
+        const ctx = sc.getContext('2d');
+        if (!ctx) return;
+
+        ctx.clearRect(0, 0, sc.width, sc.height);
+
+        // Draw ONLY static constraints
+        if (staticGroupsRef.current.length > 0) {
+            drawConstraintsOverlay(ctx, rotation.w, rotation.h, toWorldX, toWorldY, staticGroupsRef.current, 0, 0, 0);
+        }
+    };
+
+    // Re-render cache when view changes
+    useEffect(() => {
+        updateStaticCanvas();
+    }, [rotation, viewOffset, scale]); // View dependencies
+
+
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -93,11 +161,20 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         const width = rotation.w;
         const height = rotation.h;
 
+        // Clear Screen
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, width, height);
 
-        if (level.constraints && level.constraints.length > 0) {
-            drawConstraintsOverlay(ctx, width, height, toWorldX, toWorldY, level.constraints, t);
+        // 1. Draw Static Cache
+        if (staticCanvasRef.current) {
+            ctx.drawImage(staticCanvasRef.current, 0, 0);
+        }
+
+        // 2. Draw Dynamic Constraints (Real-time)
+        if (dynamicGroupsRef.current.length > 0) {
+            const pX = player?.x ?? level.startPoint.x ?? 0;
+            const pY = player?.y ?? level.startPoint.y ?? 0;
+            drawConstraintsOverlay(ctx, width, height, toWorldX, toWorldY, dynamicGroupsRef.current, t, pX, pY);
         }
 
         drawGrid(ctx, width, height, scale, ORIGIN_X, ORIGIN_Y, toWorldX, toWorldY);
@@ -132,22 +209,35 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         return Math.round(v / step) * step;
     };
 
-    const handleWheel = (e: React.WheelEvent) => {
-        e.preventDefault();
-        const zoomSensitivity = 0.001;
-        const delta = -e.deltaY * zoomSensitivity;
-        const newScale = Math.max(5, Math.min(300, scale + scale * delta));
-        const rect = canvasRef.current!.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-        const wx = (mx - ORIGIN_X) / scale;
-        const wy = (ORIGIN_Y - my) / scale;
-        const newOriginX = mx - wx * newScale;
-        const newOriginY = my + wy * newScale;
-        const newOffsetX = newOriginX - rotation.w / 2;
-        const newOffsetY = newOriginY - rotation.h / 2;
-        onViewChange({ x: newOffsetX, y: newOffsetY }, newScale);
-    };
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const onWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            const zoomSensitivity = 0.001;
+            const delta = -e.deltaY * zoomSensitivity;
+            const newScale = Math.max(5, Math.min(300, scale + scale * delta));
+
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            const wx = (mx - ORIGIN_X) / scale;
+            const wy = (ORIGIN_Y - my) / scale;
+
+            const newOriginX = mx - wx * newScale;
+            const newOriginY = my + wy * newScale;
+
+            const newOffsetX = newOriginX - rotation.w / 2;
+            const newOffsetY = newOriginY - rotation.h / 2;
+
+            onViewChange({ x: newOffsetX, y: newOffsetY }, newScale);
+        };
+
+        canvas.addEventListener('wheel', onWheel, { passive: false });
+        return () => canvas.removeEventListener('wheel', onWheel);
+    }, [scale, viewOffset, rotation, onViewChange]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         if (e.button !== 0) return; // Ignore non-left clicks (e.g. Right Click)
@@ -398,7 +488,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 width={rotation.w}
                 height={rotation.h}
                 className="block cursor-crosshair touch-none select-none"
-                onWheel={handleWheel}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
