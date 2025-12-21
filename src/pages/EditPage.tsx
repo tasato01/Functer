@@ -155,6 +155,9 @@ export const EditPage: React.FC = () => {
     // Mobile Viewport Height Fix
     const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
+    // State to force re-render for mobile layout fix
+    const [, forceUpdate] = useState({});
+
     useEffect(() => {
         const updateHeight = () => {
             if (window.visualViewport) {
@@ -307,7 +310,7 @@ export const EditPage: React.FC = () => {
 
                 <div className="w-[100px]"></div> {/* Spacer for balance */}
                 <div className="fixed top-14 right-0 bg-red-600 text-white text-xs px-2 py-1 z-50 pointer-events-none opacity-50">
-                    v1.0.2 (Debug)
+                    v1.0.3 (Debug)
                 </div>
             </div>
 

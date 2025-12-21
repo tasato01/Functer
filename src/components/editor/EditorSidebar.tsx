@@ -352,7 +352,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 onLoad={handleLoadConfirm}
             />
             <AuthDialog isOpen={showAuthDialog} onClose={() => setShowAuthDialog(false)} />
-            <div className="w-96 bg-neon-surface/90 border-r border-neon-blue/30 flex flex-col backdrop-blur-md z-10 transition-all duration-300 relative h-full">
+            <div className="w-96 bg-neon-surface/90 border-r border-neon-blue/30 flex flex-col backdrop-blur-md z-10 transition-all duration-300 relative h-full min-h-0 max-h-full">
 
                 {/* Scrollable Main Content - Disabled when verifying/playing */}
                 <div className={`flex-1 overflow-y-auto min-h-0 p-4 flex flex-col gap-6 ${gameState.isPlaying ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
