@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, orderBy, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
 import { ADMIN_UIDS } from '../constants/admin';
 
 export interface UserProfile {
@@ -156,14 +156,18 @@ export const UserService = {
         try {
             const q = query(
                 collection(db, 'admin_requests'),
-                where('status', '==', 'pending'),
-                orderBy('createdAt', 'desc')
+                where('status', '==', 'pending')
             );
             const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => ({
+            const reqs = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             } as AdminRequest));
+
+            // Client-side sort
+            reqs.sort((a, b) => b.createdAt - a.createdAt);
+
+            return reqs;
         } catch (e) {
             console.error("Failed to fetch admin requests", e);
             return [];
