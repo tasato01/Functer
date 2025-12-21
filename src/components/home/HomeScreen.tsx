@@ -50,8 +50,8 @@ export const HomeScreen: React.FC = () => {
             <MathBackground />
 
             {/* Title / Header */}
-            <div className="z-10 text-center mt-12 mb-8 animate-in fade-in zoom-in duration-700">
-                <h1 className="text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-neon-pink via-white to-neon-blue drop-shadow-[0_0_20px_rgba(255,255,255,0.4)] italic">
+            <div className="z-10 text-center mt-20 mb-12 animate-in fade-in zoom-in duration-700">
+                <h1 className="text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-neon-pink via-white to-neon-blue drop-shadow-[0_0_20px_rgba(255,255,255,0.4)] italic py-2 px-4 leading-normal">
                     FUNCTER
                 </h1>
                 <p className="text-neon-blue/80 tracking-[0.5em] mt-2 uppercase text-xs font-bold">
@@ -65,51 +65,51 @@ export const HomeScreen: React.FC = () => {
                 {/* 1. Official Stages (Primary) */}
                 <button
                     onClick={() => { audioService.playSE('click'); navigate('/official'); }}
-                    className="group relative w-full h-32 bg-gray-900/40 border border-white/10 rounded-2xl overflow-hidden hover:border-neon-pink transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-neon-pink/20"
+                    className="group relative w-full h-24 bg-gray-900/60 border border-neon-pink/30 rounded-2xl overflow-hidden hover:border-neon-pink transition-all duration-300 backdrop-blur-sm shadow-[0_0_15px_rgba(255,0,128,0.15)] hover:shadow-neon-pink/40"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-neon-pink/5 via-transparent to-transparent group-hover:from-neon-pink/20 transition-all duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-neon-pink/10 via-transparent to-transparent group-hover:from-neon-pink/20 transition-all duration-500" />
                     <div className="absolute inset-0 flex items-center justify-between px-8">
                         <div>
                             <h2 className="text-3xl font-black italic text-white group-hover:text-neon-pink transition-colors tracking-tighter">
                                 OFFICIAL
                             </h2>
-                            <p className="text-xs text-gray-400 font-mono mt-1 group-hover:text-neon-pink/70">CHALLENGE STANDARD</p>
+                            <p className="text-xs text-neon-pink/70 font-mono mt-1 group-hover:text-neon-pink">CHALLENGE STANDARD</p>
                         </div>
-                        <Trophy size={48} className="text-gray-700 group-hover:text-neon-pink group-hover:rotate-12 transition-all duration-300" />
+                        <Trophy size={48} className="text-neon-pink/50 group-hover:text-neon-pink group-hover:rotate-12 transition-all duration-300" />
                     </div>
                 </button>
 
                 {/* 2. Community Stages */}
                 <button
                     onClick={() => { audioService.playSE('click'); navigate('/user'); }}
-                    className="group relative w-full h-24 bg-gray-900/40 border border-white/10 rounded-2xl overflow-hidden hover:border-neon-green transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-neon-green/20"
+                    className="group relative w-full h-24 bg-gray-900/60 border border-neon-green/30 rounded-2xl overflow-hidden hover:border-neon-green transition-all duration-300 backdrop-blur-sm shadow-[0_0_15px_rgba(0,255,0,0.15)] hover:shadow-neon-green/40"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-neon-green/5 via-transparent to-transparent group-hover:from-neon-green/20 transition-all duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-neon-green/10 via-transparent to-transparent group-hover:from-neon-green/20 transition-all duration-500" />
                     <div className="absolute inset-0 flex items-center justify-between px-8">
                         <div>
                             <h2 className="text-2xl font-black italic text-white group-hover:text-neon-green transition-colors tracking-tighter">
                                 COMMUNITY
                             </h2>
-                            <p className="text-xs text-gray-400 font-mono mt-1 group-hover:text-neon-green/70">PLAY USER CREATIONS</p>
+                            <p className="text-xs text-neon-green/70 font-mono mt-1 group-hover:text-neon-green">PLAY USER CREATIONS</p>
                         </div>
-                        <Database size={36} className="text-gray-700 group-hover:text-neon-green group-hover:rotate-12 transition-all duration-300" />
+                        <Database size={36} className="text-neon-green/50 group-hover:text-neon-green group-hover:rotate-12 transition-all duration-300" />
                     </div>
                 </button>
 
                 {/* 3. Editor */}
                 <button
                     onClick={() => { audioService.playSE('click'); navigate('/edit'); }}
-                    className="group relative w-full h-20 bg-gray-900/40 border border-white/10 rounded-2xl overflow-hidden hover:border-neon-blue transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-neon-blue/20"
+                    className="group relative w-full h-24 bg-gray-900/60 border border-neon-blue/30 rounded-2xl overflow-hidden hover:border-neon-blue transition-all duration-300 backdrop-blur-sm shadow-[0_0_15px_rgba(0,255,255,0.15)] hover:shadow-neon-blue/40"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/5 via-transparent to-transparent group-hover:from-neon-blue/20 transition-all duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/10 via-transparent to-transparent group-hover:from-neon-blue/20 transition-all duration-500" />
                     <div className="absolute inset-0 flex items-center justify-between px-8">
                         <div>
-                            <h2 className="text-xl font-black italic text-white group-hover:text-neon-blue transition-colors tracking-tighter">
+                            <h2 className="text-2xl font-black italic text-white group-hover:text-neon-blue transition-colors tracking-tighter">
                                 EDITOR
                             </h2>
-                            <p className="text-xs text-gray-400 font-mono mt-1 group-hover:text-neon-blue/70">CREATE NEW LEVEL</p>
+                            <p className="text-xs text-neon-blue/70 font-mono mt-1 group-hover:text-neon-blue">CREATE NEW LEVEL</p>
                         </div>
-                        <PenTool size={28} className="text-gray-700 group-hover:text-neon-blue group-hover:-translate-y-1 group-hover:translate-x-1 transition-all duration-300" />
+                        <PenTool size={28} className="text-neon-blue/50 group-hover:text-neon-blue group-hover:-translate-y-1 group-hover:translate-x-1 transition-all duration-300" />
                     </div>
                 </button>
             </div>
@@ -121,10 +121,10 @@ export const HomeScreen: React.FC = () => {
                         onClick={() => { audioService.playSE('click'); navigate('/mine'); }}
                         className="group flex flex-col items-center gap-1 text-gray-400 hover:text-neon-purple transition-colors w-16"
                     >
-                        <div className="p-2 rounded-full group-hover:bg-neon-purple/10 transition-colors">
-                            <Database size={20} />
+                        <div className="p-2 rounded-full group-hover:bg-neon-purple/20 group-hover:shadow-[0_0_10px_theme(colors.neon.purple)] transition-all duration-300">
+                            <Database size={20} className="group-hover:text-neon-purple" />
                         </div>
-                        <span className="text-[9px] font-bold">MY STAGE</span>
+                        <span className="text-[9px] font-bold group-hover:text-neon-purple group-hover:shadow-neon-purple/50">MY STAGE</span>
                     </button>
                 )}
 
@@ -132,20 +132,20 @@ export const HomeScreen: React.FC = () => {
                     onClick={() => { audioService.playSE('click'); navigate('/help'); }}
                     className="group flex flex-col items-center gap-1 text-gray-400 hover:text-neon-yellow transition-colors w-16"
                 >
-                    <div className="p-2 rounded-full group-hover:bg-neon-yellow/10 transition-colors">
-                        <BookOpen size={20} />
+                    <div className="p-2 rounded-full group-hover:bg-neon-yellow/20 group-hover:shadow-[0_0_10px_theme(colors.neon.yellow)] transition-all duration-300">
+                        <BookOpen size={20} className="group-hover:text-neon-yellow" />
                     </div>
-                    <span className="text-[9px] font-bold">HELP</span>
+                    <span className="text-[9px] font-bold group-hover:text-neon-yellow">HELP</span>
                 </button>
 
                 <button
                     onClick={() => { audioService.playSE('click'); setShowSettings(true); }}
                     className="group flex flex-col items-center gap-1 text-gray-400 hover:text-white transition-colors w-16"
                 >
-                    <div className="p-2 rounded-full group-hover:bg-white/10 transition-colors">
-                        <Settings size={20} />
+                    <div className="p-2 rounded-full group-hover:bg-white/20 group-hover:shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-300">
+                        <Settings size={20} className="group-hover:text-white" />
                     </div>
-                    <span className="text-[9px] font-bold">SETTING</span>
+                    <span className="text-[9px] font-bold group-hover:text-white">SETTING</span>
                 </button>
             </div>
 
