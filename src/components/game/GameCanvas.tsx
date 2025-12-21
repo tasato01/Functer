@@ -6,7 +6,7 @@ import type { LevelConfig, Point, CircleConstraint, RectConstraint, DynamicPoint
 import {
     drawGrid, drawFunction, drawShape, drawWaypoint, drawEntities,
     drawPlayer, drawHoverTooltip, drawConstraintsOverlay, drawCoordinateLabel,
-    drawConstraintBoundaries, compileConstraints
+    compileConstraints
 } from './GameRenderer';
 
 export type InteractionMode = 'select' | 'pan' | 'create_rect' | 'create_circle' | 'add_waypoint';
@@ -88,13 +88,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const toWorldY = (sy: number) => (ORIGIN_Y - sy) / scale;
 
 
-    // Constraint Boundaries
-    const constraintBoundaries = React.useMemo(() => {
-        if (!level.constraints) return [];
-        return level.constraints.map(group =>
-            group.map(c => MathEngine.getBoundaries(c)).flat()
-        ).flat();
-    }, [level.constraints]);
+
 
     // Pre-compile constraints for caching - RESTORED
     const compiledConstraints = React.useMemo(() => {
@@ -105,7 +99,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const latestProps = useRef({
         f, g, t, level, player, currentWaypointIndex,
         viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-        compiledConstraints, constraintBoundaries
+        compiledConstraints
     });
 
     // Update ref when props change
@@ -113,9 +107,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         latestProps.current = {
             f, g, t, level, player, currentWaypointIndex,
             viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-            compiledConstraints, constraintBoundaries
+            compiledConstraints
         };
-    }, [f, g, t, level, player, currentWaypointIndex, viewOffset, scale, selectedId, hoverPos, tempShape, rotation, compiledConstraints, constraintBoundaries]);
+    }, [f, g, t, level, player, currentWaypointIndex, viewOffset, scale, selectedId, hoverPos, tempShape, rotation, compiledConstraints]);
 
     // Loop
     useEffect(() => {
@@ -138,7 +132,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 const {
                     f, g, t, level, player, currentWaypointIndex,
                     viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-                    compiledConstraints, constraintBoundaries
+                    compiledConstraints
                 } = latestProps.current;
 
                 const width = rotation.w;
@@ -172,16 +166,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                     drawConstraintsOverlay(ctx, width, height, toWorldX, toWorldY, compiledConstraints, t, pX, pY);
 
                     // Boundaries (Smart Lines)
-                    drawConstraintBoundaries(
-                        ctx,
-                        constraintBoundaries,
-                        width,
-                        height,
-                        toScreenX,
-                        toScreenY,
-                        toWorldX,
-                        t
-                    );
+
                 }
 
                 drawGrid(ctx, width, height, scale, ORIGIN_X, ORIGIN_Y, toWorldX, toWorldY);
