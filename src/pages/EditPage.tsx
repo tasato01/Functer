@@ -276,7 +276,7 @@ export const EditPage: React.FC = () => {
 
                 <div className="w-[100px]"></div> {/* Spacer for balance */}
                 <div className="fixed top-14 right-0 bg-red-600 text-white text-xs px-2 py-1 z-50 pointer-events-none opacity-50">
-                    v1.0.6 (Debug)
+                    v1.0.7 (Debug)
                 </div>
             </div>
 

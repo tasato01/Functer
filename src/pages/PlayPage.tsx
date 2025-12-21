@@ -10,6 +10,15 @@ import { Play, Square, Home, List, RefreshCw, AlertTriangle, HelpCircle, Heart, 
 import { levelService } from '../services/FirebaseLevelService';
 import { audioService } from '../services/AudioService';
 import { HelpDialog } from '../components/common/HelpDialog';
+import 'mathlive';
+
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            'math-field': any;
+        }
+    }
+}
 
 export const PlayPage: React.FC = () => {
     const navigate = useNavigate();
@@ -271,15 +280,27 @@ export const PlayPage: React.FC = () => {
                             <span className="text-gray-400 text-xs font-mono block">FORBIDDEN</span>
                             <div className="flex flex-col gap-1">
                                 {level!.constraints.map((group, i) => (
-                                    <code key={i} className="text-red-400 text-xs text-center border-b border-red-500/20 last:border-0 pb-1 mb-1 last:mb-0 block">
-                                        {group.map(c =>
-                                            c.replace(/\\le/g, '≤')
-                                                .replace(/\\ge/g, '≥')
-                                                .replace(/\\pi/g, 'π')
-                                                .replace(/¥/g, '') // Remove Yen
-                                                .replace(/\\([a-zA-Z]+)/g, '$1') // Remove remaining backslashes from words like \sin -> sin
-                                        ).join(' OR ')}
-                                    </code>
+                                    <div key={i} className="text-center border-b border-red-500/20 last:border-0 pb-1 mb-1 last:mb-0 block">
+                                        {group.map((c, j) => (
+                                            <div key={j} className="inline-block">
+                                                {j > 0 && <span className="text-red-400 text-xs mx-1 font-bold">OR</span>}
+                                                {/* Use math-field for proper LaTeX rendering */}
+                                                <math-field
+                                                    read-only
+                                                    style={{
+                                                        display: 'inline-block',
+                                                        backgroundColor: 'transparent',
+                                                        color: '#f87171', // red-400
+                                                        border: 'none',
+                                                        fontSize: '0.85em',
+                                                        padding: '2px'
+                                                    }}
+                                                >
+                                                    {c}
+                                                </math-field>
+                                            </div>
+                                        ))}
+                                    </div>
                                 ))}
                             </div>
                         </div>
