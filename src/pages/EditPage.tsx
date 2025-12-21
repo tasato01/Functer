@@ -152,6 +152,25 @@ export const EditPage: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedId, level, undo, redo]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    useEffect(() => {
+        const handleFocusOut = (e: FocusEvent) => {
+            const target = e.target as HTMLElement;
+            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+                // Delay to allow keyboard to close on mobile
+                setTimeout(() => {
+                    window.scrollTo(0, 0);
+                    document.body.scrollTop = 0;
+                    document.documentElement.scrollTop = 0;
+                    // Force resize to ensure layout recalculates
+                    window.dispatchEvent(new Event('resize'));
+                }, 100);
+            }
+        };
+
+        window.addEventListener('focusout', handleFocusOut);
+        return () => window.removeEventListener('focusout', handleFocusOut);
+    }, []);
+
     const handleTogglePlay = () => {
         audioService.playSE('play');
         if (gameState.isPlaying) {
