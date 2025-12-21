@@ -367,16 +367,15 @@ export class MathEngine {
             return `(${args.map(MathEngine.mathJsonToMathJs).join(' * ')})`;
         }
 
-        // Generic Function Call: ["f", x] -> f(x)
-        if (typeof op === 'string') {
-            return `${op}(${args.map(MathEngine.mathJsonToMathJs).join(', ')})`;
-        }
-
-
         // Delimiter Handling
         // ["Delimiter", content] -> content
         if (op === 'Delimiter') {
             return MathEngine.mathJsonToMathJs(args[0]);
+        }
+
+        // Generic Function Call: ["f", x] -> f(x)
+        if (typeof op === 'string') {
+            return `${op}(${args.map(MathEngine.mathJsonToMathJs).join(', ')})`;
         }
 
         return '';
