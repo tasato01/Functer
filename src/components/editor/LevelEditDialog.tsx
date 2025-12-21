@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { LevelConfig } from '../../types/Level';
 import { levelService } from '../../services/FirebaseLevelService';
 import { audioService } from '../../services/AudioService';
