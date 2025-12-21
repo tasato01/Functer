@@ -167,51 +167,18 @@ export const EditPage: React.FC = () => {
             }
         };
 
+        // Initial update
+        updateHeight();
+
         window.addEventListener('resize', updateHeight);
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', updateHeight);
         }
 
-        // Method 1: FocusOut (Backup)
-        const handleFocusOut = (e: FocusEvent) => {
-            const target = e.target as HTMLElement;
-            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-                setTimeout(() => {
-                    window.scrollTo(0, 0);
-                    document.body.scrollTop = 0;
-                    document.documentElement.scrollTop = 0;
-                    // Force update height just in case
-                    updateHeight();
-                    window.dispatchEvent(new Event('resize'));
-                    forceUpdate({});
-                }, 200);
-            }
-        };
-
-        // Method 2: VisualViewport (Robust)
-        const handleVisualViewportResize = () => {
-            // If viewport height is close to window height, keyboard likely closed
-            // We give some buffer (e.g. 100px) for address bars etc.
-            if (window.visualViewport && Math.abs(window.visualViewport.height - window.innerHeight) < 100) {
-                window.scrollTo(0, 0);
-                document.body.scrollTop = 0;
-                document.documentElement.scrollTop = 0;
-                forceUpdate({});
-            }
-            updateHeight();
-        };
-
-        window.addEventListener('focusout', handleFocusOut);
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', handleVisualViewportResize);
-        }
-
         return () => {
             window.removeEventListener('resize', updateHeight);
-            window.removeEventListener('focusout', handleFocusOut);
             if (window.visualViewport) {
                 window.visualViewport.removeEventListener('resize', updateHeight);
-                window.visualViewport.removeEventListener('resize', handleVisualViewportResize);
             }
         };
     }, []);
