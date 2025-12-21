@@ -1,4 +1,4 @@
-import type { LevelConfig, Point, CircleConstraint, RectConstraint } from '../../types/Level';
+import type { LevelConfig, Point, CircleConstraint, RectConstraint, DynamicPoint } from '../../types/Level';
 import type { MathFunction } from '../../core/math/MathEngine';
 import { MathEngine } from '../../core/math/MathEngine';
 
@@ -14,97 +14,124 @@ const COLORS = {
     GRID_TEXT: '#888'
 };
 
-// Constraints Overlay
+// Constraints Overlay - Optimized with Adaptive Sampling
+export type CompiledConstraints = MathFunction[][];
+
+export function compileConstraints(constraints: string[][]): CompiledConstraints {
+    if (!constraints) return [];
+    return constraints.map(group =>
+        group
+            .filter(c => c && c.trim())
+            .map(c => MathEngine.compile(c))
+            .filter(f => f.isValid)
+    ).filter(group => group.length > 0);
+}
+
+export function isForbidden(x: number, y: number, compiledGroups: CompiledConstraints, scope: any): boolean {
+    scope.x = x;
+    scope.y = y;
+
+    for (const group of compiledGroups) {
+        let groupActive = true;
+        for (const func of group) {
+            try {
+                // Logic AND for conditions in group
+                if (func.native) {
+                    if (!func.native(scope)) { groupActive = false; break; }
+                } else if (func.code) {
+                    if (!func.code.evaluate(scope)) { groupActive = false; break; }
+                } else {
+                    if (!func.compiled(scope)) { groupActive = false; break; }
+                }
+            } catch { groupActive = false; break; }
+        }
+        if (groupActive) return true; // Logic OR for groups
+    }
+    return false;
+}
+
 export function drawConstraintsOverlay(
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
     toWorldX: (x: number) => number,
     toWorldY: (y: number) => number,
-    constraints: string[][],
+    compiledGroups: CompiledConstraints,
     t: number,
     pX: number,
     pY: number
 ) {
-    if (!constraints || constraints.length === 0) return;
+    if (!compiledGroups || compiledGroups.length === 0) return;
 
-    // Optimization: Pre-compile constraints to avoid parsing every pixel!
-    const compiledGroups = constraints.map(group =>
-        group
-            .filter(c => c && c.trim())
-            .map(c => MathEngine.compile(c))
-            .filter(f => f.isValid)
-    ).filter(group => group.length > 0);
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
 
-    if (compiledGroups.length === 0) return;
-
-    // Modest resolution
-    // Stride 4 is good balance for Native optimization (1/16th pixels)
-    const stride = 4;
-    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)'; // Semi-transparent red
-
-    // Reusable scope
-    // Initialize with player positions for X, Y
+    // Scope reuse
     const scope = { x: 0, y: 0, X: pX, Y: pY, T: t, t: t };
 
-    const startTime = performance.now();
-    const TIMEOUT_MS = 100;
+    // Helper to evaluate a point (Screen Coords -> World Coords -> Evaluate)
+    const checkPoint = (sx: number, sy: number) => {
+        const wx = toWorldX(sx);
+        const wy = toWorldY(sy);
+        return isForbidden(wx, wy, compiledGroups, scope);
+    };
 
-    for (let py = 0; py < height; py += stride) {
-        if (performance.now() - startTime > TIMEOUT_MS) {
-            // Safety break
-            break;
+    // Adaptive Recursive Function
+    const BLOCK_SIZE = 32;
+    const MIN_SIZE = 4;
+
+    const processBlock = (x: number, y: number, size: number) => {
+        // Check 4 corners and center
+        // Optimization: We could pass corner values from parent to avoid re-evaluating, 
+        // but for simplicity and code size, we eval here. Cache could be added if needed.
+        const tl = checkPoint(x, y);
+        const tr = checkPoint(x + size, y);
+        const bl = checkPoint(x, y + size);
+        const br = checkPoint(x + size, y + size);
+        const center = checkPoint(x + size / 2, y + size / 2);
+
+        if (tl === tr && tl === bl && tl === br && tl === center) {
+            // Uniform block
+            if (tl) {
+                // All true -> Draw rect
+                ctx.fillRect(x, y, size, size);
+            }
+            // If all false, skip
+            return;
         }
 
-        for (let px = 0; px < width; px += stride) {
-            const wx = toWorldX(px);
-            const wy = toWorldY(py);
-
-            // Update scope - ONLY Update variables x, y
-            scope.x = wx;
-            scope.y = wy;
-            // X and Y remain fixed as Player Position (pX, pY)
-
-            let hit = false;
-            for (const group of compiledGroups) {
-                let groupActive = true;
-                for (const func of group) {
-                    try {
-                        // Priority 1: Native JS (Fastest)
-                        if (func.native) {
-                            if (!func.native(scope)) {
-                                groupActive = false;
-                                break;
-                            }
-                        }
-                        // Priority 2: MathJS Compiled Code (Fast)
-                        else if (func.code) {
-                            if (!func.code.evaluate(scope)) {
-                                groupActive = false;
-                                break;
-                            }
-                        }
-                        // Priority 3: Wrapper (Slowest)
-                        else {
-                            if (!func.compiled(scope)) {
-                                groupActive = false;
-                                break;
-                            }
-                        }
-                    } catch {
-                        groupActive = false;
-                        break;
+        // Mixed block
+        if (size > MIN_SIZE) {
+            const half = size / 2;
+            processBlock(x, y, half);
+            processBlock(x + half, y, half);
+            processBlock(x, y + half, half);
+            processBlock(x + half, y + half, half);
+        } else {
+            // Reached min size, just scan pixels (or draw 1px rects)
+            // Stride 1 or 2 for final detail
+            const stride = 1;
+            for (let py = y; py < y + size; py += stride) {
+                for (let px = x; px < x + size; px += stride) {
+                    if (checkPoint(px, py)) {
+                        ctx.fillRect(px, py, stride, stride);
                     }
                 }
-                if (groupActive) {
-                    hit = true;
-                    break;
-                }
             }
+        }
+    };
 
-            if (hit) {
-                ctx.fillRect(px, py, stride, stride);
-            }
+    // Start Processing
+    // We loop over the screen in large blocks
+    for (let y = 0; y < height; y += BLOCK_SIZE) {
+        for (let x = 0; x < width; x += BLOCK_SIZE) {
+            // Clip to screen size (handle edge blocks)
+            // Actually processBlock handles the drawing, but checkPoint logic is fine with out of bounds logic?
+            // Yes, toWorldX works for any X.
+            // Just ensure we don't draw outside canvas too much (ctx clips anyway).
+
+            // Note: If width is not multiple of BLOCK_SIZE, the last block might be partial.
+            // We can just pass full block size, ctx clips.
+            processBlock(x, y, BLOCK_SIZE);
         }
     }
 }
@@ -240,9 +267,23 @@ export function drawShape(ctx: CanvasRenderingContext2D, s: CircleConstraint | R
     }
 }
 
-export function drawWaypoint(ctx: CanvasRenderingContext2D, p: Point, i: number, toSX: any, toSY: any, selected: boolean, passed: boolean) {
-    const cx = toSX(p.x);
-    const cy = toSY(p.y);
+export function drawWaypoint(ctx: CanvasRenderingContext2D, p: DynamicPoint, i: number, toSX: any, toSY: any, selected: boolean, passed: boolean, t: number, pX: number, pY: number) {
+    let x = p.x;
+    let y = p.y;
+    try {
+        const scope = { t, T: t, X: pX, Y: pY };
+        if (p.xFormula) {
+            const res = MathEngine.evaluateScalar(p.xFormula, scope);
+            if (!isNaN(res)) x = res;
+        }
+        if (p.yFormula) {
+            const res = MathEngine.evaluateScalar(p.yFormula, scope);
+            if (!isNaN(res)) y = res;
+        }
+    } catch { }
+
+    const cx = toSX(x);
+    const cy = toSY(y);
 
     ctx.save();
     ctx.translate(cx, cy);
@@ -256,11 +297,14 @@ export function drawWaypoint(ctx: CanvasRenderingContext2D, p: Point, i: number,
 
         ctx.rotate(Math.PI / 4);
         ctx.beginPath();
-        ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
+        // Updated visual for passed waypoint: Inconspicuous Gray
+        ctx.fillStyle = '#444444';
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
         const size = 6;
         ctx.rect(-size, -size, size * 2, size * 2);
         ctx.fill();
-        ctx.strokeStyle = '#777777';
+        ctx.strokeStyle = '#666666';
         ctx.lineWidth = 1;
         ctx.stroke();
     } else {
@@ -286,57 +330,72 @@ export function drawWaypoint(ctx: CanvasRenderingContext2D, p: Point, i: number,
     ctx.restore();
 }
 
-export function drawEntities(ctx: CanvasRenderingContext2D, level: LevelConfig, toSX: any, toSY: any, scale: number, selectedId: string | null) {
+export function drawEntities(ctx: CanvasRenderingContext2D, level: LevelConfig, toSX: any, toSY: any, scale: number, selectedId: string | null, t: number, pX: number, pY: number) {
+    const evalPos = (p: DynamicPoint) => {
+        let x = p.x;
+        let y = p.y;
+        try {
+            const scope = { t, T: t, X: pX, Y: pY };
+            if (p.xFormula) {
+                const res = MathEngine.evaluateScalar(p.xFormula, scope);
+                if (!isNaN(res)) x = res;
+            }
+            if (p.yFormula) {
+                const res = MathEngine.evaluateScalar(p.yFormula, scope);
+                if (!isNaN(res)) y = res;
+            }
+        } catch { }
+        return { x, y };
+    };
+
     // Start
-    const sx = toSX(level.startPoint.x);
-    const sy = toSY(level.startPoint.y);
+    const startPos = evalPos(level.startPoint);
+    const sx = toSX(startPos.x);
+    const sy = toSY(startPos.y);
 
-    if (level.startRadius > 0) {
-        ctx.beginPath();
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
-        ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
-        ctx.arc(sx, sy, level.startRadius * scale, 0, Math.PI * 2);
-        ctx.fill(); ctx.stroke();
+    if (isFinite(sx) && isFinite(sy)) {
+        ctx.save();
+        ctx.shadowColor = COLORS.NEON_GREEN;
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = COLORS.NEON_GREEN;
+        ctx.beginPath(); ctx.arc(sx, sy, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+
+        if (selectedId === 'start') {
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx, sy, 6, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillStyle = COLORS.NEON_GREEN;
+        ctx.textAlign = 'center'; ctx.fillText("START", sx, sy - 25);
     }
-
-    ctx.save();
-    ctx.shadowColor = COLORS.NEON_GREEN;
-    ctx.shadowBlur = 15;
-    ctx.fillStyle = COLORS.NEON_GREEN;
-    ctx.beginPath(); ctx.arc(sx, sy, 6, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-
-    if (selectedId === 'start') {
-        ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx, sy, 6, 0, Math.PI * 2); ctx.stroke();
-    }
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillStyle = COLORS.NEON_GREEN;
-    ctx.textAlign = 'center'; ctx.fillText("START", sx, sy - 25);
 
     // Goal
-    const gx = toSX(level.goalPoint.x);
-    const gy = toSY(level.goalPoint.y);
+    const goalPos = evalPos(level.goalPoint);
+    const gx = toSX(goalPos.x);
+    const gy = toSY(goalPos.y);
 
-    if (level.goalRadius > 0) {
-        ctx.beginPath();
-        ctx.fillStyle = 'rgba(255, 255, 0, 0.1)';
-        ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
-        ctx.arc(gx, gy, level.goalRadius * scale, 0, Math.PI * 2);
-        ctx.fill(); ctx.stroke();
+    if (isFinite(gx) && isFinite(gy)) {
+        if (level.goalRadius > 0) {
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(255, 255, 0, 0.1)';
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+            ctx.arc(gx, gy, level.goalRadius * scale, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+        }
+
+        ctx.save();
+        ctx.shadowColor = COLORS.NEON_YELLOW;
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = COLORS.NEON_YELLOW;
+        ctx.beginPath(); ctx.arc(gx, gy, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+
+        if (selectedId === 'goal') {
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(gx, gy, 6, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.fillStyle = COLORS.NEON_YELLOW;
+        ctx.fillText("GOAL", gx, gy - 25);
     }
-
-    ctx.save();
-    ctx.shadowColor = COLORS.NEON_YELLOW;
-    ctx.shadowBlur = 15;
-    ctx.fillStyle = COLORS.NEON_YELLOW;
-    ctx.beginPath(); ctx.arc(gx, gy, 6, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-
-    if (selectedId === 'goal') {
-        ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(gx, gy, 6, 0, Math.PI * 2); ctx.stroke();
-    }
-    ctx.fillStyle = COLORS.NEON_YELLOW;
-    ctx.fillText("GOAL", gx, gy - 25);
 }
 
 export function drawPlayer(ctx: CanvasRenderingContext2D, p: any, toSX: any, toSY: any) {
@@ -369,4 +428,161 @@ export function drawHoverTooltip(ctx: CanvasRenderingContext2D, p: Point, toSX: 
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(text, cx + 15, cy + 20);
+}
+
+export function drawCoordinateLabel(ctx: CanvasRenderingContext2D, p: Point, toSX: any, toSY: any) {
+    const cx = toSX(p.x);
+    const cy = toSY(p.y);
+    const text = `(${p.x.toFixed(2)}, ${p.y.toFixed(2)})`;
+
+    ctx.font = 'bold 12px sans-serif';
+    const metrics = ctx.measureText(text);
+    const padding = 4;
+    const w = metrics.width + padding * 2;
+    const h = 20;
+
+    // Draw below the object (offset by +25 pixels in screen Y)
+    const labelX = cx - w / 2;
+    const labelY = cy + 25;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.strokeStyle = COLORS.NEON_BLUE;
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.roundRect(labelX, labelY, w, h, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = COLORS.NEON_BLUE;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, cx, labelY + h / 2);
+}
+
+export interface ConstraintBoundary {
+    fn: any; // MathFunction
+    type: 'solid' | 'dotted';
+    axis: 'x' | 'y';
+}
+
+export function drawConstraintBoundaries(
+    ctx: CanvasRenderingContext2D,
+    boundaries: ConstraintBoundary[],
+    compiledGroups: CompiledConstraints,
+    width: number,
+    height: number,
+    toScreenX: (x: number) => number,
+    toScreenY: (y: number) => number,
+    toWorldX: (sx: number) => number,
+    toWorldY: (sy: number) => number, // Added toWorldY
+    scale: number,
+    t: number,
+    pX: number,
+    pY: number
+) {
+    if (boundaries.length === 0) return;
+
+    ctx.save();
+    ctx.strokeStyle = '#ff0000'; // Pure Red for maximum visibility
+    ctx.lineWidth = 3; // Thicker lines
+    ctx.shadowColor = '#ff0000';
+    ctx.shadowBlur = 10; // Add glow for extra visibility
+
+    // Scope for checking neighbor points
+    const scope = { x: 0, y: 0, X: pX, Y: pY, T: t, t: t };
+    const EPS = 2 / scale; // Check 2 screen pixels away
+
+    const originX = toScreenX(0);
+    const originY = toScreenY(0);
+
+    boundaries.forEach(b => {
+        ctx.beginPath();
+        if (b.type === 'dotted') {
+            ctx.setLineDash([10, 6]); // Clearer dotted line
+            // Anchor dash pattern to World Origin to prevent "sliding" effect during pan
+            // limit offset to avoid potentially huge numbers if origin is far (though canvas handles it)
+            // It's periodic 16px.
+            if (b.axis === 'y') { // y = f(x), spans X
+                ctx.lineDashOffset = -originX;
+            } else { // x = c, spans Y
+                ctx.lineDashOffset = -originY;
+            }
+        } else {
+            ctx.setLineDash([]);
+            ctx.lineDashOffset = 0;
+        }
+
+        if (b.axis === 'y') {
+            // y = f(x)
+            let started = false;
+            for (let sx = 0; sx <= width; sx += 2) {
+                const wx = toWorldX(sx);
+                let wy = NaN;
+                try { wy = b.fn.compiled({ x: wx, t: t, T: t }); } catch { } // Use current t
+
+                if (isFinite(wy)) {
+                    // Check if this point is an actual boundary of the Forbidden Region
+                    // by checking slightly above and below
+                    const isForbiddenAbove = isForbidden(wx, wy + EPS, compiledGroups, scope);
+                    const isForbiddenBelow = isForbidden(wx, wy - EPS, compiledGroups, scope);
+
+                    // Only draw if there is a transition (True vs False)
+                    // If both True (inside region) or both False (outside), don't draw
+                    if (isForbiddenAbove === isForbiddenBelow) {
+                        started = false;
+                        continue;
+                    }
+
+                    const sy = toScreenY(wy);
+                    if (sy >= -100 && sy <= height + 100) {
+                        if (!started) {
+                            ctx.moveTo(sx, sy);
+                            started = true;
+                        } else {
+                            ctx.lineTo(sx, sy);
+                        }
+                    } else {
+                        started = false;
+                    }
+                } else {
+                    started = false;
+                }
+            }
+            ctx.stroke();
+        } else {
+            // x = c
+            let wx = NaN;
+            try { wx = b.fn.compiled({ t: t, T: t }); } catch { } // Use current t
+
+            if (isFinite(wx)) {
+                const sx = toScreenX(wx);
+                if (sx >= -10 && sx <= width + 10) {
+                    let started = false;
+                    ctx.beginPath();
+                    for (let sy = 0; sy <= height; sy += 2) {
+                        const wy = toWorldY(sy);
+
+                        const isForbiddenRight = isForbidden(wx + EPS, wy, compiledGroups, scope);
+                        const isForbiddenLeft = isForbidden(wx - EPS, wy, compiledGroups, scope);
+
+                        if (isForbiddenRight === isForbiddenLeft) {
+                            started = false;
+                            continue;
+                        }
+
+                        if (started) {
+                            ctx.lineTo(sx, sy);
+                        } else {
+                            ctx.moveTo(sx, sy);
+                            started = true;
+                        }
+                    }
+                    ctx.stroke();
+                }
+            }
+        }
+    });
+
+    ctx.restore();
 }

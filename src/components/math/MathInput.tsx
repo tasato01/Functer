@@ -9,9 +9,16 @@ interface MathInputProps {
     onChange: (latex: string) => void;
     placeholder?: string;
     label?: string;
+    disabled?: boolean;
+    onEnter?: () => void;
 }
 
-export const MathInput: React.FC<MathInputProps> = ({ value, onChange, label }) => {
+// Configure MathLive to use CDN for fonts/sounds to avoid Vite dev server issues
+// Using jsDelivr as unpkg had CORS issues
+MathfieldElement.fontsDirectory = 'https://cdn.jsdelivr.net/npm/mathlive/dist/fonts';
+MathfieldElement.soundsDirectory = 'https://cdn.jsdelivr.net/npm/mathlive/dist/sounds';
+
+export const MathInput: React.FC<MathInputProps> = ({ value, onChange, label, disabled, onEnter }) => {
     const mfRef = useRef<MathfieldElement>(null);
 
     // Sync value when it changes externally
@@ -32,20 +39,29 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, label }) 
             onChange(mf.getValue());
         };
 
-        mf.setOptions({
-            onKeystroke: (mf, keystroke, ev) => {
+        if (mf) {
+            (mf as any).onKeystroke = (element: any, keystroke: string, ev: KeyboardEvent) => {
                 // Intercept ' (Shift+7 on JP Keyboard)
                 if (keystroke === "'" || (ev.code === 'Digit7' && ev.shiftKey)) {
-                    mf.executeCommand(['insert', '^{\\prime}']);
+                    element.executeCommand(['insert', '^{\\prime}']);
                     return false; // Stop default handling
                 }
                 return true; // Continue default
+            };
+        }
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (onEnter) onEnter();
             }
-        });
+        };
 
         mf.addEventListener('input', handleInput);
+        mf.addEventListener('keydown', onKeyDown);
         return () => {
             mf.removeEventListener('input', handleInput);
+            mf.removeEventListener('keydown', onKeyDown);
         };
     }, [onChange]);
 
@@ -57,6 +73,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, label }) 
             {label && <label className="block text-neon-blue text-sm font-bold mb-1">{label}</label>}
             <MathFieldTag
                 ref={mfRef}
+                disabled={disabled}
                 className="w-full bg-black/50 border border-neon-blue/30 rounded p-2 text-white block"
                 style={{
                     width: '100%',

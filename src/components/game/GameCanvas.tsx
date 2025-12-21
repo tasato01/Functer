@@ -1,10 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { MathEngine, type MathFunction } from '../../core/math/MathEngine';
+import { audioService } from '../../services/AudioService';
 
-import type { LevelConfig, Point, CircleConstraint, RectConstraint } from '../../types/Level';
+import type { LevelConfig, Point, CircleConstraint, RectConstraint, DynamicPoint } from '../../types/Level';
 import {
     drawGrid, drawFunction, drawShape, drawWaypoint, drawEntities,
-    drawPlayer, drawHoverTooltip, drawConstraintsOverlay
+    drawPlayer, drawHoverTooltip, drawConstraintsOverlay, drawCoordinateLabel,
+    drawConstraintBoundaries, compileConstraints
 } from './GameRenderer';
 
 export type InteractionMode = 'select' | 'pan' | 'create_rect' | 'create_circle' | 'add_waypoint';
@@ -28,6 +30,8 @@ interface GameCanvasProps {
     onShapeCreate?: (shape: CircleConstraint | RectConstraint) => void;
     onWaypointCreate?: (p: Point) => void;
 
+    onObjectClick?: (info: { type: 'start' | 'goal' | 'waypoint', index?: number, p: Point }) => void;
+
     currentWaypointIndex?: number;
 
     onRightClick?: () => void;
@@ -43,6 +47,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     viewOffset, scale, onViewChange,
     mode, selectedId, onSelect, onLevelChange,
     onShapeCreate, onWaypointCreate,
+    onObjectClick,
     onRightClick,
     snapStep,
     className
@@ -79,128 +84,174 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const ORIGIN_X = Math.floor(rotation.w / 2 + viewOffset.x);
     const ORIGIN_Y = Math.floor(rotation.h / 2 + viewOffset.y);
 
-    const toScreenX = (x: number) => ORIGIN_X + x * scale;
-    const toScreenY = (y: number) => ORIGIN_Y - y * scale;
     const toWorldX = (sx: number) => (sx - ORIGIN_X) / scale;
     const toWorldY = (sy: number) => (ORIGIN_Y - sy) / scale;
 
-    const staticCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-    // Filter Constraints
-    const staticGroupsRef = useRef<string[][]>([]);
-    const dynamicGroupsRef = useRef<string[][]>([]);
+    // Constraint Boundaries
+    const constraintBoundaries = React.useMemo(() => {
+        if (!level.constraints) return [];
+        return level.constraints.map(group =>
+            group.map(c => MathEngine.getBoundaries(c)).flat()
+        ).flat();
+    }, [level.constraints]);
 
+    // Pre-compile constraints for caching - RESTORED
+    const compiledConstraints = React.useMemo(() => {
+        return compileConstraints(level.constraints || []);
+    }, [level.constraints]);
+
+    // --- Render Loop (Continuous) ---
+    const latestProps = useRef({
+        f, g, t, level, player, currentWaypointIndex,
+        viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
+        compiledConstraints, constraintBoundaries
+    });
+
+    // Update ref when props change
     useEffect(() => {
-        // Initialize offscreen canvas once
-        if (!staticCanvasRef.current) {
-            staticCanvasRef.current = document.createElement('canvas');
-        }
-    }, []);
+        latestProps.current = {
+            f, g, t, level, player, currentWaypointIndex,
+            viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
+            compiledConstraints, constraintBoundaries
+        };
+    }, [f, g, t, level, player, currentWaypointIndex, viewOffset, scale, selectedId, hoverPos, tempShape, rotation, compiledConstraints, constraintBoundaries]);
 
-    // 1. Separate Static/Dynamic Constraints
+    // Loop
     useEffect(() => {
-        if (!level.constraints) {
-            staticGroupsRef.current = [];
-            dynamicGroupsRef.current = [];
-            return;
-        }
+        let animationFrameId: number;
 
-        const s: string[][] = [];
-        const d: string[][] = [];
+        const render = () => {
+            const canvas = canvasRef.current;
+            if (!canvas) {
+                animationFrameId = requestAnimationFrame(render);
+                return;
+            }
 
-        level.constraints.forEach(group => {
-            // If ANY condition in a group is dynamic, the whole group is dynamic (because logic AND).
-            // Actually, static definition: NONE of the conditions depend on T.
-            const isDynamic = group.some(c => !MathEngine.isStatic(c));
-            if (isDynamic) d.push(group);
-            else s.push(group);
-        });
+            const ctx = canvas.getContext('2d', { alpha: false });
+            if (!ctx) {
+                animationFrameId = requestAnimationFrame(render);
+                return;
+            }
 
-        staticGroupsRef.current = s;
-        dynamicGroupsRef.current = d;
+            try {
+                const {
+                    f, g, t, level, player, currentWaypointIndex,
+                    viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
+                    compiledConstraints, constraintBoundaries
+                } = latestProps.current;
 
-        // Trigger a redraw of static canvas
-        updateStaticCanvas();
-    }, [level.constraints]); // Only when constraints change definition
+                const width = rotation.w;
+                const height = rotation.h;
 
-    // 2. Render Static Canvas Cache
-    // We also need to update this when View Offset/Scale or Screen Size changes.
-    const updateStaticCanvas = () => {
-        const sc = staticCanvasRef.current;
-        if (!sc || !rotation.w || !rotation.h) return;
+                if (width === 0 || height === 0) {
+                    animationFrameId = requestAnimationFrame(render);
+                    return;
+                }
 
-        // Resize if needed (Canvas size should match visual size to avoid blur or huge memory usage)
-        if (sc.width !== rotation.w || sc.height !== rotation.h) {
-            sc.width = rotation.w;
-            sc.height = rotation.h;
-        }
+                // Recalculate helpers inside loop to ensure they match current state
+                const ORIGIN_X = Math.floor(width / 2 + viewOffset.x);
+                const ORIGIN_Y = Math.floor(height / 2 + viewOffset.y);
 
-        const ctx = sc.getContext('2d');
-        if (!ctx) return;
-
-        ctx.clearRect(0, 0, sc.width, sc.height);
-
-        // Draw ONLY static constraints
-        if (staticGroupsRef.current.length > 0) {
-            drawConstraintsOverlay(ctx, rotation.w, rotation.h, toWorldX, toWorldY, staticGroupsRef.current, 0, 0, 0);
-        }
-    };
-
-    // Re-render cache when view changes
-    useEffect(() => {
-        updateStaticCanvas();
-    }, [rotation, viewOffset, scale]); // View dependencies
+                const toScreenX = (x: number) => ORIGIN_X + x * scale;
+                const toScreenY = (y: number) => ORIGIN_Y - y * scale;
+                const toWorldX = (sx: number) => (sx - ORIGIN_X) / scale;
+                const toWorldY = (sy: number) => (ORIGIN_Y - sy) / scale;
 
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d', { alpha: false });
-        if (!ctx) return;
+                // Clear Screen
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, width, height);
 
-        const width = rotation.w;
-        const height = rotation.h;
+                // Draw Constraints Overlay (Optimized, Per-Frame)
+                if (level.constraints && level.constraints.length > 0) {
+                    const pX = player?.x ?? level.startPoint.x ?? 0;
+                    const pY = player?.y ?? level.startPoint.y ?? 0;
 
-        // Clear Screen
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, width, height);
+                    // Overlay
+                    drawConstraintsOverlay(ctx, width, height, toWorldX, toWorldY, compiledConstraints, t, pX, pY);
 
-        // 1. Draw Static Cache
-        if (staticCanvasRef.current) {
-            ctx.drawImage(staticCanvasRef.current, 0, 0);
-        }
+                    // Boundaries (Smart Lines)
+                    drawConstraintBoundaries(
+                        ctx,
+                        constraintBoundaries,
+                        compiledConstraints,
+                        width,
+                        height,
+                        toScreenX,
+                        toScreenY,
+                        toWorldX,
+                        toWorldY,
+                        scale,
+                        t,
+                        pX,
+                        pY
+                    );
+                }
 
-        // 2. Draw Dynamic Constraints (Real-time)
-        if (dynamicGroupsRef.current.length > 0) {
-            const pX = player?.x ?? level.startPoint.x ?? 0;
-            const pY = player?.y ?? level.startPoint.y ?? 0;
-            drawConstraintsOverlay(ctx, width, height, toWorldX, toWorldY, dynamicGroupsRef.current, t, pX, pY);
-        }
+                drawGrid(ctx, width, height, scale, ORIGIN_X, ORIGIN_Y, toWorldX, toWorldY);
 
-        drawGrid(ctx, width, height, scale, ORIGIN_X, ORIGIN_Y, toWorldX, toWorldY);
+                if (level.shapes) {
+                    level.shapes.forEach(s => drawShape(ctx, s, toScreenX, toScreenY, scale, selectedId === s.id));
+                }
+                if (tempShape) drawShape(ctx, tempShape, toScreenX, toScreenY, scale, true);
 
-        if (level.shapes) {
-            level.shapes.forEach(s => drawShape(ctx, s, toScreenX, toScreenY, scale, selectedId === s.id));
-        }
-        if (tempShape) drawShape(ctx, tempShape, toScreenX, toScreenY, scale, true);
+                if (f && f.isValid && g && g.isValid) {
+                    const pX = player?.x ?? level.startPoint.x ?? 0;
+                    const pY = player?.y ?? level.startPoint.y ?? 0;
+                    drawFunction(ctx, f, g, width, toWorldX, toScreenY, t, pX, pY);
+                }
 
-        if (f && f.isValid && g && g.isValid) {
-            const pX = player?.x ?? level.startPoint.x ?? 0;
-            const pY = player?.y ?? level.startPoint.y ?? 0;
-            drawFunction(ctx, f, g, width, toWorldX, toScreenY, t, pX, pY);
-        }
+                if (level.waypoints) level.waypoints.forEach((wp, i) => {
+                    const pX = player?.x ?? level.startPoint.x ?? 0;
+                    const pY = player?.y ?? level.startPoint.y ?? 0;
+                    drawWaypoint(ctx, wp, i, toScreenX, toScreenY, selectedId === `wp_${i}`, i < (currentWaypointIndex ?? 0), t, pX, pY);
+                });
 
-        if (level.waypoints) level.waypoints.forEach((wp, i) => drawWaypoint(ctx, wp, i, toScreenX, toScreenY, selectedId === `wp_${i}`, i < (currentWaypointIndex ?? 0)));
+                const pX = player?.x ?? level.startPoint.x ?? 0;
+                const pY = player?.y ?? level.startPoint.y ?? 0;
+                drawEntities(ctx, level, toScreenX, toScreenY, scale, selectedId, t, pX, pY);
 
-        drawEntities(ctx, level, toScreenX, toScreenY, scale, selectedId);
+                if (player) drawPlayer(ctx, player, toScreenX, toScreenY);
 
-        if (player) drawPlayer(ctx, player, toScreenX, toScreenY);
+                if (hoverPos) {
+                    drawHoverTooltip(ctx, hoverPos, toScreenX, toScreenY);
+                }
 
-        if (hoverPos) {
-            drawHoverTooltip(ctx, hoverPos, toScreenX, toScreenY);
-        }
+                // Draw Coordinate Label if selected
+                if (selectedId) {
+                    let p: DynamicPoint | undefined;
+                    if (selectedId === 'start') p = level.startPoint;
+                    else if (selectedId === 'goal') p = level.goalPoint;
+                    else if (selectedId.startsWith('wp_')) {
+                        const idx = parseInt(selectedId.split('_')[1]);
+                        if (level.waypoints && level.waypoints[idx]) p = level.waypoints[idx];
+                    }
 
-    }, [rotation, f, g, t, level, player, viewOffset, scale, selectedId, hoverPos, tempShape]);
+                    if (p) {
+                        // Evaluate dynamic position
+                        let px = p.x;
+                        let py = p.y;
+                        try {
+                            const scope = { t, T: t, X: pX, Y: pY };
+                            if (p.xFormula) px = MathEngine.evaluateScalar(p.xFormula, scope) || px;
+                            if (p.yFormula) py = MathEngine.evaluateScalar(p.yFormula, scope) || py;
+                        } catch { }
+
+                        drawCoordinateLabel(ctx, { ...p, x: px, y: py }, toScreenX, toScreenY);
+                    }
+                }
+            } catch (err: any) {
+                console.error("Render Loop Error:", err);
+            } finally {
+                animationFrameId = requestAnimationFrame(render);
+            }
+        };
+
+        render();
+        return () => cancelAnimationFrame(animationFrameId);
+    }, []); // Run once, depend on refs
+
 
     // Snap Helper
     const snap = (v: number) => {
@@ -298,6 +349,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             for (let i = 0; i < level.waypoints.length; i++) {
                 if (distSq(wx, wy, level.waypoints[i].x, level.waypoints[i].y) < (15 / scale) ** 2) {
                     onSelect(`wp_${i}`);
+                    audioService.playSE('click');
+                    if (onObjectClick) onObjectClick({ type: 'waypoint', index: i, p: level.waypoints[i] });
                     setDragState({ type: 'entity', targetId: `wp_${i}`, startMouse: { x: mx, y: my }, startWorld: { x: level.waypoints[i].x, y: level.waypoints[i].y } });
                     return;
                 }
@@ -305,11 +358,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }
         if (distSq(wx, wy, level.startPoint.x, level.startPoint.y) < (15 / scale) ** 2) {
             onSelect('start');
+            audioService.playSE('click');
+            if (onObjectClick) onObjectClick({ type: 'start', p: level.startPoint });
             setDragState({ type: 'entity', targetId: 'start', startMouse: { x: mx, y: my }, startWorld: level.startPoint });
             return;
         }
         if (distSq(wx, wy, level.goalPoint.x, level.goalPoint.y) < (15 / scale) ** 2) {
             onSelect('goal');
+            audioService.playSE('click');
+            if (onObjectClick) onObjectClick({ type: 'goal', p: level.goalPoint });
             setDragState({ type: 'entity', targetId: 'goal', startMouse: { x: mx, y: my }, startWorld: level.goalPoint });
             return;
         }
@@ -326,6 +383,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
                 if (hit) {
                     onSelect(s.id);
+                    audioService.playSE('click');
                     setDragState({ type: 'entity', targetId: s.id, startMouse: { x: mx, y: my }, startWorld: s });
                     return;
                 }

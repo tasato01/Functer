@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { MathFunction } from '../core/math/MathEngine';
 import { MathEngine } from '../core/math/MathEngine';
+import { audioService } from '../services/AudioService';
 import type { LevelConfig } from '../types/Level';
 
 interface GameState {
@@ -35,8 +36,8 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
     const inputRef = useRef({ left: false, right: false });
 
     // Store latest params in ref to avoid closure staleness in loop
-    const paramsRef = useRef({ level });
-    paramsRef.current = { level };
+    const paramsRef = useRef({ level, f, g });
+    paramsRef.current = { level, f, g };
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,7 +97,7 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         const deltaTime = time - (lastTimeRef.current || time);
         lastTimeRef.current = time;
 
-        const { level } = paramsRef.current;
+        const { level, f, g } = paramsRef.current;
 
         // Physics: Units per Second
         const MAX_SPEED = level.playerSpeed ?? 5.0; // Default 5 units/sec
@@ -129,26 +130,28 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         let nextY = 0;
         try {
             // Use evaluateChain
-            nextY = MathEngine.evaluateChain(g, f, x, t);
+            nextY = MathEngine.evaluateChain(g, f, x, t, y);
         } catch { nextY = NaN; }
         y = nextY;
 
-        const scope = { x, y, X: x, Y: y, T: t };
+        const scope = { x, y, X: x, Y: y, T: t, t };
 
         let hitConstraint = false;
         // Check Inequality Constraints (OR of ANDs)
-        for (const group of level.constraints) {
-            let groupActive = true;
-            // All conditions in a group must be true for the group to be active (Forbidden)
-            for (const condition of group) {
-                if (!MathEngine.evaluateCondition(condition, scope)) {
-                    groupActive = false;
+        if (level.constraints) {
+            for (const group of level.constraints) {
+                let groupActive = true;
+                // All conditions in a group must be true for the group to be active (Forbidden)
+                for (const condition of group) {
+                    if (!MathEngine.evaluateCondition(condition, scope)) {
+                        groupActive = false;
+                        break;
+                    }
+                }
+                if (groupActive && group.length > 0) {
+                    hitConstraint = true;
                     break;
                 }
-            }
-            if (groupActive && group.length > 0) {
-                hitConstraint = true;
-                break;
             }
         }
 
@@ -172,22 +175,46 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         }
 
         if (hitConstraint) {
+            audioService.playSE('gameover');
             setGameState(prev => ({ ...prev, isPlaying: false, status: 'lost', x, y, vx, t }));
             return;
         }
 
-        if (currentWaypointIndex < level.waypoints.length) {
+        // Check Waypoints
+        if (level.waypoints && currentWaypointIndex < level.waypoints.length) {
             const wp = level.waypoints[currentWaypointIndex];
-            const distSq = (x - wp.x) ** 2 + (y - wp.y) ** 2;
-            if (distSq < 0.01) { // Radius 0.1
+
+            // Dynamic Position
+            let wx = wp.x;
+            let wy = wp.y;
+            try {
+                if (wp.xFormula) wx = MathEngine.evaluateScalar(wp.xFormula, scope);
+                if (wp.yFormula) wy = MathEngine.evaluateScalar(wp.yFormula, scope);
+            } catch { }
+
+            const distSq = (x - wx) ** 2 + (y - wy) ** 2;
+            const hitR = wp.radius || 0.1;
+            if (distSq < hitR * hitR) {
+                audioService.playSE('checkpoint');
                 currentWaypointIndex++;
             }
         }
 
-        if (currentWaypointIndex >= level.waypoints.length) {
-            const distSq = (x - level.goalPoint.x) ** 2 + (y - level.goalPoint.y) ** 2;
-            const effectiveR = level.goalRadius;
-            if (distSq < effectiveR * effectiveR) {
+        // Check Goal
+        if (!level.waypoints || currentWaypointIndex >= level.waypoints.length) {
+            let gx = level.goalPoint.x;
+            let gy = level.goalPoint.y;
+            try {
+                if (level.goalPoint.xFormula) gx = MathEngine.evaluateScalar(level.goalPoint.xFormula, scope);
+                if (level.goalPoint.yFormula) gy = MathEngine.evaluateScalar(level.goalPoint.yFormula, scope);
+            } catch { }
+
+            const distSq = (x - gx) ** 2 + (y - gy) ** 2;
+            const effectiveR = level.goalRadius > 0 ? level.goalRadius : 0.5;
+            const hitR = Math.max(0.2, effectiveR);
+
+            if (distSq < hitR * hitR) {
+                audioService.playSE('clear');
                 setGameState(prev => ({ ...prev, isPlaying: false, status: 'won', x, y, vx, t }));
                 return;
             }

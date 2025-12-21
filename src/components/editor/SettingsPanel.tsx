@@ -1,6 +1,7 @@
 import React from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, Maximize } from 'lucide-react';
 import type { LevelConfig } from '../../types/Level';
+import { audioService } from '../../services/AudioService';
 
 interface SettingsPanelProps {
     snapStep: number;

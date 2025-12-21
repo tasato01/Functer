@@ -188,24 +188,29 @@ export class MathEngine {
 
         if (compOps[op]) {
             // Flatten nested logic from Cortex (e.g. 4 <= x < 6 -> ["LessEqual", 4, ["Less", x, 6]])
-            // Check if standard Flat List (handled by chain below) or Nested
+
+            // Case 1: Right-Nested A Op (B Op C)
             if (args.length === 2 && Array.isArray(args[1])) {
                 const innerOp = args[1][0];
                 if (compOps[innerOp]) {
-                    // We have A Op1 (B Op2 C)
-                    // Assuming continuity B is the shared term? 
-                    // Cortex usually nests like [Op1, A, [Op2, B, C]] where B is the shared variable?
-                    // Actually, let's look at the result: ["LessEqual", 4, ["Less", "x", 6]]
-                    // Outer: <=, Args: 4, Inner
-                    // Inner: <, Args: x, 6
-                    // Desired: (4 <= x) and (x < 6)
                     const A = MathEngine.mathJsonToMathJs(args[0]);
                     const innerArgs = args[1].slice(1);
-                    const B = MathEngine.mathJsonToMathJs(innerArgs[0]); // The shared term 'x'
-                    // We re-process the inner part normally
+                    const B = MathEngine.mathJsonToMathJs(innerArgs[0]); // First arg of inner is shared
                     const innerExpr = MathEngine.mathJsonToMathJs(args[1]);
-
                     return `(${A} ${compOps[op]} ${B}) and (${innerExpr})`;
+                }
+            }
+
+            // Case 2: Left-Nested (A Op B) Op C
+            // e.g. ["Less", ["LessEqual", 0, "y"], 3]
+            if (args.length === 2 && Array.isArray(args[0])) {
+                const innerOp = args[0][0];
+                if (compOps[innerOp]) {
+                    const innerExpr = MathEngine.mathJsonToMathJs(args[0]);
+                    const innerArgs = args[0].slice(1);
+                    const B = MathEngine.mathJsonToMathJs(innerArgs[innerArgs.length - 1]); // Last arg of inner is shared
+                    const C = MathEngine.mathJsonToMathJs(args[1]);
+                    return `(${innerExpr}) and (${B} ${compOps[op]} ${C})`;
                 }
             }
 
@@ -217,6 +222,17 @@ export class MathEngine {
                 }
                 return terms.join(' and ');
             }
+
+            // Safety Check: If we STILL have a nested comparison that wasn't handled by Case 1 or Case 2, 
+            // it means the structure is complex or unsupported.
+            // Returning default comparison (e.g. 0 <= (y < 3)) evaluates to TRUE (0 <= 1) and turns screen RED.
+            // We must block this.
+            const isComp = (node: any) => Array.isArray(node) && compOps[node[0]];
+            if (isComp(args[0]) || isComp(args[1])) {
+                console.warn("Unsupported nested inequality structure, defaulting to false to prevent errors:", json);
+                return 'false';
+            }
+
             return `(${MathEngine.mathJsonToMathJs(args[0])}) ${compOps[op]} (${MathEngine.mathJsonToMathJs(args[1])})`;
         }
 
@@ -428,14 +444,15 @@ export class MathEngine {
         }
     }
 
-    static evaluateChain(g: MathFunction, f: MathFunction, x: number, t: number = 0): number {
+    static evaluateChain(g: MathFunction, f: MathFunction, x: number, t: number = 0, y: number = 0): number {
         try {
-            const fScope = { x, T: t, e: Math.E, pi: Math.PI };
+            // f(x) should NOT depend on t or T. Only x.
+            const fScope = { x };
             const fx = f.compiled(fScope);
 
             // Function wrapper for f(x) to be used in g
             const F = (val: number) => {
-                try { return f.compiled({ ...fScope, x: val }); } catch { return 0; }
+                try { return f.compiled({ x: val }); } catch { return 0; }
             };
 
             // Numeric Derivative Wrapper
@@ -443,7 +460,7 @@ export class MathEngine {
                 return MathEngine.numericalDerivative(F, val);
             };
 
-            const gScope = { f: fx, x, X: x, T: t, e: Math.E, pi: Math.PI, F, derivative_f };
+            const gScope = { f: fx, x, X: x, Y: y, t, T: t, F, derivative_f };
             return g.compiled(gScope);
         } catch (e) {
             return NaN;
@@ -457,6 +474,99 @@ export class MathEngine {
             return !!res;
         } catch {
             return false;
+        }
+    }
+
+    static getBoundaries(expression: string): { fn: MathFunction, type: 'solid' | 'dotted', axis: 'x' | 'y' }[] {
+        const boundaries: { fn: MathFunction, type: 'solid' | 'dotted', axis: 'x' | 'y' }[] = [];
+        try {
+            const json = ce.parse(expression, { canonical: false }).json;
+            // console.log("JSON:", JSON.stringify(json)); // Debug
+
+            const extract = (node: any) => {
+                if (!Array.isArray(node)) return;
+                const op = node[0];
+                const args = node.slice(1);
+
+                // Logical grouping
+                if (op === 'And' || op === 'Or' || op === 'Not') {
+                    args.forEach(extract);
+                    return;
+                }
+
+                const compOps: Record<string, string> = {
+                    'Equal': 'solid', 'LessEqual': 'solid', 'GreaterEqual': 'solid',
+                    'Less': 'dotted', 'Greater': 'dotted', 'NotEqual': 'dotted'
+                };
+
+                if (compOps[op]) {
+                    const style = compOps[op] as 'solid' | 'dotted';
+
+                    // Helper to add boundary
+                    const addBoundary = (a: any, b: any, overrideStyle?: 'solid' | 'dotted') => {
+                        const s = overrideStyle || style;
+                        const aStr = MathEngine.mathJsonToMathJs(a);
+                        const bStr = MathEngine.mathJsonToMathJs(b);
+
+                        if (aStr === 'y' && !bStr.includes('y')) {
+                            boundaries.push({ fn: MathEngine.compile(bStr), type: s, axis: 'y' });
+                        } else if (bStr === 'y' && !aStr.includes('y')) {
+                            boundaries.push({ fn: MathEngine.compile(aStr), type: s, axis: 'y' });
+                        }
+                        else if (aStr === 'x' && !bStr.includes('x') && !bStr.includes('y')) {
+                            boundaries.push({ fn: MathEngine.compile(bStr), type: s, axis: 'x' });
+                        } else if (bStr === 'x' && !aStr.includes('x') && !aStr.includes('y')) {
+                            boundaries.push({ fn: MathEngine.compile(aStr), type: s, axis: 'x' });
+                        }
+                    };
+
+                    // Case 1: Right-nested: 0 <= (y < 3) -> 0 <= y AND y < 3
+                    if (args.length === 2 && Array.isArray(args[1]) && compOps[args[1][0]]) {
+                        const A = args[0];
+                        const innerArgs = args[1].slice(1);
+                        const B = innerArgs[0]; // First arg of inner is shared
+                        addBoundary(A, B, style); // Use CURRENT op style for first pair
+                        extract(args[1]); // Recurse for the rest
+                        return;
+                    }
+
+                    // Case 2: Left-nested: (0 <= y) < 3 -> y < 3 AND 0 <= y
+                    if (args.length === 2 && Array.isArray(args[0]) && compOps[args[0][0]]) {
+                        const innerArgs = args[0].slice(1);
+                        const B = innerArgs[innerArgs.length - 1]; // Last arg of inner is shared
+                        const C = args[1];
+                        addBoundary(B, C, style); // Use CURRENT op style for second pair
+                        extract(args[0]); // Recurse
+                        return;
+                    }
+
+                    if (args.length === 2) {
+                        addBoundary(args[0], args[1]);
+                        extract(args[0]);
+                        extract(args[1]);
+                    } else if (args.length > 2) {
+                        for (let i = 0; i < args.length - 1; i++) {
+                            addBoundary(args[i], args[i + 1]);
+                            extract(args[i]);
+                        }
+                        extract(args[args.length - 1]);
+                    }
+                }
+            };
+
+            extract(json);
+        } catch (e) { console.error(e); }
+        return boundaries;
+    }
+
+    static evaluateScalar(expr: string, scope: any): number {
+        try {
+            const cleaned = MathEngine.cleanExpression(expr);
+            const res = math.evaluate(cleaned, scope);
+            const num = Number(res);
+            return isFinite(num) ? num : NaN;
+        } catch {
+            return NaN;
         }
     }
 }

@@ -1,19 +1,21 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom'; // Added useLocation
 import { GameCanvas } from '../components/game/GameCanvas';
 import type { InteractionMode } from '../components/game/GameCanvas';
 
-import { DEFAULT_LEVEL } from '../types/Level';
+import { DEFAULT_LEVEL, EMPTY_LEVEL } from '../types/Level';
 import type { LevelConfig, Point, CircleConstraint, RectConstraint } from '../types/Level';
 import { MathEngine } from '../core/math/MathEngine';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { EditorSidebar } from '../components/editor/EditorSidebar';
-import { Move } from 'lucide-react';
+import { Move, Home } from 'lucide-react';
+import { HelpDialog } from '../components/common/HelpDialog';
+import { audioService } from '../services/AudioService';
 
+// ... (useHistory hook remains unchanged)
 function useHistory<T>(initialState: T) {
     const [history, setHistory] = useState<T[]>([initialState]);
     const [index, setIndex] = useState(0);
-
-
 
     const state = history[index];
 
@@ -48,7 +50,9 @@ function useHistory<T>(initialState: T) {
 }
 
 export const EditPage: React.FC = () => {
-    const { state: level, setState: setLevel, undo, redo, canUndo, canRedo, reset } = useHistory<LevelConfig>(DEFAULT_LEVEL);
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { state: level, setState: setLevel, undo, redo, canUndo, canRedo, reset } = useHistory<LevelConfig>(EMPTY_LEVEL);
 
     const [testF, setTestF] = useState('0'); // Default 0
     const [snapStep, setSnapStep] = useState(0.5); // Default 0.5
@@ -62,11 +66,74 @@ export const EditPage: React.FC = () => {
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
     const [showHelp, setShowHelp] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false); // Verification for Publish
 
     const fFn = useMemo(() => MathEngine.compile(testF), [testF]);
     const gFn = useMemo(() => MathEngine.compile(level.g_raw), [level.g_raw]);
 
     const { gameState, startGame, stopGame } = useGameLoop(fFn, gFn, level);
+
+    // Initialize/Reset on mount
+    useEffect(() => {
+        const state = location.state as { initialLevel?: LevelConfig } | undefined;
+
+        if (state?.initialLevel) {
+            // Load Copied Level
+            const loaded = JSON.parse(JSON.stringify(state.initialLevel));
+            // IMPORTANT: If we want to "Copy", we must strip ID and author
+            // If it's "My Level Edit" (from previous task), we might want to keep ID?
+            // The previous code in LevelBrowser for "My Levels" sent `initialLevel: level`.
+            // For now, let's assume we WANT to strip ID if it's a copy action.
+            // But if it's "Edit" action from MY LEVEL, we might want to keep it?
+
+            // Current Plan: LevelBrowser sends explicit intent? No, just the level object.
+            // User requirement: "Copy any existing level".
+            // If I open "My Level" with the same button, it acts as edit (maybe).
+            // But `publishLevel` always creates NEW doc currently.
+            // So practically EVERYTHING is a "Copy" right now until we implement `updateLevel`.
+
+            // So: Clean it up to be safe for "New Level" flow.
+            // But wait, if I want to "Edit My Level", I might be annoyed if it creates a duplicate.
+            // However, implementing Update is "Edit & Republish" task.
+            // The current task is "Copy".
+            // I'll make sure it's at least loaded.
+            // If I strip ID here, even "My Levels" will be copies.
+            // That's safer for MVP to avoid accidental overwrites of Official levels.
+
+            // Let's Clean metadata
+            // loaded.id = undefined; // Actually keep it? No, strip it so publishing makes new.
+            // Wait, if I strip it, `LevelSaveDialog` or `FirebaseLevelService` will treat as new.
+            // If I keep it, `publishLevel` might overwrite if I change logic there.
+            // Currently `publishLevel` uses `addDoc`. So even if I keep ID, it makes new doc.
+            // So it's effectively always "Copy".
+
+            // Just ensure we don't carry over weird state.
+            loaded.plays = 0;
+            loaded.likes = 0;
+            loaded.isOfficial = false; // Always become user level on copy
+
+            // If it's NOT my level, I should definitely strip ID and author.
+            // But logic to check "is my level" is not inside EditPage easily without Auth check.
+            // Let's just strip ID to be consistent with "Copy" behavior for now.
+            // The user explicitly asked for "Copy".
+            // For "My Levels Edit", they might expect "Update", but "Copy" is a safe fallback.
+
+            delete loaded.id;
+            delete loaded.authorId;
+            delete loaded.authorName;
+            delete loaded.createdAt;
+
+            reset(loaded);
+        } else {
+            // Default New
+            // Deep clone to ensure fresh start and no mutation of global default
+            const cleanLevel = JSON.parse(JSON.stringify(EMPTY_LEVEL));
+            reset(cleanLevel);
+        }
+
+        setTestF('0');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -86,6 +153,7 @@ export const EditPage: React.FC = () => {
     }, [selectedId, level, undo, redo]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleTogglePlay = () => {
+        audioService.playSE('play');
         if (gameState.isPlaying) {
             stopGame();
         } else {
@@ -159,99 +227,103 @@ export const EditPage: React.FC = () => {
 
 
     return (
-        <div className="h-full flex relative">
-            {/* Sidebar */}
-            {/* Sidebar */}
-            <EditorSidebar
-                level={level}
-                setLevel={setLevel}
-                mode={mode}
-                setMode={setMode}
-                selectedId={selectedId}
-                setSelectedId={setSelectedId}
-                undo={undo}
-                redo={redo}
-                canUndo={canUndo}
-                canRedo={canRedo}
-                reset={reset}
-                DEFAULT_LEVEL={DEFAULT_LEVEL}
-                resetView={resetView}
-                testF={testF}
-                setTestF={setTestF}
-                snapStep={snapStep}
-                setSnapStep={setSnapStep}
-                gameState={gameState}
-                handleTogglePlay={handleTogglePlay}
-                onHelpClick={() => setShowHelp(true)}
-            />
-
-            {/* Main Graph Area */}
-            <div className="flex-1 relative bg-black overflow-hidden relative group">
-                <div className="absolute top-4 left-4 z-20 flex gap-2">
-                    <button onClick={resetView} className="p-2 bg-black/50 border border-white/20 rounded-full hover:bg-white/10 text-white transition-colors backdrop-blur-sm shadow-lg" title="Home Position">
-                        <Move size={20} />
+        <div className="absolute inset-0 flex flex-col bg-black overflow-hidden">
+            {/* Header / Nav (Consistent with PlayPage) */}
+            <div className="h-14 bg-neon-surface/80 border-b border-neon-blue/30 flex items-center justify-between px-6 backdrop-blur-md z-20 shrink-0">
+                <div className="flex items-center gap-4">
+                    <button onClick={() => navigate('/')} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-bold">
+                        <Home size={16} /> HOME
                     </button>
+                    {/* No list button for Editor */}
+                    <div className="h-4 w-[1px] bg-white/10"></div>
+                    <span className="text-gray-500 text-xs font-mono">EDITOR MODE</span>
                 </div>
 
-                <GameCanvas
-                    f={fFn}
-                    g={gFn}
+
+
+                <div className="w-[100px]"></div> {/* Spacer for balance */}
+            </div>
+
+            {/* Content Area */}
+            <div className="flex-1 flex relative overflow-hidden">
+                {/* Sidebar */}
+                <EditorSidebar
                     level={level}
-                    t={gameState.isPlaying ? gameState.t : 0}
-                    player={gameState.isPlaying ? { x: gameState.x, y: gameState.y } : undefined}
-                    currentWaypointIndex={gameState.currentWaypointIndex}
-
-                    viewOffset={viewOffset}
-                    scale={scale}
-                    onViewChange={(o, s) => { setViewOffset(o); setScale(s); }}
-
+                    setLevel={setLevel}
                     mode={mode}
-                    onRightClick={() => setMode('select')} // Add this
+                    setMode={setMode}
                     selectedId={selectedId}
-                    onSelect={setSelectedId}
-                    onLevelChange={newL => setLevel(newL)}
-                    onShapeCreate={handleAddShape}
-                    onWaypointCreate={handleAddWaypoint}
-
+                    setSelectedId={setSelectedId}
+                    undo={undo}
+                    redo={redo}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    reset={reset}
+                    DEFAULT_LEVEL={EMPTY_LEVEL}
+                    resetView={resetView}
+                    testF={testF}
+                    setTestF={setTestF}
                     snapStep={snapStep}
-
-                    className="w-full h-full"
+                    setSnapStep={setSnapStep}
+                    gameState={gameState}
+                    handleTogglePlay={handleTogglePlay}
+                    stopGame={stopGame}
+                    onHelpClick={() => setShowHelp(true)}
+                    isVerifying={isVerifying}
+                    setIsVerifying={setIsVerifying}
                 />
 
-                {/* Modals ... */}
-                {showHelp && (
-                    <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 p-8" onClick={() => setShowHelp(false)}>
-                        <div className="bg-neon-surface border border-neon-blue rounded-xl p-6 max-w-2xl text-left overflow-y-auto max-h-[80vh]" onClick={e => e.stopPropagation()}>
-                            <h3 className="text-2xl font-bold text-neon-blue mb-4">Manual</h3>
+                {/* Main Graph Area */}
+                <div className="flex-1 relative bg-black overflow-hidden relative group">
+                    <div className="absolute top-4 left-4 z-20 flex gap-2">
+                        <button onClick={resetView} className="p-2 bg-black/50 border border-white/20 rounded-full hover:bg-white/10 text-white transition-colors backdrop-blur-sm shadow-lg" title="Home Position">
+                            <Move size={20} />
+                        </button>
+                    </div>
 
-                            <div className="space-y-4 text-gray-300">
-                                <section>
-                                    <h4 className="font-bold text-white border-b border-gray-600 mb-2">Controls</h4>
-                                    <ul className="list-disc pl-5 text-sm space-y-1">
-                                        <li><b>Tools:</b> Use Undo/Redo/Reset at top left.</li>
-                                        <li><b>Snapping:</b> Adjust 'Snap Step' in sidebar.</li>
-                                        <li><b>Constraints:</b> Add realtime math constraints (e.g. <code>y &lt; 0</code>) or Shapes.</li>
-                                        <li><b>Inspect:</b> Click an object to edit exact coordinates or ranges.</li>
-                                    </ul>
-                                </section>
+                    <GameCanvas
+                        f={fFn}
+                        g={gFn}
+                        level={level}
+                        t={gameState.isPlaying ? gameState.t : 0}
+                        player={gameState.isPlaying ? { x: gameState.x, y: gameState.y } : undefined}
+                        currentWaypointIndex={gameState.currentWaypointIndex}
+
+                        viewOffset={viewOffset}
+                        scale={scale}
+                        onViewChange={(o, s) => { setViewOffset(o); setScale(s); }}
+
+                        mode={mode}
+                        onRightClick={() => setMode('select')} // Add this
+                        selectedId={selectedId}
+                        onSelect={setSelectedId}
+                        onLevelChange={newL => setLevel(newL)}
+                        onShapeCreate={handleAddShape}
+                        onWaypointCreate={handleAddWaypoint}
+
+                        snapStep={snapStep}
+
+                        className="w-full h-full"
+                    />
+
+                    {/* Modals ... */}
+                    {/* Modals ... */}
+                    <HelpDialog isOpen={showHelp} onClose={() => setShowHelp(false)} />
+
+                    {/* Game Status */}
+                    {gameState.status !== 'idle' && gameState.status !== 'playing' && !isVerifying && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
+                            <div className="p-8 border-2 rounded-xl text-center bg-black shadow-[0_0_50px_rgba(0,0,0,0.8)] border-neon-blue">
+                                <h2 className={`text-6xl font-black mb-2 ${gameState.status === 'won' ? 'text-neon-green' : 'text-red-500'}`}>
+                                    {gameState.status === 'won' ? 'CLEAR!!' : 'FAILED'}
+                                </h2>
+                                <button onClick={() => { audioService.playSE('click'); stopGame(); }} className="mt-4 px-6 py-2 bg-white text-black font-bold rounded hover:bg-gray-200">
+                                    Close
+                                </button>
                             </div>
                         </div>
-                    </div>
-                )}
-
-                {/* Game Status */}
-                {gameState.status !== 'idle' && gameState.status !== 'playing' && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
-                        <div className="p-8 border-2 rounded-xl text-center bg-black shadow-[0_0_50px_rgba(0,0,0,0.8)] border-neon-blue">
-                            <h2 className={`text-6xl font-black mb-2 ${gameState.status === 'won' ? 'text-neon-green' : 'text-red-500'}`}>
-                                {gameState.status === 'won' ? 'CLEAR!!' : 'FAILED'}
-                            </h2>
-                            <button onClick={stopGame} className="mt-4 px-6 py-2 bg-white text-black font-bold rounded hover:bg-gray-200">
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );
