@@ -156,27 +156,43 @@ export const EditPage: React.FC = () => {
     const [, forceUpdate] = useState({});
 
     useEffect(() => {
+        // Method 1: FocusOut (Backup)
         const handleFocusOut = (e: FocusEvent) => {
             const target = e.target as HTMLElement;
             if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-                // Delay to allow keyboard to close on mobile
-                // Increased timeout and added forceUpdate to mimic state change effect (like DEMOPLAY)
                 setTimeout(() => {
                     window.scrollTo(0, 0);
                     document.body.scrollTop = 0;
                     document.documentElement.scrollTop = 0;
-
-                    // Force resize event
                     window.dispatchEvent(new Event('resize'));
-
-                    // Force React Re-render to correct any flexbox/height issues
                     forceUpdate({});
                 }, 200);
             }
         };
 
+        // Method 2: VisualViewport (Robust)
+        const handleVisualViewportResize = () => {
+            // If viewport height is close to window height, keyboard likely closed
+            // We give some buffer (e.g. 100px) for address bars etc.
+            if (window.visualViewport && Math.abs(window.visualViewport.height - window.innerHeight) < 100) {
+                window.scrollTo(0, 0);
+                document.body.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+                forceUpdate({});
+            }
+        };
+
         window.addEventListener('focusout', handleFocusOut);
-        return () => window.removeEventListener('focusout', handleFocusOut);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', handleVisualViewportResize);
+        }
+
+        return () => {
+            window.removeEventListener('focusout', handleFocusOut);
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', handleVisualViewportResize);
+            }
+        };
     }, []);
 
     const handleTogglePlay = () => {
@@ -254,7 +270,7 @@ export const EditPage: React.FC = () => {
 
 
     return (
-        <div className="absolute inset-0 flex flex-col bg-black overflow-hidden">
+        <div className="fixed inset-0 flex flex-col bg-black overflow-hidden">
             {/* Header / Nav (Consistent with PlayPage) */}
             <div className="h-14 bg-neon-surface/80 border-b border-neon-blue/30 flex items-center justify-between px-6 backdrop-blur-md z-20 shrink-0">
                 <div className="flex items-center gap-4">
