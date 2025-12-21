@@ -119,12 +119,12 @@ export const HomeScreen: React.FC = () => {
                 {user && (
                     <button
                         onClick={() => { audioService.playSE('click'); navigate('/mine'); }}
-                        className="group flex flex-col items-center gap-1 text-gray-400 hover:text-neon-orange transition-colors w-16"
+                        className="group flex flex-col items-center gap-1 text-gray-400 hover:text-orange-500 transition-colors w-16"
                     >
-                        <div className="p-2 rounded-full group-hover:bg-neon-orange/20 group-hover:shadow-[0_0_10px_theme(colors.neon.orange)] transition-all duration-300">
-                            <Database size={20} className="group-hover:text-neon-orange" />
+                        <div className="p-2 rounded-full group-hover:bg-orange-500/20 group-hover:shadow-[0_0_10px_rgba(249,115,22,0.5)] transition-all duration-300">
+                            <Database size={20} className="group-hover:text-orange-500" />
                         </div>
-                        <span className="text-[9px] font-bold group-hover:text-neon-orange group-hover:shadow-neon-orange/50">MY STAGE</span>
+                        <span className="text-[9px] font-bold group-hover:text-orange-500 group-hover:shadow-orange-500/50">MY STAGE</span>
                     </button>
                 )}
 
@@ -204,22 +204,24 @@ export const HomeScreen: React.FC = () => {
             {/* Settings Dialog */}
             {showSettings && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                    <div className="bg-gray-900 border border-white/20 rounded-xl w-full max-w-sm shadow-[0_0_30px_rgba(0,0,0,0.5)] p-6 relative">
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2 tracking-wider">
-                                <Settings size={20} className="text-neon-blue" /> SETTINGS
+                    <div className="bg-gray-900/90 border border-white/20 rounded-2xl w-full max-w-sm shadow-[0_0_40px_rgba(0,0,0,0.6)] p-8 relative backdrop-blur-xl">
+                        <div className="flex justify-between items-center mb-10 border-b border-white/10 pb-4">
+                            <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-widest italic">
+                                <Settings size={24} className="text-neon-blue animate-spin-slow" /> SETTINGS
                             </h2>
-                            <button onClick={() => { audioService.playSE('click'); setShowSettings(false); }} className="text-gray-400 hover:text-white transition-colors">
-                                <X size={24} />
+                            <button onClick={() => { audioService.playSE('click'); setShowSettings(false); }} className="text-gray-400 hover:text-white hover:rotate-90 transition-all duration-300">
+                                <X size={28} />
                             </button>
                         </div>
 
                         <div className="space-y-8">
                             {/* BGM Volume */}
                             <div className="space-y-3">
-                                <div className="flex justify-between text-sm font-bold text-gray-300">
-                                    <span className="flex items-center gap-2"><Volume2 size={16} className="text-neon-pink" /> BGM VOLUME</span>
-                                    <span className="text-neon-pink">{Math.round(bgmVolume)}%</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="flex items-center gap-3 text-sm font-bold text-gray-300 tracking-wider">
+                                        <Volume2 size={18} className="text-neon-pink" /> BGM
+                                    </span>
+                                    <span className="text-neon-pink font-mono font-bold bg-neon-pink/10 px-2 py-0.5 rounded text-xs">{Math.round(bgmVolume)}%</span>
                                 </div>
                                 <input
                                     type="range"
@@ -231,15 +233,17 @@ export const HomeScreen: React.FC = () => {
                                         setBgmVolume(val);
                                         audioService.setBGMVolume(val / 100);
                                     }}
-                                    className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-neon-pink hover:accent-neon-pink/80 transition-all"
+                                    className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-neon-pink hover:accent-neon-pink/80 transition-all"
                                 />
                             </div>
 
                             {/* SE Volume */}
                             <div className="space-y-3">
-                                <div className="flex justify-between text-sm font-bold text-gray-300">
-                                    <span className="flex items-center gap-2"><Volume2 size={16} className="text-neon-blue" /> SE VOLUME</span>
-                                    <span className="text-neon-blue">{Math.round(seVolume)}%</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="flex items-center gap-3 text-sm font-bold text-gray-300 tracking-wider">
+                                        <Volume2 size={18} className="text-neon-blue" /> SE
+                                    </span>
+                                    <span className="text-neon-blue font-mono font-bold bg-neon-blue/10 px-2 py-0.5 rounded text-xs">{Math.round(seVolume)}%</span>
                                 </div>
                                 <input
                                     type="range"
@@ -252,33 +256,37 @@ export const HomeScreen: React.FC = () => {
                                         audioService.setSEVolume(val / 100);
                                     }}
                                     onMouseUp={() => audioService.playSE('click')}
-                                    className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-neon-blue hover:accent-neon-blue/80 transition-all"
+                                    className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-neon-blue hover:accent-neon-blue/80 transition-all"
                                 />
+                            </div>
+
+                            {/* Fullscreen Toggle */}
+                            <div className="pt-4 border-t border-white/10">
+                                <div className="flex justify-between items-center">
+                                    <span className="flex items-center gap-3 text-sm font-bold text-gray-300 tracking-wider">
+                                        <Maximize size={18} className="text-neon-green" /> FULLSCREEN
+                                    </span>
+                                    <button
+                                        onClick={() => {
+                                            audioService.playSE('click');
+                                            if (!document.fullscreenElement) {
+                                                document.documentElement.requestFullscreen();
+                                            } else {
+                                                document.exitFullscreen();
+                                            }
+                                        }}
+                                        className={`w-14 h-7 rounded-full transition-colors relative shadow-inner ${document.fullscreenElement ? 'bg-neon-green' : 'bg-gray-800 border border-gray-700'}`}
+                                    >
+                                        <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform shadow-md ${document.fullscreenElement ? 'translate-x-7' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Fullscreen Toggle */}
-                        <div className="flex justify-between items-center text-sm font-bold text-gray-300">
-                            <span className="flex items-center gap-2"><Maximize size={16} className="text-neon-green" /> FULLSCREEN</span>
-                            <button
-                                onClick={() => {
-                                    audioService.playSE('click');
-                                    if (!document.fullscreenElement) {
-                                        document.documentElement.requestFullscreen();
-                                    } else {
-                                        document.exitFullscreen();
-                                    }
-                                }}
-                                className={`w-12 h-6 rounded-full transition-colors relative ${document.fullscreenElement ? 'bg-neon-green' : 'bg-gray-700'}`}
-                            >
-                                <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${document.fullscreenElement ? 'translate-x-6' : 'translate-x-0'}`} />
-                            </button>
-                        </div>
-
-                        <div className="mt-8 text-center">
+                        <div className="mt-10 text-center">
                             <button
                                 onClick={() => { audioService.playSE('click'); setShowSettings(false); }}
-                                className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm font-bold transition-colors"
+                                className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all hover:scale-[1.02] tracking-widest text-gray-400 hover:text-white"
                             >
                                 CLOSE
                             </button>
