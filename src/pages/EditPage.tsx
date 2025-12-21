@@ -152,18 +152,26 @@ export const EditPage: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedId, level, undo, redo]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // State to force re-render for mobile layout fix
+    const [, forceUpdate] = useState({});
+
     useEffect(() => {
         const handleFocusOut = (e: FocusEvent) => {
             const target = e.target as HTMLElement;
             if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
                 // Delay to allow keyboard to close on mobile
+                // Increased timeout and added forceUpdate to mimic state change effect (like DEMOPLAY)
                 setTimeout(() => {
                     window.scrollTo(0, 0);
                     document.body.scrollTop = 0;
                     document.documentElement.scrollTop = 0;
-                    // Force resize to ensure layout recalculates
+
+                    // Force resize event
                     window.dispatchEvent(new Event('resize'));
-                }, 100);
+
+                    // Force React Re-render to correct any flexbox/height issues
+                    forceUpdate({});
+                }, 200);
             }
         };
 
