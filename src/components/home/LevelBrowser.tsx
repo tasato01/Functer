@@ -233,12 +233,16 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
                                             </div>
 
                                             <div className="flex gap-4 mb-2">
-                                                <div className="flex items-center gap-1 text-xs text-gray-500">
-                                                    <Heart size={12} /> {level.likes || 0}
-                                                </div>
-                                                <div className="flex items-center gap-1 text-xs text-gray-500">
-                                                    <Play size={12} /> {level.plays || 0}
-                                                </div>
+                                                {(type !== 'official' || isAdmin) && (
+                                                    <>
+                                                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                                                            <Heart size={12} /> {level.likes || 0}
+                                                        </div>
+                                                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                                                            <Play size={12} /> {level.plays || 0}
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
 
                                             <p className="text-gray-400 text-sm break-words line-clamp-2">{level.description}</p>
@@ -259,7 +263,7 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
                                                     <User size={12} /> {level.authorName}
                                                 </span>
                                             )}
-                                            {level.createdAt && (
+                                            {(type !== 'official' || isAdmin) && level.createdAt && (
                                                 <span className="flex items-center gap-1">
                                                     <Clock size={12} /> {new Date(level.createdAt).toLocaleDateString()}
                                                 </span>

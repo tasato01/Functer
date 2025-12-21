@@ -12,6 +12,7 @@ export default {
           pink: '#ff00ff',
           green: '#00ff00',
           yellow: '#ffff00',
+          orange: '#ff9900',
           purple: '#bd00ff',
           dark: '#0a0a0a',
           surface: '#1a1a1a',

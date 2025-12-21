@@ -46,7 +46,7 @@ export const HomeScreen: React.FC = () => {
     }, []);
 
     return (
-        <div className="h-full flex flex-col items-center relative overflow-hidden text-white font-sans bg-black">
+        <div className="h-full flex flex-col items-center relative overflow-y-auto text-white font-sans bg-black">
             <MathBackground />
 
             {/* Title / Header */}
@@ -119,12 +119,12 @@ export const HomeScreen: React.FC = () => {
                 {user && (
                     <button
                         onClick={() => { audioService.playSE('click'); navigate('/mine'); }}
-                        className="group flex flex-col items-center gap-1 text-gray-400 hover:text-fuchsia-400 transition-colors w-16"
+                        className="group flex flex-col items-center gap-1 text-gray-400 hover:text-neon-orange transition-colors w-16"
                     >
-                        <div className="p-2 rounded-full group-hover:bg-fuchsia-500/20 group-hover:shadow-[0_0_10px_rgba(217,70,239,0.5)] transition-all duration-300">
-                            <Database size={20} className="group-hover:text-fuchsia-400" />
+                        <div className="p-2 rounded-full group-hover:bg-neon-orange/20 group-hover:shadow-[0_0_10px_theme(colors.neon.orange)] transition-all duration-300">
+                            <Database size={20} className="group-hover:text-neon-orange" />
                         </div>
-                        <span className="text-[9px] font-bold group-hover:text-fuchsia-400 group-hover:shadow-fuchsia-500/50">MY STAGE</span>
+                        <span className="text-[9px] font-bold group-hover:text-neon-orange group-hover:shadow-neon-orange/50">MY STAGE</span>
                     </button>
                 )}
 
