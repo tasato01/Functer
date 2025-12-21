@@ -342,6 +342,11 @@ export class MathEngine {
         // ["InvisibleOperator", f, ["Delimiter", x]] -> f(x)
         // ["InvisibleOperator", ["Prime", f], ["Delimiter", x]] -> f'(x) -> derivative_f(x)
         if (op === 'InvisibleOperator') {
+            // N-ary Implicit Multiplication (e.g. a b c -> a*b*c)
+            if (args.length > 2) {
+                return `(${args.map(MathEngine.mathJsonToMathJs).join(' * ')})`;
+            }
+
             const left = args[0];
             const right = args[1]; // Can be ["Delimiter", ...]
 
@@ -359,6 +364,12 @@ export class MathEngine {
 
                 const funcName = MathEngine.mathJsonToMathJs(left);
                 const funcArgs = MathEngine.mathJsonToMathJs(right[1]); // Content of delimiter
+
+                // Implicit Multiplication Fix: If funcName is a basic variable, treat as multiplication
+                if (['x', 'y', 't', 'T', 'X', 'Y'].includes(funcName)) {
+                    return `${funcName} * (${funcArgs})`;
+                }
+
                 return `${funcName}(${funcArgs})`;
             }
 
@@ -375,6 +386,10 @@ export class MathEngine {
 
         // Generic Function Call: ["f", x] -> f(x)
         if (typeof op === 'string') {
+            // Implicit Multiplication Fix: If op is a basic variable, treat as multiplication
+            if (['x', 'y', 't', 'T', 'X', 'Y'].includes(op)) {
+                return `${op} * (${args.map(MathEngine.mathJsonToMathJs).join(' * ')})`;
+            }
             return `${op}(${args.map(MathEngine.mathJsonToMathJs).join(', ')})`;
         }
 
