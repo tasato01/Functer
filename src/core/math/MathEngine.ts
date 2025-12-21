@@ -143,6 +143,14 @@ export class MathEngine {
         return null; // Fallback to MathJS
     }
 
+    // Preprocess expression to fix Cortex parsing issues with ASCII operators
+    private static preprocess(expr: string): string {
+        return expr
+            .replace(/<=/g, '\\le ')
+            .replace(/>=/g, '\\ge ')
+            .replace(/!=/g, '\\neq ');
+    }
+
     // Helper to unwrap Delimiter nodes
     private static unwrap(node: any): any {
         while (Array.isArray(node) && node[0] === 'Delimiter') {
@@ -400,8 +408,11 @@ export class MathEngine {
         try {
             if (!expression || !expression.trim()) throw new Error("Empty");
 
+            // Preprocess to fix <= / >=
+            const cleanedExpr = MathEngine.preprocess(expression);
+
             // 1. Parse LaTeX to MathJSON using Cortex (Non-Canonical)
-            const boxed = ce.parse(expression, { canonical: false });
+            const boxed = ce.parse(cleanedExpr, { canonical: false });
             // Ignore valid check for now, some partial expressions work
 
             // 2. Convert MathJSON to MathJS string
@@ -496,7 +507,9 @@ export class MathEngine {
     static getBoundaries(expression: string): { fn: MathFunction, type: 'solid' | 'dotted', axis: 'x' | 'y' }[] {
         const boundaries: { fn: MathFunction, type: 'solid' | 'dotted', axis: 'x' | 'y' }[] = [];
         try {
-            const json = ce.parse(expression, { canonical: false }).json;
+            // Preprocess to fix <= / >=
+            const cleanedExpr = MathEngine.preprocess(expression);
+            const json = ce.parse(cleanedExpr, { canonical: false }).json;
             // console.log("JSON:", JSON.stringify(json)); // Debug
 
             const extract = (node: any) => {
