@@ -277,7 +277,26 @@ export const PlayPage: React.FC = () => {
                     {/* g(f)(x) display */}
                     <div className="bg-black/60 backdrop-blur-md border border-neon-blue/30 p-3 rounded-lg">
                         <span className="text-gray-400 text-xs font-mono block">TRANSFORMATION</span>
-                        <code className="text-neon-pink text-sm font-bold">g(f) = {level?.g_raw || 'f'}</code>
+                        {(() => {
+                            const MathFieldTag = 'math-field' as any;
+                            return (
+                                <MathFieldTag
+                                    read-only
+                                    style={{
+                                        display: 'block',
+                                        backgroundColor: 'transparent',
+                                        color: '#f472b6', // neon-pink (tailwind pink-400 approx)
+                                        fontSize: '0.9em',
+                                        padding: '4px 0',
+                                        border: 'none',
+                                        width: '100%',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    {`g(f) = ${level?.g_raw || 'f'}`}
+                                </MathFieldTag>
+                            );
+                        })()}
                     </div>
 
                     {/* Constraints display */}
