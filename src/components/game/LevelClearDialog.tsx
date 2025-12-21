@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Star, ArrowRight, Home, RefreshCw } from 'lucide-react';
+import { Heart, Star, ArrowRight, Home, RefreshCw, Lightbulb } from 'lucide-react';
 import { auth } from '../../services/firebase';
 
 interface LevelClearDialogProps {
@@ -8,6 +8,7 @@ interface LevelClearDialogProps {
     onHome: () => void;
     onLike: () => void;
     onRate: (rating: number) => void;
+    onShowSolutions: () => void; // Added
     isLiked: boolean;
     userRating: number | null;
     hasNextLevel: boolean;
@@ -21,13 +22,14 @@ export const LevelClearDialog: React.FC<LevelClearDialogProps> = ({
     onRate,
     isLiked,
     userRating,
-    hasNextLevel
+    hasNextLevel,
+    onShowSolutions
 }) => {
     const isLoggedIn = !!auth.currentUser;
 
     return (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm animate-fade-in">
-            <div className="bg-gray-900 border border-neon-blue/50 rounded-2xl p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,255,255,0.2)] relative overflow-hidden">
+            <div className="bg-gray-900 border border-neon-blue/50 rounded-2xl p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,255,255,0.2)] relative overflow-y-auto max-h-[90vh]">
                 {/* Background Effects */}
                 <div className="absolute inset-0 bg-gradient-to-b from-neon-blue/10 to-transparent pointer-events-none"></div>
 
@@ -95,6 +97,13 @@ export const LevelClearDialog: React.FC<LevelClearDialogProps> = ({
                             <Home size={18} /> Menu
                         </button>
                     </div>
+
+                    <button
+                        onClick={onShowSolutions}
+                        className="w-full mt-2 py-2 text-neon-purple hover:text-white hover:bg-neon-purple/20 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-neon-purple/30"
+                    >
+                        <Lightbulb size={16} /> Show Answers
+                    </button>
                 </div>
             </div>
         </div>

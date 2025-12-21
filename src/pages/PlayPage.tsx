@@ -6,10 +6,12 @@ import { useGameLoop } from '../hooks/useGameLoop';
 import { MathEngine } from '../core/math/MathEngine';
 import { DEFAULT_LEVEL } from '../types/Level';
 import type { LevelConfig } from '../types/Level';
-import { Play, Square, Home, List, RefreshCw, AlertTriangle, HelpCircle, Heart, Plus, Minus } from 'lucide-react';
+import { Play, Square, Home, List, RefreshCw, AlertTriangle, HelpCircle, Plus, Minus } from 'lucide-react';
 import { levelService } from '../services/FirebaseLevelService';
 import { audioService } from '../services/AudioService';
 import { HelpDialog } from '../components/common/HelpDialog';
+import { SolutionDisplayDialog } from '../components/game/SolutionDisplayDialog';
+import { LevelClearDialog } from '../components/game/LevelClearDialog';
 
 
 export const PlayPage: React.FC = () => {
@@ -84,6 +86,18 @@ export const PlayPage: React.FC = () => {
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [showHelp, setShowHelp] = useState(false);
+    const [showSolutions, setShowSolutions] = useState(false);
+
+    // Auto-submit solution on clear
+    useEffect(() => {
+        if (gameState.status === 'won' && level?.id && !level.id.startsWith('draft')) {
+            // Check if user is logged in? Service handles anonymous.
+            // But we should verify valid fRaw
+            if (fFn.isValid) {
+                levelService.submitPlayerSolution(level.id, fRaw);
+            }
+        }
+    }, [gameState.status, level?.id, fRaw, fFn.isValid]);
 
     const handleNext = () => {
         audioService.playSE('click');
@@ -315,52 +329,19 @@ export const PlayPage: React.FC = () => {
                 </div>
 
                 {/* Game Over / Clear Overlay */}
+                {/* Game Over / Clear Overlay */}
                 {gameState.status === 'won' && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-                        <div className="bg-neon-surface border border-white/10 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
-                            <h2 className="text-4xl font-black mb-2 text-neon-green">
-                                LEVEL CLEARED!
-                            </h2>
-                            <p className="text-gray-400 mb-6 font-mono">
-                                Function executed successfully.
-                            </p>
-
-                            <div className="flex justify-center mb-6">
-                                <button
-                                    onClick={() => { audioService.playSE('click'); handleLike(); }}
-                                    disabled={isLiked}
-                                    className={`flex items-center gap-2 px-6 py-2 rounded-full font-bold transition-all ${isLiked ? 'bg-neon-pink text-black' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
-                                >
-                                    <Heart size={20} className={isLiked ? "fill-black" : ""} /> {isLiked ? "LIKED!" : "LIKE"}
-                                </button>
-                            </div>
-
-                            <div className="flex flex-col gap-3">
-                                {hasNextLevel && (
-                                    <button
-                                        className="w-full py-3 bg-neon-green text-black font-bold rounded-lg hover:bg-neon-green/90 transition-all flex items-center justify-center gap-2"
-                                        onClick={handleNext}
-                                    >
-                                        NEXT LEVEL <Play className="fill-current" size={18} />
-                                    </button>
-                                )}
-
-                                <button
-                                    className="w-full py-3 bg-white/10 text-white font-bold rounded-lg hover:bg-white/20 transition-all flex items-center justify-center gap-2"
-                                    onClick={() => { audioService.playSE('click'); stopGame(); }}
-                                >
-                                    <RefreshCw size={18} /> TRY AGAIN
-                                </button>
-
-                                <button
-                                    className="w-full py-3 bg-transparent border border-white/10 text-gray-400 font-bold rounded-lg hover:text-white hover:border-white/30 transition-all flex items-center justify-center gap-2"
-                                    onClick={() => { audioService.playSE('click'); navigate(backPath); }}
-                                >
-                                    <List size={18} /> BACK TO {listLabel}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <LevelClearDialog
+                        onNext={handleNext}
+                        onReplay={() => { audioService.playSE('click'); stopGame(); }}
+                        onHome={() => { audioService.playSE('click'); navigate('/'); }}
+                        onLike={() => { audioService.playSE('click'); handleLike(); }}
+                        onRate={(r) => { if (level?.id) levelService.rateLevel(level.id, r); }}
+                        onShowSolutions={() => { audioService.playSE('click'); setShowSolutions(true); }}
+                        isLiked={isLiked}
+                        userRating={null} // TODO: Fetch user rating
+                        hasNextLevel={hasNextLevel}
+                    />
                 )}
 
                 {gameState.status === 'lost' && (
@@ -391,10 +372,16 @@ export const PlayPage: React.FC = () => {
                         </div>
                     </div>
                 )}
-
             </div>
 
             <HelpDialog isOpen={showHelp} onClose={() => setShowHelp(false)} />
+
+            <SolutionDisplayDialog
+                isOpen={showSolutions}
+                onClose={() => setShowSolutions(false)}
+                levelId={level?.id || ''}
+                levelSolution={level?.solution}
+            />
         </div>
     );
 };

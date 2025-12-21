@@ -67,6 +67,9 @@ export interface LevelConfig {
 
     // Physics
     playerSpeed: number;
+
+    // Solution (LaTeX f(x))
+    solution?: string; // Official solution string
 }
 
 export const DEFAULT_LEVEL: LevelConfig = {

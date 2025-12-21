@@ -9,6 +9,7 @@ import { Play, User, Clock, Heart, RefreshCw, Trash2, PenSquare, Copy, Save } fr
 import { StageThumbnail } from './StageThumbnail';
 import { MathBackground } from '../common/MathBackground';
 import { LevelEditDialog } from '../editor/LevelEditDialog';
+import { SolutionDisplayDialog } from '../game/SolutionDisplayDialog';
 import { UserService } from '../../services/UserService';
 import type { LevelConfig } from '../../types/Level';
 
@@ -25,6 +26,7 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
     const [dragSourceIndex, setDragSourceIndex] = useState<number | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [editingLevel, setEditingLevel] = useState<LevelConfig | null>(null);
+    const [levelWithSolutions, setLevelWithsolutions] = useState<LevelConfig | null>(null);
 
     const isAdmin = currentUser && ADMIN_UIDS.includes(currentUser.uid);
 
@@ -62,7 +64,10 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
 
     useEffect(() => {
         fetchLevels();
-        const unsub = auth.onAuthStateChanged(u => setCurrentUser(u));
+        const unsub = auth.onAuthStateChanged(u => {
+            setCurrentUser(u);
+            if (u) console.log("Current User UID:", u.uid);
+        });
         return () => unsub();
     }, [type, sort]);
 
@@ -293,6 +298,20 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
                                             </button>
                                         )}
 
+                                        {/* Admin Solution View */}
+                                        {isAdmin && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setLevelWithsolutions(level);
+                                                }}
+                                                className="p-2 bg-purple-900/80 rounded hover:bg-purple-700 transition-all shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                                                title="View Solutions"
+                                            >
+                                                <PenSquare size={14} className="text-white" />
+                                            </button>
+                                        )}
+
                                         {/* Edit Button for My Levels OR Admin */}
                                         {(type === 'mine' || (isAdmin && type === 'official')) && (
                                             <button
@@ -333,12 +352,19 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
             </div >
 
             {/* Edit Dialog */}
-            < LevelEditDialog
+            <LevelEditDialog
                 isOpen={!!editingLevel}
                 onClose={() => setEditingLevel(null)}
                 level={editingLevel}
                 onSave={() => fetchLevels(true)}
             />
-        </div >
+
+            <SolutionDisplayDialog
+                isOpen={!!levelWithSolutions}
+                onClose={() => setLevelWithsolutions(null)}
+                levelId={levelWithSolutions?.id || ''}
+                levelSolution={levelWithSolutions?.solution}
+            />
+        </div>
     );
 };

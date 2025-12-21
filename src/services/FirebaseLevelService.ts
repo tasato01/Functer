@@ -379,6 +379,52 @@ export class FirebaseLevelService implements ILevelService {
         }
     }
 
+    // --- Solution Sharing ---
+
+    async submitPlayerSolution(levelId: string, solution: string): Promise<void> {
+        const user = auth.currentUser;
+        try {
+            const solutionsRef = collection(db, LEVELS_COLLECTION, levelId, "solutions");
+
+            // We can store it as a simple doc
+            await addDoc(solutionsRef, {
+                solution,
+                userId: user?.uid || 'anonymous',
+                userName: user?.displayName || 'Anonymous',
+                createdAt: Timestamp.now()
+            });
+            console.log("Solution submitted for", levelId);
+        } catch (e) {
+            console.error("Failed to submit solution", e);
+        }
+    }
+
+    async getLevelSolutions(levelId: string, limitCount = 20): Promise<{ solution: string, userName: string, createdAt: number }[]> {
+        try {
+            const solutionsRef = collection(db, LEVELS_COLLECTION, levelId, "solutions");
+            const q = query(
+                solutionsRef,
+                // orderBy("createdAt", "desc"), // Requires index? If consistent failure, remove orderBy or create index
+                limit(limitCount)
+            );
+
+            // Note: If orderBy fails without index, we might just fetch and soft.
+            // For now, let's try without strict orderBy or just accept it might require index creation.
+            // Safest for MVP without index creation is just getDocs (it usually returns insertion order roughly or undefined).
+            // Let's add orderBy in memory or try simple query.
+
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({
+                solution: doc.data().solution,
+                userName: doc.data().userName,
+                createdAt: (doc.data().createdAt as Timestamp).toMillis()
+            })).sort((a, b) => b.createdAt - a.createdAt); // Sort in memory
+        } catch (e) {
+            console.error("Failed to fetch solutions", e);
+            return [];
+        }
+    }
+
     private mapDocToLevel(docSnapshot: any): LevelConfig {
         const data = docSnapshot.data() as FirestoreLevelData;
         const id = docSnapshot.id;
@@ -405,6 +451,7 @@ export class FirebaseLevelService implements ILevelService {
         levelConfig.order = data.order;
         levelConfig.ratingTotal = data.ratingTotal;
         levelConfig.ratingCount = data.ratingCount;
+        levelConfig.solution = data.solution || undefined; // Map solution
 
         return levelConfig;
     }
