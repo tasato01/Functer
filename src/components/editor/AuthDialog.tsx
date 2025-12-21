@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { X, Mail, Lock } from 'lucide-react';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from '../../services/firebase';
 
 interface AuthDialogProps {

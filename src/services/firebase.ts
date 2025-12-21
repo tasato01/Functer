@@ -1,16 +1,16 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, doc, getDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, query, where, orderBy } from "firebase/firestore";
 import type { LevelConfig } from "../types/Level";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBu3GnGlVhnt22oAQnNvsrdNlAeS_zYBTk",
-    authDomain: "functer-69dd0.firebaseapp.com",
-    projectId: "functer-69dd0",
-    storageBucket: "functer-69dd0.firebasestorage.app",
-    messagingSenderId: "58375292012",
-    appId: "1:58375292012:web:b689c09bf54da3daed0449",
-    measurementId: "G-889FKV7XHZ"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);

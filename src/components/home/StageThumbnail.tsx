@@ -18,7 +18,7 @@ export const StageThumbnail: React.FC<StageThumbnailProps> = ({ level, width = 1
         const points = [
             level.startPoint,
             level.goalPoint,
-            ...(level.constraints?.flat().flatMap(c => {
+            ...(level.constraints?.flat().flatMap(() => {
                 // Approximate constraint bounds?
                 // For now just focus on S/G and maybe 0,0
                 return [];

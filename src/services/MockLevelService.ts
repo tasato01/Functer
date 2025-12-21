@@ -164,6 +164,16 @@ export class MockLevelService implements ILevelService {
         return true;
     }
 
+    async updateLevel(id: string, updates: Partial<LevelConfig>): Promise<boolean> {
+        console.log("Mock updateLevel", id, updates);
+        const l = await this.getLevelById(id);
+        if (l) {
+            Object.assign(l, updates);
+            return true;
+        }
+        return false;
+    }
+
     async deleteLevel(id: string): Promise<boolean> {
         console.log("Mock delete", id);
         const idx = MOCK_USER_LEVELS.findIndex(l => l.id === id);

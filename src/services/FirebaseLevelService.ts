@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, query, where, doc, getDoc, deleteDoc, updateDoc, increment, writeBatch, Timestamp, limit, orderBy } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where, doc, getDoc, deleteDoc, updateDoc, increment, writeBatch, Timestamp, limit } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import type { ILevelService } from "./LevelService";
 import type { LevelConfig } from "../types/Level";

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, BookOpen, Calculator, PenTool, AlertTriangle } from 'lucide-react';
+import { X, BookOpen, Calculator, AlertTriangle } from 'lucide-react';
 import { audioService } from '../../services/AudioService';
 
 interface HelpDialogProps {

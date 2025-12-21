@@ -73,7 +73,7 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
         e.dataTransfer.effectAllowed = "move";
     };
 
-    const handleDragOver = (e: React.DragEvent, index: number) => {
+    const handleDragOver = (e: React.DragEvent, _index: number) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
     };

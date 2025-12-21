@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'; // Added useLocatio
 import { GameCanvas } from '../components/game/GameCanvas';
 import type { InteractionMode } from '../components/game/GameCanvas';
 
-import { DEFAULT_LEVEL, EMPTY_LEVEL } from '../types/Level';
+import { EMPTY_LEVEL } from '../types/Level';
 import type { LevelConfig, Point, CircleConstraint, RectConstraint } from '../types/Level';
 import { MathEngine } from '../core/math/MathEngine';
 import { useGameLoop } from '../hooks/useGameLoop';
