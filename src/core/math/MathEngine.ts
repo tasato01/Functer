@@ -148,7 +148,10 @@ export class MathEngine {
         return expr
             .replace(/<=/g, '\\le ')
             .replace(/>=/g, '\\ge ')
-            .replace(/!=/g, '\\neq ');
+            .replace(/!=/g, '\\neq ')
+            .replace(/\blog10\b/g, '\\log_{10}') // log10 -> \log_{10}
+            .replace(/\bln\b/g, '\\ln')          // ln -> \ln
+            .replace(/\blog\b/g, '\\log');       // log -> \log
     }
 
     // Helper to unwrap Delimiter nodes
