@@ -9,6 +9,7 @@ import { Play, User, Clock, Heart, RefreshCw, Trash2, PenSquare, Copy, Save } fr
 import { StageThumbnail } from './StageThumbnail';
 import { MathBackground } from '../common/MathBackground';
 import { LevelEditDialog } from '../editor/LevelEditDialog';
+import { UserService } from '../../services/UserService';
 import type { LevelConfig } from '../../types/Level';
 
 export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'author' }> = ({ type }) => {
@@ -18,6 +19,7 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(auth.currentUser);
     const [sort, setSort] = useState<'newest' | 'oldest' | 'likes' | 'rating' | 'plays'>('newest');
+    const [authorName, setAuthorName] = useState<string | null>(null);
 
     // Admin DnD State
     const [dragSourceIndex, setDragSourceIndex] = useState<number | null>(null);
@@ -43,6 +45,10 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
             } else if (type === 'author' && authorId) {
                 const data = await levelService.getUserLevels({ authorId, sort }, force);
                 setLevels(data);
+                // Fetch Author Name
+                UserService.getUser(authorId).then(u => {
+                    if (u) setAuthorName(u.displayName || 'Unknown');
+                });
             } else {
                 const data = await levelService.getUserLevels({ sort }, force);
                 setLevels(data);
@@ -109,48 +115,70 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
         <div className="h-full flex flex-col bg-black relative overflow-hidden">
             <MathBackground />
 
-            {/* Header */}
-            {/* Save Order Button for Admin Official */}
-            {isAdmin && type === 'official' && hasUnsavedChanges && (
-                <button
-                    onClick={handleSaveOrder}
-                    className="flex items-center gap-2 bg-neon-green/20 border border-neon-green text-neon-green px-3 py-1 rounded hover:bg-neon-green/30 transition-all font-bold animate-pulse"
-                >
-                    <Save size={16} /> SAVE ORDER
-                </button>
-            )}
-
-            {/* Sort Dropdown (Not for Official) */}
-            {type !== 'official' && (
-                <div className="relative">
-                    <select
-                        value={sort}
-                        onChange={(e) => setSort(e.target.value as any)}
-                        className="bg-gray-900 border border-white/20 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-neon-blue appearance-none pr-8 cursor-pointer"
+            {/* Header / Nav */}
+            <div className="flex items-center justify-between px-6 py-4 z-20 shrink-0">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => { audioService.playSE('click'); navigate('/'); }}
+                        className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-bold"
                     >
-                        <option value="newest">Newest</option>
-                        <option value="oldest">Oldest</option>
-                        <option value="likes">Most Likes</option>
-                        <option value="rating">Highest Rating</option>
-                        <option value="plays">Most Plays</option>
-                    </select>
-                    {/* Custom Arrow */}
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                    </div>
-                </div>
-            )}
+                        {/* Re-using icon or style from EditPage header logic if needed, but simple Back is fine */}
+                        <span className="flex items-center gap-1"><Play size={16} className="rotate-180" /> HOME</span>
+                    </button>
 
-            <button
-                onClick={() => { audioService.playSE('click'); fetchLevels(true); }}
-                className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
-                title="Refresh List"
-                disabled={loading}
-            >
-                <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
-            </button>
+                    {/* Author Name Display for Admin View */}
+                    {type === 'author' && authorName && (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-neon-blue/10 border border-neon-blue/30 rounded-full">
+                            <User size={14} className="text-neon-blue" />
+                            <span className="text-neon-blue font-bold text-sm">{authorName}</span>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex gap-4 items-center">
+                    {/* Save Order Button for Admin Official */}
+                    {isAdmin && type === 'official' && hasUnsavedChanges && (
+                        <button
+                            onClick={handleSaveOrder}
+                            className="flex items-center gap-2 bg-neon-green/20 border border-neon-green text-neon-green px-3 py-1 rounded hover:bg-neon-green/30 transition-all font-bold animate-pulse"
+                        >
+                            <Save size={16} /> SAVE ORDER
+                        </button>
+                    )}
+
+                    {/* Sort Dropdown (Not for Official) */}
+                    {type !== 'official' && (
+                        <div className="relative">
+                            <select
+                                value={sort}
+                                onChange={(e) => setSort(e.target.value as any)}
+                                className="bg-black/50 border border-white/20 text-white text-xs rounded-full px-4 py-1.5 focus:outline-none focus:border-neon-blue appearance-none pr-8 cursor-pointer backdrop-blur-sm hover:bg-white/10 transition-colors"
+                            >
+                                <option value="newest">Newest</option>
+                                <option value="oldest">Oldest</option>
+                                <option value="likes">Most Likes</option>
+                                <option value="rating">Highest Rating</option>
+                                <option value="plays">Most Plays</option>
+                            </select>
+                            {/* Custom Arrow */}
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                <svg width="8" height="5" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </div>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => { audioService.playSE('click'); fetchLevels(true); }}
+                        className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                        title="Refresh List"
+                        disabled={loading}
+                    >
+                        <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
+                    </button>
+                </div>
+            </div>
 
             {/* List */}
             <div className="flex-1 overflow-y-auto flex flex-col gap-4 pr-2 pb-20 max-w-4xl mx-auto w-full">

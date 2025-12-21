@@ -60,7 +60,7 @@ export const HomeScreen: React.FC = () => {
             </div>
 
             {/* Main Center Stack */}
-            <div className="z-10 flex flex-col gap-3 md:gap-6 w-full max-w-lg px-6 flex-1 justify-center pb-32 min-h-0 shrink-0">
+            <div className="z-10 flex flex-col gap-3 md:gap-6 w-full max-w-lg px-6 flex-1 justify-center min-h-0 shrink-0">
 
                 {/* 1. Official Stages (Primary) */}
                 <button
@@ -114,17 +114,17 @@ export const HomeScreen: React.FC = () => {
                 </button>
             </div>
 
-            {/* Bottom Dock */}
-            <div className="absolute bottom-8 z-20 flex gap-6 p-4 bg-gray-900/60 backdrop-blur-md rounded-full border border-white/10 shadow-2xl">
+            {/* Bottom Dock - Changed to relative flex item to prevent overlap */}
+            <div className="z-20 flex gap-6 p-4 bg-gray-900/60 backdrop-blur-md rounded-full border border-white/10 shadow-2xl mt-4 mb-8 shrink-0">
                 {user && (
                     <button
                         onClick={() => { audioService.playSE('click'); navigate('/mine'); }}
-                        className="group flex flex-col items-center gap-1 text-gray-400 hover:text-neon-purple transition-colors w-16"
+                        className="group flex flex-col items-center gap-1 text-gray-400 hover:text-fuchsia-400 transition-colors w-16"
                     >
-                        <div className="p-2 rounded-full group-hover:bg-neon-purple/20 group-hover:shadow-[0_0_10px_theme(colors.neon.purple)] transition-all duration-300">
-                            <Database size={20} className="group-hover:text-neon-purple" />
+                        <div className="p-2 rounded-full group-hover:bg-fuchsia-500/20 group-hover:shadow-[0_0_10px_rgba(217,70,239,0.5)] transition-all duration-300">
+                            <Database size={20} className="group-hover:text-fuchsia-400" />
                         </div>
-                        <span className="text-[9px] font-bold group-hover:text-neon-purple group-hover:shadow-neon-purple/50">MY STAGE</span>
+                        <span className="text-[9px] font-bold group-hover:text-fuchsia-400 group-hover:shadow-fuchsia-500/50">MY STAGE</span>
                     </button>
                 )}
 
@@ -149,7 +149,10 @@ export const HomeScreen: React.FC = () => {
                 </button>
             </div>
 
-            {/* Top Right User Profile (Fixed Identity) */}
+            {/* Version Footer - Now part of flow */}
+            <div className="mb-2 text-[8px] text-gray-700 font-mono select-none pointer-events-none shrink-0">
+                FUNCTER v0.1.0
+            </div>
             <div className="absolute top-6 right-6 z-20 flex gap-3">
                 {user ? (
                     <div className="flex gap-2">
@@ -284,10 +287,6 @@ export const HomeScreen: React.FC = () => {
                 </div>
             )}
 
-            {/* Version Footer */}
-            <div className="absolute bottom-2 text-[8px] text-gray-700 font-mono select-none pointer-events-none">
-                FUNCTER v0.1.0
-            </div>
         </div>
     );
 };

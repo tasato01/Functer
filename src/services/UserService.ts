@@ -56,6 +56,20 @@ export const UserService = {
         }
     },
 
+    async getUser(uid: string): Promise<UserProfile | null> {
+        try {
+            const docRef = doc(db, 'users', uid);
+            const snapshot = await getDoc(docRef);
+            if (snapshot.exists()) {
+                return { uid: snapshot.id, ...snapshot.data() } as UserProfile;
+            }
+            return null;
+        } catch (e) {
+            console.error("Failed to get user", e);
+            return null;
+        }
+    },
+
     async updateUserProfile(uid: string, newName: string): Promise<boolean> {
         try {
             const user = auth.currentUser;

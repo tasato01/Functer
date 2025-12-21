@@ -224,7 +224,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
     const addConstraintGroup = () => {
         // Add a new group with a visible default condition
-        setLevel(prev => ({ ...prev, constraints: [...prev.constraints, ['x > 5']] }));
+        setLevel(prev => ({ ...prev, constraints: [...prev.constraints, ['']] }));
     };
 
     const removeConstraintGroup = (index: number) => {
