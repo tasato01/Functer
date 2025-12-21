@@ -175,17 +175,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                     drawConstraintBoundaries(
                         ctx,
                         constraintBoundaries,
-                        compiledConstraints,
                         width,
                         height,
                         toScreenX,
                         toScreenY,
                         toWorldX,
-                        toWorldY,
-                        scale,
-                        t,
-                        pX,
-                        pY
+                        t
                     );
                 }
 

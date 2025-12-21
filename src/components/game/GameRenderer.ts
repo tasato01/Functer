@@ -469,17 +469,12 @@ export interface ConstraintBoundary {
 export function drawConstraintBoundaries(
     ctx: CanvasRenderingContext2D,
     boundaries: ConstraintBoundary[],
-    compiledGroups: CompiledConstraints,
     width: number,
     height: number,
     toScreenX: (x: number) => number,
     toScreenY: (y: number) => number,
     toWorldX: (sx: number) => number,
-    toWorldY: (sy: number) => number, // Added toWorldY
-    scale: number,
-    t: number,
-    pX: number,
-    pY: number
+    t: number
 ) {
     if (boundaries.length === 0) return;
 
@@ -489,23 +484,16 @@ export function drawConstraintBoundaries(
     ctx.shadowColor = '#ff0000';
     ctx.shadowBlur = 10; // Add glow for extra visibility
 
-    // Scope for checking neighbor points
-    const scope = { x: 0, y: 0, X: pX, Y: pY, T: t, t: t };
-    const EPS = 2 / scale; // Check 2 screen pixels away
-
     const originX = toScreenX(0);
     const originY = toScreenY(0);
 
     boundaries.forEach(b => {
         ctx.beginPath();
         if (b.type === 'dotted') {
-            ctx.setLineDash([10, 6]); // Clearer dotted line
-            // Anchor dash pattern to World Origin to prevent "sliding" effect during pan
-            // limit offset to avoid potentially huge numbers if origin is far (though canvas handles it)
-            // It's periodic 16px.
-            if (b.axis === 'y') { // y = f(x), spans X
+            ctx.setLineDash([10, 6]);
+            if (b.axis === 'y') {
                 ctx.lineDashOffset = -originX;
-            } else { // x = c, spans Y
+            } else {
                 ctx.lineDashOffset = -originY;
             }
         } else {
@@ -519,21 +507,9 @@ export function drawConstraintBoundaries(
             for (let sx = 0; sx <= width; sx += 2) {
                 const wx = toWorldX(sx);
                 let wy = NaN;
-                try { wy = b.fn.compiled({ x: wx, t: t, T: t }); } catch { } // Use current t
+                try { wy = b.fn.compiled({ x: wx, t: t, T: t }); } catch { }
 
                 if (isFinite(wy)) {
-                    // Check if this point is an actual boundary of the Forbidden Region
-                    // by checking slightly above and below
-                    const isForbiddenAbove = isForbidden(wx, wy + EPS, compiledGroups, scope);
-                    const isForbiddenBelow = isForbidden(wx, wy - EPS, compiledGroups, scope);
-
-                    // Only draw if there is a transition (True vs False)
-                    // If both True (inside region) or both False (outside), don't draw
-                    if (isForbiddenAbove === isForbiddenBelow) {
-                        started = false;
-                        continue;
-                    }
-
                     const sy = toScreenY(wy);
                     if (sy >= -100 && sy <= height + 100) {
                         if (!started) {
@@ -553,31 +529,14 @@ export function drawConstraintBoundaries(
         } else {
             // x = c
             let wx = NaN;
-            try { wx = b.fn.compiled({ t: t, T: t }); } catch { } // Use current t
+            try { wx = b.fn.compiled({ t: t, T: t }); } catch { }
 
             if (isFinite(wx)) {
                 const sx = toScreenX(wx);
                 if (sx >= -10 && sx <= width + 10) {
-                    let started = false;
                     ctx.beginPath();
-                    for (let sy = 0; sy <= height; sy += 2) {
-                        const wy = toWorldY(sy);
-
-                        const isForbiddenRight = isForbidden(wx + EPS, wy, compiledGroups, scope);
-                        const isForbiddenLeft = isForbidden(wx - EPS, wy, compiledGroups, scope);
-
-                        if (isForbiddenRight === isForbiddenLeft) {
-                            started = false;
-                            continue;
-                        }
-
-                        if (started) {
-                            ctx.lineTo(sx, sy);
-                        } else {
-                            ctx.moveTo(sx, sy);
-                            started = true;
-                        }
-                    }
+                    ctx.moveTo(sx, 0);
+                    ctx.lineTo(sx, height);
                     ctx.stroke();
                 }
             }
