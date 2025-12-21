@@ -180,6 +180,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                         toScreenX,
                         toScreenY,
                         toWorldX,
+                        toWorldY,
                         t
                     );
                 }

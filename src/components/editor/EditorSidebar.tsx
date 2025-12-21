@@ -516,7 +516,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                 <div className="flex justify-between items-center">
                                     <label className="text-xs text-gray-400 font-bold">Waypoints</label>
                                 </div>
-                                <button onClick={() => { audioService.playSE('click'); setMode('add_waypoint'); }} className={`w-full py-2 rounded border flex items-center justify-center gap-2 text-xs transition-all ${mode === 'add_waypoint' ? 'bg-neon-blue text-black border-neon-blue shadow-[0_0_15px_rgba(0,255,255,0.5)]' : 'border-dashed border-neon-blue/50 text-neon-blue hover:bg-neon-blue/10 hover:border-solid hover:shadow-[0_0_10px_rgba(0,255,255,0.2)]'}`}>
+                                <button onClick={() => { audioService.playSE('click'); setMode(mode === 'add_waypoint' ? 'select' : 'add_waypoint'); }} className={`w-full py-2 rounded border flex items-center justify-center gap-2 text-xs transition-all ${mode === 'add_waypoint' ? 'bg-neon-blue text-black border-neon-blue shadow-[0_0_15px_rgba(0,255,255,0.5)]' : 'border-dashed border-neon-blue/50 text-neon-blue hover:bg-neon-blue/10 hover:border-solid hover:shadow-[0_0_10px_rgba(0,255,255,0.2)]'}`}>
                                     <Plus size={14} /> Add Waypoint
                                 </button>
 
