@@ -1,37 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PenTool, Database, Trophy, User as UserIcon, LogOut, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize } from 'lucide-react';
+import { PenTool, Database, Trophy, User as UserIcon, LogOut, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize, UserPlus } from 'lucide-react';
 import { levelService } from '../../services/FirebaseLevelService';
 import { audioService } from '../../services/AudioService';
 import { AuthDialog } from '../editor/AuthDialog';
+import { AdminRequestsDialog } from '../admin/AdminRequestsDialog';
 import { auth, signOutUser } from '../../services/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { ADMIN_UIDS } from '../../constants/admin';
+import { UserService } from '../../services/UserService';
 
 export const HomeScreen: React.FC = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
     const [showAuthDialog, setShowAuthDialog] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [showAdminRequests, setShowAdminRequests] = useState(false);
     const [bgmVolume, setBgmVolume] = useState(audioService.getBGMVolume() * 100);
     const [seVolume, setSeVolume] = useState(audioService.getSEVolume() * 100);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     // Auth & Prefetch
     useEffect(() => {
         levelService.getOfficialLevels().catch(console.error);
         levelService.getUserLevels().catch(console.error);
 
-        const unsubscribe = onAuthStateChanged(auth, (u) => {
+        const unsubscribe = onAuthStateChanged(auth, async (u) => {
             setUser(u);
+            if (u) {
+                const adminStatus = await UserService.isAdmin(u.uid);
+                setIsAdmin(adminStatus);
+            } else {
+                setIsAdmin(false);
+            }
         });
         return () => unsubscribe();
     }, []);
 
-    const isAdmin = user && ADMIN_UIDS.includes(user.uid);
-
     const handleLogout = async () => {
         if (confirm("Logout?")) {
             await signOutUser();
+        }
+    };
+
+    const handleRequestAdmin = async () => {
+        if (!user) return;
+        if (confirm("Request Administrator privileges?")) {
+            const success = await UserService.requestAdminAccess({
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName
+            });
+            if (success) {
+                alert("Request sent! an Admin needs to approve it.");
+            } else {
+                alert("Request failed.");
+            }
         }
     };
 
@@ -182,6 +205,9 @@ export const HomeScreen: React.FC = () => {
             {/* Auth Dialog */}
             <AuthDialog isOpen={showAuthDialog} onClose={() => setShowAuthDialog(false)} />
 
+            {/* Admin Requests Dialog */}
+            <AdminRequestsDialog isOpen={showAdminRequests} onClose={() => setShowAdminRequests(false)} />
+
             {/* Settings Dialog */}
             {showSettings && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
@@ -239,7 +265,7 @@ export const HomeScreen: React.FC = () => {
                         </div>
 
                         {/* Fullscreen Toggle */}
-                        <div className="flex justify-between items-center text-sm font-bold text-gray-300">
+                        <div className="flex justify-between items-center text-sm font-bold text-gray-300 my-8">
                             <span className="flex items-center gap-2"><Maximize size={16} className="text-neon-green" /> FULLSCREEN</span>
                             <button
                                 onClick={() => {
@@ -255,6 +281,31 @@ export const HomeScreen: React.FC = () => {
                                 <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${document.fullscreenElement ? 'translate-x-6' : 'translate-x-0'}`} />
                             </button>
                         </div>
+
+                        {/* Admin Request Controls */}
+                        {user && (
+                            <div className="border-t border-gray-800 pt-6 mt-6">
+                                {!isAdmin ? (
+                                    <button
+                                        onClick={handleRequestAdmin}
+                                        className="w-full py-2 bg-gray-800 text-gray-400 text-xs rounded hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <ShieldCheck size={14} /> Request Admin Access
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => {
+                                            audioService.playSE('click');
+                                            setShowSettings(false);
+                                            setShowAdminRequests(true);
+                                        }}
+                                        className="w-full py-2 bg-neon-purple/20 border border-neon-purple text-neon-purple text-xs rounded hover:bg-neon-purple/30 transition-colors flex items-center justify-center gap-2 font-bold"
+                                    >
+                                        <UserPlus size={14} /> Review Admin Requests
+                                    </button>
+                                )}
+                            </div>
+                        )}
 
                         <div className="mt-8 text-center">
                             <button
