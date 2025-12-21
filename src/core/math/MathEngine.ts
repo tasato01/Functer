@@ -143,6 +143,14 @@ export class MathEngine {
         return null; // Fallback to MathJS
     }
 
+    // Helper to unwrap Delimiter nodes
+    private static unwrap(node: any): any {
+        while (Array.isArray(node) && node[0] === 'Delimiter') {
+            node = node[1];
+        }
+        return node;
+    }
+
     // Transform Cortex MathJSON to MathJS expression string
     private static mathJsonToMathJs(json: any): string {
         if (typeof json === 'number') return json.toString();
@@ -188,28 +196,31 @@ export class MathEngine {
 
         if (compOps[op]) {
             // Flatten nested logic from Cortex (e.g. 4 <= x < 6 -> ["LessEqual", 4, ["Less", x, 6]])
+            // Unwrapping Delimiters is CRITICAL here to match structure.
+            const arg0 = MathEngine.unwrap(args[0]);
+            const arg1 = MathEngine.unwrap(args[1]);
 
             // Case 1: Right-Nested A Op (B Op C)
-            if (args.length === 2 && Array.isArray(args[1])) {
-                const innerOp = args[1][0];
+            if (args.length === 2 && Array.isArray(arg1)) {
+                const innerOp = arg1[0];
                 if (compOps[innerOp]) {
-                    const A = MathEngine.mathJsonToMathJs(args[0]);
-                    const innerArgs = args[1].slice(1);
+                    const A = MathEngine.mathJsonToMathJs(arg0);
+                    const innerArgs = arg1.slice(1);
                     const B = MathEngine.mathJsonToMathJs(innerArgs[0]); // First arg of inner is shared
-                    const innerExpr = MathEngine.mathJsonToMathJs(args[1]);
+                    const innerExpr = MathEngine.mathJsonToMathJs(arg1);
                     return `(${A} ${compOps[op]} ${B}) and (${innerExpr})`;
                 }
             }
 
             // Case 2: Left-Nested (A Op B) Op C
             // e.g. ["Less", ["LessEqual", 0, "y"], 3]
-            if (args.length === 2 && Array.isArray(args[0])) {
-                const innerOp = args[0][0];
+            if (args.length === 2 && Array.isArray(arg0)) {
+                const innerOp = arg0[0];
                 if (compOps[innerOp]) {
-                    const innerExpr = MathEngine.mathJsonToMathJs(args[0]);
-                    const innerArgs = args[0].slice(1);
+                    const innerExpr = MathEngine.mathJsonToMathJs(arg0);
+                    const innerArgs = arg0.slice(1);
                     const B = MathEngine.mathJsonToMathJs(innerArgs[innerArgs.length - 1]); // Last arg of inner is shared
-                    const C = MathEngine.mathJsonToMathJs(args[1]);
+                    const C = MathEngine.mathJsonToMathJs(arg1);
                     return `(${innerExpr}) and (${B} ${compOps[op]} ${C})`;
                 }
             }
@@ -227,8 +238,13 @@ export class MathEngine {
             // it means the structure is complex or unsupported.
             // Returning default comparison (e.g. 0 <= (y < 3)) evaluates to TRUE (0 <= 1) and turns screen RED.
             // We must block this.
-            const isComp = (node: any) => Array.isArray(node) && compOps[node[0]];
-            if (isComp(args[0]) || isComp(args[1])) {
+
+            const isComp = (node: any) => {
+                const unwrapped = MathEngine.unwrap(node);
+                return Array.isArray(unwrapped) && compOps[unwrapped[0]];
+            };
+
+            if (isComp(arg0) || isComp(arg1)) {
                 console.warn("Unsupported nested inequality structure, defaulting to false to prevent errors:", json);
                 return 'false';
             }
@@ -485,6 +501,11 @@ export class MathEngine {
 
             const extract = (node: any) => {
                 if (!Array.isArray(node)) return;
+
+                // UNWRAP Delimiters before processing
+                node = MathEngine.unwrap(node);
+                if (!Array.isArray(node)) return;
+
                 const op = node[0];
                 const args = node.slice(1);
 
@@ -520,23 +541,26 @@ export class MathEngine {
                         }
                     };
 
+                    const arg0 = MathEngine.unwrap(args[0]);
+                    const arg1 = MathEngine.unwrap(args[1]);
+
                     // Case 1: Right-nested: 0 <= (y < 3) -> 0 <= y AND y < 3
-                    if (args.length === 2 && Array.isArray(args[1]) && compOps[args[1][0]]) {
+                    if (args.length === 2 && Array.isArray(arg1) && compOps[arg1[0]]) {
                         const A = args[0];
-                        const innerArgs = args[1].slice(1);
+                        const innerArgs = arg1.slice(1);
                         const B = innerArgs[0]; // First arg of inner is shared
                         addBoundary(A, B, style); // Use CURRENT op style for first pair
-                        extract(args[1]); // Recurse for the rest
+                        extract(arg1); // Recurse for the rest (recursive extract uses unwrap)
                         return;
                     }
 
                     // Case 2: Left-nested: (0 <= y) < 3 -> y < 3 AND 0 <= y
-                    if (args.length === 2 && Array.isArray(args[0]) && compOps[args[0][0]]) {
-                        const innerArgs = args[0].slice(1);
+                    if (args.length === 2 && Array.isArray(arg0) && compOps[arg0[0]]) {
+                        const innerArgs = arg0.slice(1);
                         const B = innerArgs[innerArgs.length - 1]; // Last arg of inner is shared
                         const C = args[1];
                         addBoundary(B, C, style); // Use CURRENT op style for second pair
-                        extract(args[0]); // Recurse
+                        extract(arg0); // Recurse
                         return;
                     }
 
