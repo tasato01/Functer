@@ -474,7 +474,6 @@ export function drawConstraintBoundaries(
     toScreenX: (x: number) => number,
     toScreenY: (y: number) => number,
     toWorldX: (sx: number) => number,
-    toWorldY: (sy: number) => number,
     t: number
 ) {
     if (boundaries.length === 0) return;
