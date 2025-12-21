@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, LogOut, Database, ShieldCheck, Save, X, Edit2 } from 'lucide-react';
+import { User, LogOut, ShieldCheck, Save, X, Edit2 } from 'lucide-react';
 import { auth, signOutUser } from '../../services/firebase';
 import { UserService } from '../../services/UserService';
 import { audioService } from '../../services/AudioService';
-import { useNavigate } from 'react-router-dom';
+
 
 interface UserMenuDialogProps {
     isOpen: boolean;
@@ -12,7 +12,6 @@ interface UserMenuDialogProps {
 }
 
 export const UserMenuDialog: React.FC<UserMenuDialogProps> = ({ isOpen, onClose, onOpenAdmin }) => {
-    const navigate = useNavigate();
     const user = auth.currentUser;
     const [isAdmin, setIsAdmin] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -110,17 +109,6 @@ export const UserMenuDialog: React.FC<UserMenuDialogProps> = ({ isOpen, onClose,
 
                 {/* Menu Items */}
                 <div className="space-y-3">
-                    <button
-                        onClick={() => { onClose(); navigate('/mine'); }}
-                        className="w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center gap-3 transition-colors text-left"
-                    >
-                        <Database size={20} className="text-neon-purple" />
-                        <div>
-                            <div className="font-bold text-sm text-white">My Levels</div>
-                            <div className="text-[10px] text-gray-400">Manage your creations</div>
-                        </div>
-                    </button>
-
                     {isAdmin ? (
                         <button
                             onClick={() => { onOpenAdmin(); }}
@@ -156,6 +144,7 @@ export const UserMenuDialog: React.FC<UserMenuDialogProps> = ({ isOpen, onClose,
                     </button>
                 </div>
             </div>
+
         </div>
     );
 };

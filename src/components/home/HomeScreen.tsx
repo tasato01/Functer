@@ -9,6 +9,7 @@ import { UserMenuDialog } from './UserMenuDialog';
 import { auth } from '../../services/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { UserService } from '../../services/UserService';
+import { MathBackground } from '../common/MathBackground';
 
 export const HomeScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -45,116 +46,117 @@ export const HomeScreen: React.FC = () => {
     }, []);
 
     return (
-        <div className="h-full flex flex-col items-center justify-center relative overflow-hidden bg-black text-white">
-            {/* Background Effects */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-neon-blue/10 via-transparent to-transparent pointer-events-none" />
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-pink to-transparent opacity-50"></div>
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-blue to-transparent opacity-50"></div>
+        <div className="h-full flex flex-col items-center relative overflow-hidden text-white font-sans bg-black">
+            <MathBackground />
 
-            {/* Title */}
-            <div className="z-10 text-center mb-12 animate-in fade-in zoom-in duration-700">
-                <h1 className="text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-neon-pink via-white to-neon-blue drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+            {/* Title / Header */}
+            <div className="z-10 text-center mt-12 mb-8 animate-in fade-in zoom-in duration-700">
+                <h1 className="text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-neon-pink via-white to-neon-blue drop-shadow-[0_0_20px_rgba(255,255,255,0.4)] italic">
                     FUNCTER
                 </h1>
-                <p className="text-neon-blue/80 tracking-widest mt-2 uppercase text-sm font-bold">
+                <p className="text-neon-blue/80 tracking-[0.5em] mt-2 uppercase text-xs font-bold">
                     Functional Graph Action Puzzle
                 </p>
             </div>
 
-            {/* Menu List */}
-            <div className="z-10 flex flex-col gap-4 w-full max-w-md px-8">
-                {/* Standard Stages */}
+            {/* Main Center Stack */}
+            <div className="z-10 flex flex-col gap-4 w-full max-w-lg px-6 flex-1 justify-center pb-24">
+
+                {/* 1. Official Stages (Primary) */}
                 <button
                     onClick={() => { audioService.playSE('click'); navigate('/official'); }}
-                    className="group relative p-4 bg-gray-900/50 border border-white/10 rounded-xl hover:bg-white/5 hover:border-neon-pink/50 transition-all duration-300 backdrop-blur-sm flex items-center gap-4 overflow-hidden w-full h-[78px]"
+                    className="group relative w-full h-32 bg-gray-900/40 border border-white/10 rounded-2xl overflow-hidden hover:border-neon-pink transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-neon-pink/20"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-neon-pink/0 to-neon-pink/0 group-hover:from-neon-pink/10 group-hover:to-transparent transition-all duration-500"></div>
-                    <Trophy size={24} className="text-neon-pink group-hover:scale-110 transition-transform duration-300" />
-                    <div className="text-left">
-                        <h3 className="text-lg font-bold text-white group-hover:text-neon-pink transition-colors">OFFICIAL STAGES</h3>
-                        <p className="text-[10px] text-gray-400">Challenge the standard puzzles</p>
+                    <div className="absolute inset-0 bg-gradient-to-r from-neon-pink/5 via-transparent to-transparent group-hover:from-neon-pink/20 transition-all duration-500" />
+                    <div className="absolute inset-0 flex items-center justify-between px-8">
+                        <div>
+                            <h2 className="text-3xl font-black italic text-white group-hover:text-neon-pink transition-colors tracking-tighter">
+                                OFFICIAL
+                            </h2>
+                            <p className="text-xs text-gray-400 font-mono mt-1 group-hover:text-neon-pink/70">CHALLENGE STANDARD</p>
+                        </div>
+                        <Trophy size={48} className="text-gray-700 group-hover:text-neon-pink group-hover:rotate-12 transition-all duration-300" />
                     </div>
                 </button>
 
-                {/* User Stages */}
+                {/* 2. Community Stages */}
                 <button
                     onClick={() => { audioService.playSE('click'); navigate('/user'); }}
-                    className="group relative p-4 bg-gray-900/50 border border-white/10 rounded-xl hover:bg-white/5 hover:border-neon-green/50 transition-all duration-300 backdrop-blur-sm flex items-center gap-4 overflow-hidden w-full h-[78px]"
+                    className="group relative w-full h-24 bg-gray-900/40 border border-white/10 rounded-2xl overflow-hidden hover:border-neon-green transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-neon-green/20"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-neon-green/0 to-neon-green/0 group-hover:from-neon-green/10 group-hover:to-transparent transition-all duration-500"></div>
-                    <Database size={24} className="text-neon-green group-hover:scale-110 transition-transform duration-300" />
-                    <div className="text-left">
-                        <h3 className="text-lg font-bold text-white group-hover:text-neon-green transition-colors">COMMUNITY STAGES</h3>
-                        <p className="text-[10px] text-gray-400">Play stages created by community</p>
+                    <div className="absolute inset-0 bg-gradient-to-r from-neon-green/5 via-transparent to-transparent group-hover:from-neon-green/20 transition-all duration-500" />
+                    <div className="absolute inset-0 flex items-center justify-between px-8">
+                        <div>
+                            <h2 className="text-2xl font-black italic text-white group-hover:text-neon-green transition-colors tracking-tighter">
+                                COMMUNITY
+                            </h2>
+                            <p className="text-xs text-gray-400 font-mono mt-1 group-hover:text-neon-green/70">PLAY USER CREATIONS</p>
+                        </div>
+                        <Database size={36} className="text-gray-700 group-hover:text-neon-green group-hover:rotate-12 transition-all duration-300" />
                     </div>
                 </button>
 
-                {/* Editor & Settings Row */}
-                <div className="flex gap-4 w-full">
-                    {/* Editor Mode */}
-                    <button
-                        onClick={() => { audioService.playSE('click'); navigate('/edit'); }}
-                        className="group relative flex-1 p-3 bg-gray-900/50 border border-white/10 rounded-xl hover:bg-white/5 hover:border-neon-blue/50 transition-all duration-300 backdrop-blur-sm flex flex-col items-center justify-center gap-2 overflow-hidden h-[78px]"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/0 to-neon-blue/0 group-hover:from-neon-blue/10 group-hover:to-transparent transition-all duration-500"></div>
-                        <PenTool size={24} className="text-neon-blue group-hover:scale-110 transition-transform duration-300" />
-                        <div className="text-center w-full">
-                            <h3 className="text-xs font-bold text-white group-hover:text-neon-blue transition-colors truncate">EDITOR</h3>
-                            <p className="text-[9px] text-gray-400 truncate opacity-70">Create</p>
-                        </div>
-                    </button>
-
-                    {/* My Levels (Only if logged in) */}
-                    {user && (
-                        <button
-                            onClick={() => { audioService.playSE('click'); navigate('/mine'); }}
-                            className="group relative flex-1 p-3 bg-gray-900/50 border border-white/10 rounded-xl hover:bg-white/5 hover:border-neon-purple/50 transition-all duration-300 backdrop-blur-sm flex flex-col items-center justify-center gap-2 overflow-hidden h-[78px]"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/0 to-neon-purple/0 group-hover:from-neon-purple/10 group-hover:to-transparent transition-all duration-500"></div>
-                            <Database size={24} className="text-neon-purple group-hover:scale-110 transition-transform duration-300" />
-                            <div className="text-center w-full">
-                                <h3 className="text-xs font-bold text-white group-hover:text-neon-purple transition-colors truncate">MY STAGES</h3>
-                                <p className="text-[9px] text-gray-400 truncate opacity-70">Manage</p>
-                            </div>
-                        </button>
-                    )}
-
-                    {/* Help */}
-                    <button
-                        onClick={() => { audioService.playSE('click'); navigate('/help'); }}
-                        className="group relative flex-1 p-3 bg-gray-900/50 border border-white/10 rounded-xl hover:bg-white/5 hover:border-neon-yellow/50 transition-all duration-300 backdrop-blur-sm flex flex-col items-center justify-center gap-2 overflow-hidden h-[78px]"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-neon-yellow/0 to-neon-yellow/0 group-hover:from-neon-yellow/10 group-hover:to-transparent transition-all duration-500"></div>
-                        <BookOpen size={24} className="text-neon-yellow group-hover:scale-110 transition-transform duration-300" />
-                        <div className="text-center w-full">
-                            <h3 className="text-xs font-bold text-white group-hover:text-neon-yellow transition-colors truncate">HOW TO PLAY</h3>
-                            <p className="text-[9px] text-gray-400 truncate opacity-70">Guide</p>
-                        </div>
-                    </button>
-                </div>
-            </div>
-
-            {/* Footer */}
-            <div className="absolute bottom-4 text-[10px] text-gray-600 font-mono">
-                FUNCTER v0.1.0 - PRE_ALPHA
-            </div>
-
-            {/* Top Right Controls */}
-            <div className="absolute top-6 right-6 z-20 flex gap-3">
+                {/* 3. Editor */}
                 <button
-                    onClick={() => { audioService.playSE('click'); setShowSettings(true); }}
-                    className="p-2 bg-gray-900/50 border border-white/20 rounded-full hover:bg-white/10 hover:border-white/50 transition-all backdrop-blur-md"
-                    title="Settings"
+                    onClick={() => { audioService.playSE('click'); navigate('/edit'); }}
+                    className="group relative w-full h-20 bg-gray-900/40 border border-white/10 rounded-2xl overflow-hidden hover:border-neon-blue transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-neon-blue/20"
                 >
-                    <Settings className="text-gray-300 hover:text-white" size={20} />
+                    <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/5 via-transparent to-transparent group-hover:from-neon-blue/20 transition-all duration-500" />
+                    <div className="absolute inset-0 flex items-center justify-between px-8">
+                        <div>
+                            <h2 className="text-xl font-black italic text-white group-hover:text-neon-blue transition-colors tracking-tighter">
+                                EDITOR
+                            </h2>
+                            <p className="text-xs text-gray-400 font-mono mt-1 group-hover:text-neon-blue/70">CREATE NEW LEVEL</p>
+                        </div>
+                        <PenTool size={28} className="text-gray-700 group-hover:text-neon-blue group-hover:-translate-y-1 group-hover:translate-x-1 transition-all duration-300" />
+                    </div>
+                </button>
+            </div>
+
+            {/* Bottom Dock */}
+            <div className="absolute bottom-8 z-20 flex gap-6 p-4 bg-gray-900/60 backdrop-blur-md rounded-full border border-white/10 shadow-2xl">
+                {user && (
+                    <button
+                        onClick={() => { audioService.playSE('click'); navigate('/mine'); }}
+                        className="group flex flex-col items-center gap-1 text-gray-400 hover:text-neon-purple transition-colors w-16"
+                    >
+                        <div className="p-2 rounded-full group-hover:bg-neon-purple/10 transition-colors">
+                            <Database size={20} />
+                        </div>
+                        <span className="text-[9px] font-bold">MY STAGE</span>
+                    </button>
+                )}
+
+                <button
+                    onClick={() => { audioService.playSE('click'); navigate('/help'); }}
+                    className="group flex flex-col items-center gap-1 text-gray-400 hover:text-neon-yellow transition-colors w-16"
+                >
+                    <div className="p-2 rounded-full group-hover:bg-neon-yellow/10 transition-colors">
+                        <BookOpen size={20} />
+                    </div>
+                    <span className="text-[9px] font-bold">HELP</span>
                 </button>
 
+                <button
+                    onClick={() => { audioService.playSE('click'); setShowSettings(true); }}
+                    className="group flex flex-col items-center gap-1 text-gray-400 hover:text-white transition-colors w-16"
+                >
+                    <div className="p-2 rounded-full group-hover:bg-white/10 transition-colors">
+                        <Settings size={20} />
+                    </div>
+                    <span className="text-[9px] font-bold">SETTING</span>
+                </button>
+            </div>
+
+            {/* Top Right User Profile (Fixed Identity) */}
+            <div className="absolute top-6 right-6 z-20 flex gap-3">
                 {user ? (
                     <div className="flex gap-2">
                         {isAdmin && (
-                            <div className="flex items-center gap-1 bg-red-900/80 text-red-200 text-[10px] px-2 py-1 rounded font-bold border border-red-500/30 shadow-[0_0_10px_rgba(255,0,0,0.3)] select-none">
+                            <div className="flex items-center gap-1 bg-red-900/80 text-red-200 text-[10px] px-2 py-1 rounded font-bold border border-red-500/30 shadow-[0_0_10px_rgba(255,0,0,0.3)] select-none h-9">
                                 <ShieldCheck size={12} />
-                                ADMIN MODE
+                                ADMIN
                             </div>
                         )}
                         <button
@@ -163,14 +165,14 @@ export const HomeScreen: React.FC = () => {
                                 audioService.playSE('click');
                                 setShowUserMenu(true);
                             }}
-                            className="flex items-center gap-2 px-4 py-2 bg-neon-blue/20 border border-neon-blue/50 rounded-full hover:bg-neon-blue/30 backdrop-blur-md transition-all active:scale-95"
+                            className="flex items-center gap-2 pl-2 pr-4 py-1 bg-gray-900/50 border border-white/20 rounded-full hover:bg-white/10 hover:border-neon-blue/50 backdrop-blur-md transition-all active:scale-95 h-9"
                         >
                             {user.photoURL ? (
-                                <img src={user.photoURL} className="w-5 h-5 rounded-full border border-white/20" />
+                                <img src={user.photoURL} className="w-6 h-6 rounded-full border border-white/20" />
                             ) : (
                                 <UserIcon size={16} className="text-neon-blue" />
                             )}
-                            <span className="font-bold text-sm text-neon-blue hidden sm:inline">
+                            <span className="font-bold text-sm text-gray-200 group-hover:text-white">
                                 {user.displayName || 'Player'}
                             </span>
                         </button>
@@ -178,7 +180,7 @@ export const HomeScreen: React.FC = () => {
                 ) : (
                     <button
                         onClick={() => { audioService.playSE('click'); setShowAuthDialog(true); }}
-                        className="px-6 py-2 bg-white/10 border border-white/20 rounded-full hover:bg-white/20 backdrop-blur-md font-bold text-sm"
+                        className="px-6 py-1.5 bg-white/10 border border-white/20 rounded-full hover:bg-white/20 backdrop-blur-md font-bold text-sm text-white/90 hover:text-white transition-all"
                     >
                         LOGIN
                     </button>
@@ -281,6 +283,11 @@ export const HomeScreen: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Version Footer */}
+            <div className="absolute bottom-2 text-[8px] text-gray-700 font-mono select-none pointer-events-none">
+                FUNCTER v0.1.0
+            </div>
         </div>
     );
 };
