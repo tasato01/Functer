@@ -152,10 +152,23 @@ export const EditPage: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedId, level, undo, redo]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // State to force re-render for mobile layout fix
-    const [, forceUpdate] = useState({});
+    // Mobile Viewport Height Fix
+    const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
     useEffect(() => {
+        const updateHeight = () => {
+            if (window.visualViewport) {
+                setViewportHeight(window.visualViewport.height);
+            } else {
+                setViewportHeight(window.innerHeight);
+            }
+        };
+
+        window.addEventListener('resize', updateHeight);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateHeight);
+        }
+
         // Method 1: FocusOut (Backup)
         const handleFocusOut = (e: FocusEvent) => {
             const target = e.target as HTMLElement;
@@ -164,6 +177,8 @@ export const EditPage: React.FC = () => {
                     window.scrollTo(0, 0);
                     document.body.scrollTop = 0;
                     document.documentElement.scrollTop = 0;
+                    // Force update height just in case
+                    updateHeight();
                     window.dispatchEvent(new Event('resize'));
                     forceUpdate({});
                 }, 200);
@@ -180,6 +195,7 @@ export const EditPage: React.FC = () => {
                 document.documentElement.scrollTop = 0;
                 forceUpdate({});
             }
+            updateHeight();
         };
 
         window.addEventListener('focusout', handleFocusOut);
@@ -188,8 +204,10 @@ export const EditPage: React.FC = () => {
         }
 
         return () => {
+            window.removeEventListener('resize', updateHeight);
             window.removeEventListener('focusout', handleFocusOut);
             if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', updateHeight);
                 window.visualViewport.removeEventListener('resize', handleVisualViewportResize);
             }
         };
@@ -270,7 +288,10 @@ export const EditPage: React.FC = () => {
 
 
     return (
-        <div className="fixed inset-0 flex flex-col bg-black overflow-hidden">
+        <div
+            className="fixed inset-0 flex flex-col bg-black overflow-hidden"
+            style={{ height: `${viewportHeight}px` }}
+        >
             {/* Header / Nav (Consistent with PlayPage) */}
             <div className="h-14 bg-neon-surface/80 border-b border-neon-blue/30 flex items-center justify-between px-6 backdrop-blur-md z-20 shrink-0">
                 <div className="flex items-center gap-4">
