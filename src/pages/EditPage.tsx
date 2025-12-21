@@ -155,8 +155,7 @@ export const EditPage: React.FC = () => {
     // Mobile Viewport Height Fix
     const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
-    // State to force re-render for mobile layout fix
-    const [, forceUpdate] = useState({});
+
 
     useEffect(() => {
         const updateHeight = () => {
