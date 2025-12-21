@@ -1,7 +1,8 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { getFirestore, collection, addDoc, getDocs, query, where, orderBy } from "firebase/firestore";
 import type { LevelConfig } from "../types/Level";
+import { UserService } from "./UserService";
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -22,6 +23,12 @@ export const googleProvider = new GoogleAuthProvider();
 export const signInWithGoogle = async () => {
     try {
         const result = await signInWithPopup(auth, googleProvider);
+        // Sync on Google login too (if name changed or new user)
+        await UserService.syncUser({
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName
+        });
         return result.user;
     } catch (error) {
         console.error("Login Failed", error);
@@ -29,9 +36,17 @@ export const signInWithGoogle = async () => {
     }
 };
 
-export const signUpWithEmail = async (email: string, pass: string) => {
+export const signUpWithEmail = async (email: string, pass: string, displayName: string) => {
     try {
         const result = await createUserWithEmailAndPassword(auth, email, pass);
+        // Update Profile
+        await updateProfile(result.user, { displayName });
+        // Sync to Firestore
+        await UserService.syncUser({
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: displayName
+        });
         return result.user;
     } catch (error) {
         throw error;

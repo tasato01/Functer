@@ -12,6 +12,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ isOpen, onClose }) => {
     const [mode, setMode] = useState<'login' | 'signup'>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [displayName, setDisplayName] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -24,7 +25,8 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ isOpen, onClose }) => {
 
         try {
             if (mode === 'signup') {
-                await signUpWithEmail(email, password);
+                if (!displayName.trim()) throw new Error("Display Name is required");
+                await signUpWithEmail(email, password, displayName);
                 alert("Account created successfully!");
                 onClose();
             } else {
@@ -85,6 +87,24 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({ isOpen, onClose }) => {
                             />
                         </div>
                     </div>
+
+                    {mode === 'signup' && (
+                        <div className="space-y-1">
+                            <label className="text-xs text-gray-400 font-bold block">User Name</label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    className="w-full bg-black/50 border border-gray-600 rounded p-2 text-white focus:border-neon-blue outline-none"
+                                    value={displayName}
+                                    onChange={e => setDisplayName(e.target.value)}
+                                    placeholder="Enter your creator name"
+                                    required
+                                    minLength={1}
+                                    maxLength={20}
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     {error && <p className="text-red-400 text-xs">{error}</p>}
 

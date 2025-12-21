@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PenTool, Database, Trophy, User as UserIcon, LogOut, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize, UserPlus } from 'lucide-react';
+import { PenTool, Database, Trophy, User as UserIcon, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize } from 'lucide-react';
 import { levelService } from '../../services/FirebaseLevelService';
 import { audioService } from '../../services/AudioService';
 import { AuthDialog } from '../editor/AuthDialog';
-import { AdminRequestsDialog } from '../admin/AdminRequestsDialog';
-import { auth, signOutUser } from '../../services/firebase';
+import { AdminManagementDialog } from '../admin/AdminManagementDialog';
+import { UserMenuDialog } from './UserMenuDialog';
+import { auth } from '../../services/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { UserService } from '../../services/UserService';
 
@@ -14,7 +15,8 @@ export const HomeScreen: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [showAuthDialog, setShowAuthDialog] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
-    const [showAdminRequests, setShowAdminRequests] = useState(false);
+    const [showAdminPanel, setShowAdminPanel] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
     const [bgmVolume, setBgmVolume] = useState(audioService.getBGMVolume() * 100);
     const [seVolume, setSeVolume] = useState(audioService.getSEVolume() * 100);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -29,34 +31,18 @@ export const HomeScreen: React.FC = () => {
             if (u) {
                 const adminStatus = await UserService.isAdmin(u.uid);
                 setIsAdmin(adminStatus);
+                // Sync user data
+                UserService.syncUser({
+                    uid: u.uid,
+                    email: u.email,
+                    displayName: u.displayName
+                });
             } else {
                 setIsAdmin(false);
             }
         });
         return () => unsubscribe();
     }, []);
-
-    const handleLogout = async () => {
-        if (confirm("Logout?")) {
-            await signOutUser();
-        }
-    };
-
-    const handleRequestAdmin = async () => {
-        if (!user) return;
-        if (confirm("Request Administrator privileges?")) {
-            const success = await UserService.requestAdminAccess({
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName
-            });
-            if (success) {
-                alert("Request sent! an Admin needs to approve it.");
-            } else {
-                alert("Request failed.");
-            }
-        }
-    };
 
     return (
         <div className="h-full flex flex-col items-center justify-center relative overflow-hidden bg-black text-white">
@@ -172,8 +158,12 @@ export const HomeScreen: React.FC = () => {
                             </div>
                         )}
                         <button
-                            onClick={() => { audioService.playSE('click'); navigate(`/user/${user.uid}`); }}
-                            className="flex items-center gap-2 px-4 py-2 bg-neon-blue/20 border border-neon-blue/50 rounded-full hover:bg-neon-blue/30 backdrop-blur-md transition-all"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                audioService.playSE('click');
+                                setShowUserMenu(true);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-neon-blue/20 border border-neon-blue/50 rounded-full hover:bg-neon-blue/30 backdrop-blur-md transition-all active:scale-95"
                         >
                             {user.photoURL ? (
                                 <img src={user.photoURL} className="w-5 h-5 rounded-full border border-white/20" />
@@ -183,13 +173,6 @@ export const HomeScreen: React.FC = () => {
                             <span className="font-bold text-sm text-neon-blue hidden sm:inline">
                                 {user.displayName || 'Player'}
                             </span>
-                        </button>
-                        <button
-                            onClick={() => { audioService.playSE('click'); handleLogout(); }}
-                            className="p-2 bg-red-900/50 border border-red-500/30 rounded-full hover:bg-red-900/80 transition-all backdrop-blur-md"
-                            title="Logout"
-                        >
-                            <LogOut size={16} className="text-red-300" />
                         </button>
                     </div>
                 ) : (
@@ -202,11 +185,16 @@ export const HomeScreen: React.FC = () => {
                 )}
             </div>
 
-            {/* Auth Dialog */}
+            {/* Dialogs */}
             <AuthDialog isOpen={showAuthDialog} onClose={() => setShowAuthDialog(false)} />
 
-            {/* Admin Requests Dialog */}
-            <AdminRequestsDialog isOpen={showAdminRequests} onClose={() => setShowAdminRequests(false)} />
+            <UserMenuDialog
+                isOpen={showUserMenu}
+                onClose={() => setShowUserMenu(false)}
+                onOpenAdmin={() => { setShowUserMenu(false); setShowAdminPanel(true); }}
+            />
+
+            <AdminManagementDialog isOpen={showAdminPanel} onClose={() => setShowAdminPanel(false)} />
 
             {/* Settings Dialog */}
             {showSettings && (
@@ -265,7 +253,7 @@ export const HomeScreen: React.FC = () => {
                         </div>
 
                         {/* Fullscreen Toggle */}
-                        <div className="flex justify-between items-center text-sm font-bold text-gray-300 my-8">
+                        <div className="flex justify-between items-center text-sm font-bold text-gray-300">
                             <span className="flex items-center gap-2"><Maximize size={16} className="text-neon-green" /> FULLSCREEN</span>
                             <button
                                 onClick={() => {
@@ -281,31 +269,6 @@ export const HomeScreen: React.FC = () => {
                                 <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${document.fullscreenElement ? 'translate-x-6' : 'translate-x-0'}`} />
                             </button>
                         </div>
-
-                        {/* Admin Request Controls */}
-                        {user && (
-                            <div className="border-t border-gray-800 pt-6 mt-6">
-                                {!isAdmin ? (
-                                    <button
-                                        onClick={handleRequestAdmin}
-                                        className="w-full py-2 bg-gray-800 text-gray-400 text-xs rounded hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        <ShieldCheck size={14} /> Request Admin Access
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => {
-                                            audioService.playSE('click');
-                                            setShowSettings(false);
-                                            setShowAdminRequests(true);
-                                        }}
-                                        className="w-full py-2 bg-neon-purple/20 border border-neon-purple text-neon-purple text-xs rounded hover:bg-neon-purple/30 transition-colors flex items-center justify-center gap-2 font-bold"
-                                    >
-                                        <UserPlus size={14} /> Review Admin Requests
-                                    </button>
-                                )}
-                            </div>
-                        )}
 
                         <div className="mt-8 text-center">
                             <button

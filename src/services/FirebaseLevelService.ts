@@ -351,6 +351,34 @@ export class FirebaseLevelService implements ILevelService {
         }
     }
 
+    async updateAuthorName(authorId: string, newName: string): Promise<boolean> {
+        try {
+            console.log(`Updating author name for ${authorId} to ${newName}`);
+            const q = query(
+                collection(db, LEVELS_COLLECTION),
+                where("authorId", "==", authorId)
+            );
+            const snapshot = await getDocs(q);
+
+            const batch = writeBatch(db);
+            snapshot.docs.forEach(doc => {
+                batch.update(doc.ref, { authorName: newName });
+            });
+
+            await batch.commit();
+            console.log(`Updated ${snapshot.size} levels with new author name.`);
+
+            // Invalidate cache
+            this.cache.user = null;
+            this.cache.official = null;
+
+            return true;
+        } catch (e) {
+            console.error("Failed to batch update author name", e);
+            return false;
+        }
+    }
+
     private mapDocToLevel(docSnapshot: any): LevelConfig {
         const data = docSnapshot.data() as FirestoreLevelData;
         const id = docSnapshot.id;

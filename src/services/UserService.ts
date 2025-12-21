@@ -7,6 +7,7 @@ export interface UserProfile {
     isBanned?: boolean;
     displayName?: string;
     isAdmin?: boolean;
+    email?: string;
 }
 
 export interface AdminRequest {
@@ -18,7 +19,76 @@ export interface AdminRequest {
     status: 'pending' | 'approved' | 'rejected';
 }
 
+import { levelService } from './FirebaseLevelService';
+import { updateProfile } from 'firebase/auth';
+import { auth } from './firebase';
+
 export const UserService = {
+    // Sync user data to Firestore on login
+    async syncUser(user: { uid: string, email: string | null, displayName: string | null }): Promise<void> {
+        if (!user.uid) return;
+        try {
+            const userRef = doc(db, 'users', user.uid);
+            // Use setDoc with merge to create or update
+            // We only update essential info that might have changed (e.g. email, name from provider)
+            // But we respect existing isAdmin/isBanned flags.
+            await setDoc(userRef, {
+                uid: user.uid,
+                email: user.email || '',
+                displayName: user.displayName || 'Unknown',
+                lastLoginAt: Date.now()
+            }, { merge: true });
+        } catch (e) {
+            console.error("Failed to sync user", e);
+        }
+    },
+
+    async getAllUsers(): Promise<UserProfile[]> {
+        try {
+            const snapshot = await getDocs(collection(db, 'users'));
+            return snapshot.docs.map(doc => ({
+                uid: doc.id,
+                ...doc.data()
+            } as UserProfile));
+        } catch (e) {
+            console.error("Failed to get all users", e);
+            return [];
+        }
+    },
+
+    async updateUserProfile(uid: string, newName: string): Promise<boolean> {
+        try {
+            const user = auth.currentUser;
+            if (!user || user.uid !== uid) return false;
+
+            // 1. Update Firebase Auth Profile
+            await updateProfile(user, { displayName: newName });
+
+            // 2. Update Firestore User Doc
+            const userRef = doc(db, 'users', uid);
+            await setDoc(userRef, { displayName: newName }, { merge: true });
+
+            // 3. Batch update all levels authored by this user
+            await levelService.updateAuthorName(uid, newName);
+
+            return true;
+        } catch (e) {
+            console.error("Failed to update user profile", e);
+            return false;
+        }
+    },
+
+    async revokeAdmin(uid: string): Promise<boolean> {
+        try {
+            const userRef = doc(db, 'users', uid);
+            await setDoc(userRef, { isAdmin: false }, { merge: true });
+            return true;
+        } catch (e) {
+            console.error("Failed to revoke admin", e);
+            return false;
+        }
+    },
+
     async checkBanStatus(uid: string): Promise<boolean> {
         try {
             const userDoc = await getDoc(doc(db, 'users', uid));
@@ -52,7 +122,8 @@ export const UserService = {
 
     async requestAdminAccess(user: { uid: string, email: string | null, displayName: string | null }): Promise<boolean> {
         try {
-            // Create a request in 'admin_requests' collection
+            // Check if already exists
+            // Ideally should query if pending request exists, but for now just add
             await addDoc(collection(db, 'admin_requests'), {
                 uid: user.uid,
                 email: user.email || 'No Email',
@@ -91,10 +162,7 @@ export const UserService = {
             const userRef = doc(db, 'users', req.uid);
             await setDoc(userRef, { isAdmin: true }, { merge: true });
 
-            // 2. Update request status (or delete it)
-            // Let's delete it to keep clean, or mark approved for history. 
-            // Mark approved for history is better but cleaning up is easier for MVP.
-            // Let's delete.
+            // 2. Delete request
             await deleteDoc(doc(db, 'admin_requests', req.id));
 
             return true;
