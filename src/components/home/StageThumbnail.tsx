@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { GameCanvas } from '../game/GameCanvas';
 import { MathEngine } from '../../core/math/MathEngine';
 import type { LevelConfig } from '../../types/Level';
+import { useInView } from '../../hooks/useInView';
 
 interface StageThumbnailProps {
     level: LevelConfig;
@@ -11,6 +12,7 @@ interface StageThumbnailProps {
 }
 
 export const StageThumbnail: React.FC<StageThumbnailProps> = ({ level, width = 120, height = 90, className }) => {
+    const [ref, inView] = useInView<HTMLDivElement>({ rootMargin: '100px' }); // Load 100px before appearing
 
     // Calculate bounds to fit content
     const { viewOffset, scale } = useMemo(() => {
@@ -75,25 +77,28 @@ export const StageThumbnail: React.FC<StageThumbnailProps> = ({ level, width = 1
     const gFn = useMemo(() => MathEngine.compile(level.g_raw || 'f'), [level.g_raw]);
 
     return (
-        <div style={{ width, height }} className={`relative overflow-hidden bg-black border border-gray-800 rounded lg ${className}`}>
-            <GameCanvas
-                level={level}
-                f={fFn}
-                g={gFn}
-                t={0}
-                viewOffset={viewOffset}
-                scale={scale}
-                onViewChange={() => { }}
-                mode="pan"
-                selectedId={null}
-                onSelect={() => { }}
-                onLevelChange={() => { }}
-                snapStep={1}
-                className="w-full h-full pointer-events-none"
-            // Hide controls if GameCanvas supports a 'minimal' prop? 
-            // Currently it doesn't, but pointer-events-none prevents interaction.
-            // We might want to disable grid labels if they are too small?
-            />
+        <div ref={ref} style={{ width, height }} className={`relative overflow-hidden bg-black border border-gray-800 rounded lg ${className}`}>
+            {inView ? (
+                <GameCanvas
+                    level={level}
+                    f={fFn}
+                    g={gFn}
+                    t={0}
+                    viewOffset={viewOffset}
+                    scale={scale}
+                    onViewChange={() => { }}
+                    mode="pan"
+                    selectedId={null}
+                    onSelect={() => { }}
+                    onLevelChange={() => { }}
+                    snapStep={1}
+                    className="w-full h-full pointer-events-none"
+                    isStatic={true} // Use Static Mode
+                />
+            ) : (
+                // Lightweight Placeholder
+                <div className="w-full h-full bg-gray-900 animate-pulse" />
+            )}
             {/* Overlay to intercept any events just in case and darken slightly? */}
             <div className="absolute inset-0 z-10" />
         </div>

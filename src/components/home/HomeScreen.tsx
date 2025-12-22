@@ -149,9 +149,9 @@ export const HomeScreen: React.FC = () => {
                 </button>
             </div>
 
-            {/* Version Footer - Now part of flow */}
-            <div className="mb-2 text-[8px] text-gray-700 font-mono select-none pointer-events-none shrink-0">
-                FUNCTER v0.1.0
+            {/* Version Footer - Absolute Bottom Right */}
+            <div className="absolute bottom-2 right-4 text-[10px] text-gray-800 font-mono select-none pointer-events-none z-0">
+                v0.1.1
             </div>
             <div className="absolute top-6 right-6 z-20 flex gap-3">
                 {user ? (

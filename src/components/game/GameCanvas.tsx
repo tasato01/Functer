@@ -33,12 +33,10 @@ interface GameCanvasProps {
     onObjectClick?: (info: { type: 'start' | 'goal' | 'waypoint', index?: number, p: Point }) => void;
 
     currentWaypointIndex?: number;
-
     onRightClick?: () => void;
-
     snapStep: number;
-
     className?: string;
+    isStatic?: boolean;
 }
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -50,7 +48,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     onObjectClick,
     onRightClick,
     snapStep,
-    className
+    className,
+    isStatic = false
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -99,7 +98,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const latestProps = useRef({
         f, g, t, level, player, currentWaypointIndex,
         viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-        compiledConstraints
+        compiledConstraints, isStatic
     });
 
     // Update ref when props change
@@ -107,9 +106,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         latestProps.current = {
             f, g, t, level, player, currentWaypointIndex,
             viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-            compiledConstraints
+            compiledConstraints, isStatic
         };
-    }, [f, g, t, level, player, currentWaypointIndex, viewOffset, scale, selectedId, hoverPos, tempShape, rotation, compiledConstraints]);
+    }, [f, g, t, level, player, currentWaypointIndex, viewOffset, scale, selectedId, hoverPos, tempShape, rotation, compiledConstraints, isStatic]);
 
     // Loop
     useEffect(() => {
@@ -118,6 +117,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         const render = () => {
             const canvas = canvasRef.current;
             if (!canvas) {
+                // If canvas is not ready yet, keep retrying even if static.
+                // But if static and canvas is gone, we stop?
+                // Better: standard loop
                 animationFrameId = requestAnimationFrame(render);
                 return;
             }
@@ -132,7 +134,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 const {
                     f, g, t, level, player, currentWaypointIndex,
                     viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-                    compiledConstraints
+                    compiledConstraints, isStatic
                 } = latestProps.current;
 
                 const width = rotation.w;
@@ -221,16 +223,28 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                         drawCoordinateLabel(ctx, { ...p, x: px, y: py }, toScreenX, toScreenY);
                     }
                 }
+
+                // If Static, STOP loop here (after one successful render)
+                if (isStatic) {
+                    return;
+                }
+
             } catch (err: any) {
                 console.error("Render Loop Error:", err);
             } finally {
-                animationFrameId = requestAnimationFrame(render);
+                // If static, we might have returned early, so this finally block is tricky if we want to STOP.
+                // Actually if checks isStatic above and returns, this finally block STILL runs in JS try/finally semantics if present?
+                // Wait, if I return in try, finally block runs BEFORE returning.
+                // So I need to control the requestAnimationFrame inside finally or check a flag.
             }
+
+            // Standard loop continue
+            animationFrameId = requestAnimationFrame(render);
         };
 
         render();
         return () => cancelAnimationFrame(animationFrameId);
-    }, []); // Run once, depend on refs
+    }, [rotation]); // Re-run if rotation (size) changes to restart loop even if static (to redraw once)
 
 
     // Snap Helper
