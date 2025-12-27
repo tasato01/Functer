@@ -337,6 +337,7 @@ const AdminAnnouncementPanel: React.FC = () => {
                     </div>
                 </div>
             </div>
-            );
+        </div>
+    );
 };
 
