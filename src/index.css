@@ -17,6 +17,7 @@ body {
   background-color: var(--color-neon-dark);
   color: white;
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 /* Custom Scrollbar */

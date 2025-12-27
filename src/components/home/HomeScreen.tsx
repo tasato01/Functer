@@ -181,7 +181,7 @@ export const HomeScreen: React.FC = () => {
 
             {/* Version Footer - Fixed Bottom Right */}
             <div className="fixed bottom-2 right-2 text-xs text-gray-400 font-mono select-none pointer-events-none z-50 opacity-80 shadow-black drop-shadow-md">
-                v0.2.0
+                v0.2.1
             </div>
             <div className="absolute top-6 right-6 z-20 flex gap-3">
                 {user ? (

@@ -89,9 +89,10 @@ export const EditPage: React.FC = () => {
                 for (const rule of rules) {
                     try {
                         if (MathEngine.evaluateCondition(rule.cond, scope)) {
-                            return rule.fn.compiled(scope);
+                            const res = rule.fn.compiled(scope);
+                            return res; // MathEngine will cast to number later if needed
                         }
-                    } catch { } // formatting error or similar
+                    } catch { }
                 }
                 return defaultFn.compiled(scope);
             }
@@ -116,55 +117,13 @@ export const EditPage: React.FC = () => {
         const state = location.state as { initialLevel?: LevelConfig } | undefined;
 
         if (state?.initialLevel) {
-            // Load Copied Level
             const loaded = JSON.parse(JSON.stringify(state.initialLevel));
-            // IMPORTANT: If we want to "Copy", we must strip ID and author
-            // If it's "My Level Edit" (from previous task), we might want to keep ID?
-            // The previous code in LevelBrowser for "My Levels" sent `initialLevel: level`.
-            // For now, let's assume we WANT to strip ID if it's a copy action.
-            // But if it's "Edit" action from MY LEVEL, we might want to keep it?
-
-            // Current Plan: LevelBrowser sends explicit intent? No, just the level object.
-            // User requirement: "Copy any existing level".
-            // If I open "My Level" with the same button, it acts as edit (maybe).
-            // But `publishLevel` always creates NEW doc currently.
-            // So practically EVERYTHING is a "Copy" right now until we implement `updateLevel`.
-
-            // So: Clean it up to be safe for "New Level" flow.
-            // But wait, if I want to "Edit My Level", I might be annoyed if it creates a duplicate.
-            // However, implementing Update is "Edit & Republish" task.
-            // The current task is "Copy".
-            // I'll make sure it's at least loaded.
-            // If I strip ID here, even "My Levels" will be copies.
-            // That's safer for MVP to avoid accidental overwrites of Official levels.
-
-            // Let's Clean metadata
-            // loaded.id = undefined; // Actually keep it? No, strip it so publishing makes new.
-            // Wait, if I strip it, `LevelSaveDialog` or `FirebaseLevelService` will treat as new.
-            // If I keep it, `publishLevel` might overwrite if I change logic there.
-            // Currently `publishLevel` uses `addDoc`. So even if I keep ID, it makes new doc.
-            // So it's effectively always "Copy".
-
-            // Just ensure we don't carry over weird state.
-            loaded.plays = 0;
-            loaded.likes = 0;
-            loaded.isOfficial = false; // Always become user level on copy
-
-            // If it's NOT my level, I should definitely strip ID and author.
-            // But logic to check "is my level" is not inside EditPage easily without Auth check.
-            // Let's just strip ID to be consistent with "Copy" behavior for now.
-            // The user explicitly asked for "Copy".
-            // For "My Levels Edit", they might expect "Update", but "Copy" is a safe fallback.
-
             delete loaded.id;
             delete loaded.authorId;
             delete loaded.authorName;
             delete loaded.createdAt;
-
             reset(loaded);
         } else {
-            // Default New
-            // Deep clone to ensure fresh start and no mutation of global default
             const cleanLevel = JSON.parse(JSON.stringify(EMPTY_LEVEL));
             reset(cleanLevel);
         }
@@ -193,8 +152,6 @@ export const EditPage: React.FC = () => {
     // Mobile Viewport Height Fix
     const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
-
-
     useEffect(() => {
         const updateHeight = () => {
             if (window.visualViewport) {
@@ -203,15 +160,11 @@ export const EditPage: React.FC = () => {
                 setViewportHeight(window.innerHeight);
             }
         };
-
-        // Initial update
         updateHeight();
-
         window.addEventListener('resize', updateHeight);
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', updateHeight);
         }
-
         return () => {
             window.removeEventListener('resize', updateHeight);
             if (window.visualViewport) {
@@ -220,6 +173,11 @@ export const EditPage: React.FC = () => {
         };
     }, []);
 
+    // Layout Fix: Added min-h-0 to flex container to ensure proper shrinking
+    // const styles = { height: `${viewportHeight}px` };  <-- removed
+
+
+    // ... (handleTogglePlay)
     const handleTogglePlay = () => {
         audioService.playSE('play');
         if (gameState.isPlaying) {
@@ -233,12 +191,16 @@ export const EditPage: React.FC = () => {
             const sy = level.startPoint.y;
             let gy = 0;
             try {
-                // Use evaluateChain to ensure consistent scope (including derivative_f), t=0.01 to match physics
+                // Use evaluateChain to ensure consistent scope
                 gy = MathEngine.evaluateChain(gFn, fFn, sx, 0.01);
             } catch { gy = NaN; }
 
-            if (isNaN(gy) || Math.abs(sy - gy) > 0.1) {
-                alert(`Cannot start! \nStart Point (${sy.toFixed(2)}) is not on the function graph (${Number.isNaN(gy) ? 'NaN' : gy.toFixed(2)}).\nDifference must be within ±0.1.`);
+            // Ensure gy is a number for formatting
+            const gyNum = Number(gy);
+
+            if (isNaN(gyNum) || Math.abs(sy - gyNum) > 0.1) {
+                const gyStr = Number.isNaN(gyNum) ? 'NaN' : gyNum.toFixed(2);
+                alert(`Cannot start! \nStart Point (${sy.toFixed(2)}) is not on the function graph (${gyStr}).\nDifference must be within ±0.1.`);
                 return;
             }
             startGame();
@@ -316,7 +278,7 @@ export const EditPage: React.FC = () => {
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 flex relative overflow-hidden">
+            <div className="flex-1 flex relative overflow-hidden min-h-0">
                 {/* Sidebar */}
                 <EditorSidebar
                     level={level}

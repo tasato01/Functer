@@ -508,7 +508,10 @@ export class MathEngine {
             };
 
             const gScope = { f: fx, x, X: x, Y: y, t, T: t, F, derivative_f, a };
-            return g.compiled(gScope);
+            const result = g.compiled(gScope);
+            // Ensure result is a number (handle potential object returns from mathjs)
+            const num = Number(result);
+            return isFinite(num) ? num : NaN;
         } catch (e) {
             return NaN;
         }
