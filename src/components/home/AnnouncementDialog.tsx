@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Bell, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Bell } from 'lucide-react';
 import { AnnouncementService, type Announcement } from '../../services/AnnouncementService';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -98,8 +98,8 @@ export const AnnouncementDialog: React.FC<AnnouncementDialogProps> = ({ isOpen, 
                                                     </span>
                                                 )}
                                                 <span className={`text-[10px] font-mono opacity-70 ${item.type === 'important' ? 'text-red-400' :
-                                                        item.type === 'maintenance' ? 'text-orange-400' :
-                                                            item.type === 'update' ? 'text-neon-green' : 'text-neon-blue'
+                                                    item.type === 'maintenance' ? 'text-orange-400' :
+                                                        item.type === 'update' ? 'text-neon-green' : 'text-neon-blue'
                                                     }`}>
                                                     {new Date(item.createdAt).toLocaleDateString()}
                                                 </span>
@@ -129,8 +129,8 @@ export const AnnouncementDialog: React.FC<AnnouncementDialogProps> = ({ isOpen, 
                                     <div className="mb-6 border-b border-white/10 pb-4">
                                         <div className="flex items-center gap-3 mb-2">
                                             <span className={`text-xs font-bold px-2 py-0.5 rounded border ${selectedAnnouncement.type === 'important' ? 'border-red-500 text-red-500' :
-                                                    selectedAnnouncement.type === 'maintenance' ? 'border-orange-500 text-orange-500' :
-                                                        selectedAnnouncement.type === 'update' ? 'border-neon-green text-neon-green' : 'border-neon-blue text-neon-blue'
+                                                selectedAnnouncement.type === 'maintenance' ? 'border-orange-500 text-orange-500' :
+                                                    selectedAnnouncement.type === 'update' ? 'border-neon-green text-neon-green' : 'border-neon-blue text-neon-blue'
                                                 }`}>
                                                 {selectedAnnouncement.type.toUpperCase()}
                                             </span>
@@ -154,7 +154,7 @@ export const AnnouncementDialog: React.FC<AnnouncementDialogProps> = ({ isOpen, 
                                                 p: ({ node, ...props }) => <p className="mb-4 leading-relaxed text-gray-200" {...props} />,
                                                 li: ({ node, ...props }) => <li className="mb-1 text-gray-200" {...props} />,
                                                 code: ({ node, ...props }) => <code className="bg-black/50 rounded px-1 text-neon-pink font-mono text-sm" {...props} />,
-                                                pre: ({ node, ...props }) => <div className="bg-black/50 rounded p-4 mb-4 overflow-x-auto border border-white/10" {...props} />,
+                                                pre: ({ node, ...props }) => <pre className="bg-black/50 rounded p-4 mb-4 overflow-x-auto border border-white/10" {...props} />,
                                                 blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-gray-500 pl-4 py-1 italic text-gray-400 bg-white/5 my-4 rounded-r" {...props} />,
                                             }}
                                         >
