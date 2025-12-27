@@ -12,9 +12,7 @@ interface SettingsPanelProps {
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     snapStep,
-    setSnapStep,
-    level,
-    setLevel
+    setSnapStep
 }) => {
     return (
         <div className="bg-black/80 border border-neon-blue rounded p-4 mb-4 animate-in fade-in slide-in-from-top-2">

@@ -70,6 +70,7 @@ export const AnnouncementDialog: React.FC<AnnouncementDialogProps> = ({ isOpen, 
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <style>{markdownStyles}</style>
             <div className="bg-gray-900 border border-neon-blue/50 rounded-2xl w-full max-w-7xl h-[85vh] shadow-2xl flex flex-col overflow-hidden">
 
                 {/* Header */}
