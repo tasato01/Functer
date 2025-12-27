@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Check, X, User, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Check, X, User, AlertTriangle, Send } from 'lucide-react';
 import { UserService, type AdminRequest, type UserProfile } from '../../services/UserService';
+import { AnnouncementService } from '../../services/AnnouncementService';
 import { audioService } from '../../services/AudioService';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../../services/firebase';
@@ -12,17 +13,22 @@ interface AdminManagementDialogProps {
 
 export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<'requests' | 'users'>('requests');
+    const [activeTab, setActiveTab] = useState<'requests' | 'users' | 'announce'>('requests');
     const [requests, setRequests] = useState<AdminRequest[]>([]);
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Announcement State
+    const [announceMsg, setAnnounceMsg] = useState('');
+    const [announceTitle, setAnnounceTitle] = useState('');
+    const [announceType, setAnnounceType] = useState<'info' | 'maintenance' | 'update' | 'important'>('info');
 
     const fetchData = async () => {
         setLoading(true);
         if (activeTab === 'requests') {
             const data = await UserService.getAdminRequests();
             setRequests(data);
-        } else {
+        } else if (activeTab === 'users') {
             const data = await UserService.getAllUsers();
             // Sort admins first
             data.sort((a, b) => (b.isAdmin ? 1 : 0) - (a.isAdmin ? 1 : 0));
@@ -33,7 +39,11 @@ export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ is
 
     useEffect(() => {
         if (isOpen) {
-            fetchData();
+            if (activeTab === 'announce') {
+                setLoading(false);
+            } else {
+                fetchData();
+            }
         }
     }, [isOpen, activeTab]);
 
@@ -57,6 +67,26 @@ export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ is
         } else {
             alert("Failed to revoke.");
         }
+    };
+
+    const handlePostAnnouncement = async () => {
+        if (!announceMsg.trim()) {
+            alert("Message cannot be empty.");
+            return;
+        }
+        if (!confirm("Post this announcement to all users?")) return;
+
+        setLoading(true);
+        const success = await AnnouncementService.addAnnouncement(announceMsg, announceType, announceTitle);
+        if (success) {
+            audioService.playSE('save');
+            alert("Announcement Posted Successfully!");
+            setAnnounceMsg('');
+            setAnnounceTitle('');
+        } else {
+            alert("Failed to post announcement.");
+        }
+        setLoading(false);
     };
 
     if (!isOpen) return null;
@@ -87,7 +117,13 @@ export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ is
                         onClick={() => { setActiveTab('users'); audioService.playSE('click'); }}
                         className={`flex-1 py-3 text-sm font-bold transition-colors ${activeTab === 'users' ? 'bg-neon-blue/10 text-neon-blue border-b-2 border-neon-blue' : 'text-gray-500 hover:text-white'}`}
                     >
-                        ALL USERS
+                        USERS
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('announce'); audioService.playSE('click'); }}
+                        className={`flex-1 py-3 text-sm font-bold transition-colors ${activeTab === 'announce' ? 'bg-neon-blue/10 text-neon-blue border-b-2 border-neon-blue' : 'text-gray-500 hover:text-white'}`}
+                    >
+                        ANNOUNCE
                     </button>
                 </div>
 
@@ -153,6 +189,57 @@ export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ is
                                             )}
                                         </div>
                                     ))}
+                                </div>
+                            )}
+
+                            {activeTab === 'announce' && (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 mb-1">TYPE</label>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {(['info', 'maintenance', 'update', 'important'] as const).map(type => (
+                                                <button
+                                                    key={type}
+                                                    onClick={() => setAnnounceType(type)}
+                                                    className={`py-2 text-xs font-bold rounded uppercase transition-colors border ${announceType === type
+                                                        ? type === 'important' ? 'bg-red-500/20 border-red-500 text-red-400'
+                                                            : type === 'maintenance' ? 'bg-orange-500/20 border-orange-500 text-orange-400'
+                                                                : type === 'update' ? 'bg-neon-green/20 border-neon-green text-neon-green'
+                                                                    : 'bg-blue-500/20 border-blue-500 text-blue-400'
+                                                        : 'bg-black/50 border-gray-700 text-gray-500 hover:bg-white/5'
+                                                        }`}
+                                                >
+                                                    {type}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 mb-1">TITLE (Optional)</label>
+                                        <input
+                                            type="text"
+                                            value={announceTitle}
+                                            onChange={(e) => setAnnounceTitle(e.target.value)}
+                                            className="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-white text-sm focus:border-neon-blue focus:outline-none mb-4"
+                                            placeholder="Announcement Title"
+                                        />
+
+                                        <label className="block text-xs font-bold text-gray-400 mb-1">MESSAGE (Markdown supported)</label>
+                                        <textarea
+                                            value={announceMsg}
+                                            onChange={(e) => setAnnounceMsg(e.target.value)}
+                                            className="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-white text-sm focus:border-neon-blue focus:outline-none min-h-[150px]"
+                                            placeholder="Enter announcement message..."
+                                        />
+                                    </div>
+
+                                    <button
+                                        onClick={handlePostAnnouncement}
+                                        className="w-full py-3 bg-neon-blue/20 border border-neon-blue text-neon-blue font-bold rounded-lg hover:bg-neon-blue/30 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Send size={18} /> POST ANNOUNCEMENT
+                                    </button>
                                 </div>
                             )}
                         </>

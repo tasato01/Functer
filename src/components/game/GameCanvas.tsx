@@ -15,6 +15,7 @@ interface GameCanvasProps {
     f?: MathFunction;
     g?: MathFunction;
     t?: number;
+    a?: number; // Player variable
     level: LevelConfig;
     player?: { x: number, y: number };
 
@@ -37,10 +38,11 @@ interface GameCanvasProps {
     snapStep: number;
     className?: string;
     isStatic?: boolean;
+    showForbiddenOverlay?: boolean;
 }
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
-    f, g, t = 0,
+    f, g, t = 0, a = 0,
     level, player, currentWaypointIndex,
     viewOffset, scale, onViewChange,
     mode, selectedId, onSelect, onLevelChange,
@@ -49,7 +51,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     onRightClick,
     snapStep,
     className,
-    isStatic = false
+    isStatic = false,
+    showForbiddenOverlay = true
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -96,19 +99,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // --- Render Loop (Continuous) ---
     const latestProps = useRef({
-        f, g, t, level, player, currentWaypointIndex,
+        f, g, t, a, level, player, currentWaypointIndex,
         viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-        compiledConstraints, isStatic
+        compiledConstraints, isStatic, showForbiddenOverlay
     });
 
     // Update ref when props change
     useEffect(() => {
         latestProps.current = {
-            f, g, t, level, player, currentWaypointIndex,
+            f, g, t, a, level, player, currentWaypointIndex,
             viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-            compiledConstraints, isStatic
+            compiledConstraints, isStatic, showForbiddenOverlay
         };
-    }, [f, g, t, level, player, currentWaypointIndex, viewOffset, scale, selectedId, hoverPos, tempShape, rotation, compiledConstraints, isStatic]);
+    }, [f, g, t, a, level, player, currentWaypointIndex, viewOffset, scale, selectedId, hoverPos, tempShape, rotation, compiledConstraints, isStatic, showForbiddenOverlay]);
 
     // Loop
     useEffect(() => {
@@ -132,9 +135,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
             try {
                 const {
-                    f, g, t, level, player, currentWaypointIndex,
+                    f, g, t, a, level, player, currentWaypointIndex,
                     viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-                    compiledConstraints, isStatic
+                    compiledConstraints, isStatic, showForbiddenOverlay
                 } = latestProps.current;
 
                 const width = rotation.w;
@@ -159,16 +162,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 ctx.fillStyle = '#000000';
                 ctx.fillRect(0, 0, width, height);
 
-                // Draw Constraints Overlay (Optimized, Per-Frame)
-                if (level.constraints && level.constraints.length > 0) {
+                // Draw Inequality Constraints (OR of ANDs)
+                const showInequalities = (level.showInequalities !== false) && (showForbiddenOverlay !== false);
+                if (showInequalities && level.constraints && level.constraints.length > 0) {
                     const pX = player?.x ?? level.startPoint.x ?? 0;
                     const pY = player?.y ?? level.startPoint.y ?? 0;
 
                     // Overlay
                     drawConstraintsOverlay(ctx, width, height, toWorldX, toWorldY, compiledConstraints, t, pX, pY);
-
-                    // Boundaries (Smart Lines)
-
                 }
 
                 drawGrid(ctx, width, height, scale, ORIGIN_X, ORIGIN_Y, toWorldX, toWorldY);
@@ -200,29 +201,63 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                     drawHoverTooltip(ctx, hoverPos, toScreenX, toScreenY);
                 }
 
-                // Draw Coordinate Label if selected
-                if (selectedId) {
-                    let p: DynamicPoint | undefined;
-                    if (selectedId === 'start') p = level.startPoint;
-                    else if (selectedId === 'goal') p = level.goalPoint;
+                // Render Variable 'a' value
+                if (level.playerVar?.enabled && !isStatic) {
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
+                    ctx.font = 'bold 20px monospace';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'top';
+                    ctx.shadowColor = '#00ffff';
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(`a = ${a.toFixed(2)}`, 10, 10);
+                    ctx.restore();
+                }
+
+                // Render Player Coordinates
+                if (player && !isStatic) {
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.font = '12px monospace';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'top';
+                    const yPos = (level.playerVar?.enabled) ? 40 : 10;
+                    ctx.fillText(`P:(${player.x.toFixed(2)}, ${player.y.toFixed(2)})`, 10, yPos);
+                    ctx.restore();
+                }
+
+                // Draw Coordinate Labels
+                const showCoords = level.showCoordinates !== false;
+                const pointsToLabel: { p: DynamicPoint, label?: string }[] = [];
+
+                if (showCoords) {
+                    // Show labels for Start, Goal, Waypoints
+                    pointsToLabel.push({ p: level.startPoint });
+                    pointsToLabel.push({ p: level.goalPoint });
+                    level.waypoints?.forEach(wp => pointsToLabel.push({ p: wp }));
+                } else if (selectedId) {
+                    // Show only selected
+                    if (selectedId === 'start') pointsToLabel.push({ p: level.startPoint });
+                    else if (selectedId === 'goal') pointsToLabel.push({ p: level.goalPoint });
                     else if (selectedId.startsWith('wp_')) {
                         const idx = parseInt(selectedId.split('_')[1]);
-                        if (level.waypoints && level.waypoints[idx]) p = level.waypoints[idx];
-                    }
-
-                    if (p) {
-                        // Evaluate dynamic position
-                        let px = p.x;
-                        let py = p.y;
-                        try {
-                            const scope = { t, T: t, X: pX, Y: pY };
-                            if (p.xFormula) px = MathEngine.evaluateScalar(p.xFormula, scope) || px;
-                            if (p.yFormula) py = MathEngine.evaluateScalar(p.yFormula, scope) || py;
-                        } catch { }
-
-                        drawCoordinateLabel(ctx, { ...p, x: px, y: py }, toScreenX, toScreenY);
+                        if (level.waypoints && level.waypoints[idx]) pointsToLabel.push({ p: level.waypoints[idx] });
                     }
                 }
+
+                // Draw accumulated labels
+                // Use Set to avoid duplicates if selected is already included
+                const uniquePoints = new Set(pointsToLabel);
+                uniquePoints.forEach(({ p }) => {
+                    let px = p.x;
+                    let py = p.y;
+                    try {
+                        const scope = { t, T: t, X: pX, Y: pY, a };
+                        if (p.xFormula) px = MathEngine.evaluateScalar(p.xFormula, scope) || px;
+                        if (p.yFormula) py = MathEngine.evaluateScalar(p.yFormula, scope) || py;
+                    } catch { }
+                    drawCoordinateLabel(ctx, { ...p, x: px, y: py }, toScreenX, toScreenY);
+                });
 
                 // If Static, STOP loop here (after one successful render)
                 if (isStatic) {

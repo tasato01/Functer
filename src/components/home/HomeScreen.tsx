@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PenTool, Database, Trophy, User as UserIcon, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize } from 'lucide-react';
+import { PenTool, Database, Trophy, User as UserIcon, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize, Bell, AlertTriangle, Info, Wrench } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
+
 import { levelService } from '../../services/FirebaseLevelService';
 import { audioService } from '../../services/AudioService';
+import { AnnouncementService, type Announcement } from '../../services/AnnouncementService';
 import { AuthDialog } from '../editor/AuthDialog';
 import { AdminManagementDialog } from '../admin/AdminManagementDialog';
 import { UserMenuDialog } from './UserMenuDialog';
@@ -21,11 +27,13 @@ export const HomeScreen: React.FC = () => {
     const [bgmVolume, setBgmVolume] = useState(audioService.getBGMVolume() * 100);
     const [seVolume, setSeVolume] = useState(audioService.getSEVolume() * 100);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [announcement, setAnnouncement] = useState<Announcement | null>(null);
 
     // Auth & Prefetch
     useEffect(() => {
         levelService.getOfficialLevels().catch(console.error);
         levelService.getUserLevels().catch(console.error);
+        AnnouncementService.getLatestAnnouncement().then(setAnnouncement); // Fetch Announcement
 
         const unsubscribe = onAuthStateChanged(auth, async (u) => {
             setUser(u);
@@ -58,6 +66,54 @@ export const HomeScreen: React.FC = () => {
                     Functional Graph Action Puzzle
                 </p>
             </div>
+
+            {/* Announcement Banner */}
+            {announcement && (
+                <div className="z-20 w-full max-w-lg px-6 mb-2 animate-in slide-in-from-top-4 fade-in duration-500">
+                    <div className={`
+                        p-3 rounded-xl border flex items-start gap-3 backdrop-blur-md shadow-lg
+                        ${announcement.type === 'important' ? 'bg-red-900/40 border-red-500/50' :
+                            announcement.type === 'maintenance' ? 'bg-orange-900/40 border-orange-500/50' :
+                                announcement.type === 'update' ? 'bg-neon-green/20 border-neon-green/50' :
+                                    'bg-blue-900/40 border-blue-500/50'}
+                    `}>
+                        <div className="mt-1 shrink-0">
+                            {announcement.type === 'important' ? <AlertTriangle className="text-red-400" size={20} /> :
+                                announcement.type === 'maintenance' ? <Wrench className="text-orange-400" size={20} /> :
+                                    announcement.type === 'update' ? <Bell className="text-neon-green" size={20} /> :
+                                        <Info className="text-blue-400" size={20} />}
+                        </div>
+
+                        <div className="flex-1 text-xs md:text-sm overflow-hidden">
+                            <div className="font-bold flex justify-between items-center mb-1">
+                                <span className={`uppercase tracking-wider opacity-90 text-[10px] ${announcement.type === 'important' ? 'text-red-300' :
+                                        announcement.type === 'maintenance' ? 'text-orange-300' :
+                                            announcement.type === 'update' ? 'text-green-300' : 'text-blue-300'
+                                    }`}>
+                                    {announcement.title || announcement.type}
+                                </span>
+                                <span className="text-[10px] opacity-50 shrink-0 ml-2">
+                                    {new Date(announcement.createdAt).toLocaleDateString()}
+                                </span>
+                            </div>
+                            <div className="text-white/90 font-medium leading-tight whitespace-pre-wrap markdown-content">
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkMath]}
+                                    rehypePlugins={[rehypeKatex]}
+                                    components={{
+                                        p: ({ node, ...props }) => <p className="mb-1 last:mb-0" {...props} />,
+                                        a: ({ node, ...props }) => <a className="text-neon-blue hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                                        ul: ({ node, ...props }) => <ul className="list-disc list-inside ml-1" {...props} />,
+                                        ol: ({ node, ...props }) => <ol className="list-decimal list-inside ml-1" {...props} />
+                                    }}
+                                >
+                                    {announcement.message}
+                                </ReactMarkdown>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Main Center Stack */}
             <div className="z-10 flex flex-col gap-3 md:gap-6 w-full max-w-lg px-6 flex-1 justify-center min-h-0 shrink-0">

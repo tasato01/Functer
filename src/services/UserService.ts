@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { ADMIN_UIDS } from '../constants/admin';
 
 export interface UserProfile {
@@ -187,6 +187,33 @@ export const UserService = {
         } catch (e) {
             console.error("Failed to approve admin request", e);
             return false;
+        }
+    },
+
+    // Cleared Levels
+    async addClearedLevel(uid: string, levelId: string): Promise<void> {
+        try {
+            const userRef = doc(db, 'users', uid);
+            // Use arrayUnion to add specifically to 'clearedLevels' array
+            await updateDoc(userRef, {
+                clearedLevels: arrayUnion(levelId)
+            });
+        } catch (e) {
+            console.error("Failed to add cleared level", e);
+        }
+    },
+
+    async getClearedLevels(uid: string): Promise<string[]> {
+        try {
+            const userDoc = await getDoc(doc(db, 'users', uid));
+            if (userDoc.exists()) {
+                const data = userDoc.data();
+                return data.clearedLevels || [];
+            }
+            return [];
+        } catch (e) {
+            console.error("Failed to get cleared levels", e);
+            return [];
         }
     }
 };

@@ -393,6 +393,11 @@ export class FirebaseLevelService implements ILevelService {
                 userName: user?.displayName || 'Anonymous',
                 createdAt: Timestamp.now()
             });
+
+            if (user) {
+                await UserService.addClearedLevel(user.uid, levelId);
+            }
+
             console.log("Solution submitted for", levelId);
         } catch (e) {
             console.error("Failed to submit solution", e);

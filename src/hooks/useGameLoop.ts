@@ -10,12 +10,10 @@ interface GameState {
     y: number;
     vx: number;
     t: number;
+    a: number; // Player variable
     status: 'playing' | 'won' | 'lost' | 'idle';
     currentWaypointIndex: number;
 }
-
-// Helper: Point in Polygon (Ray Casting)
-
 
 export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig) => {
     const [gameState, setGameState] = useState<GameState>({
@@ -23,30 +21,49 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         x: level.startPoint.x,
         y: level.startPoint.y,
         vx: 0,
-        t: 0,
+        t: 0.001, // Fix division by zero
+        a: 0,
         status: 'idle',
         currentWaypointIndex: 0
     });
+
+    const [gRulesFunctions, setGRulesFunctions] = useState<{ fn: MathFunction, cond: string }[]>([]);
+
+    useEffect(() => {
+        if (level.gRules && level.gRules.length > 0) {
+            const compiled = level.gRules.map(r => ({
+                fn: MathEngine.compile(r.expression),
+                cond: r.condition
+            }));
+            setGRulesFunctions(compiled);
+        } else {
+            setGRulesFunctions([]);
+        }
+    }, [level.gRules]);
 
     const stateRef = useRef(gameState);
     stateRef.current = gameState;
 
     const requestRef = useRef<number | null>(null);
     const lastTimeRef = useRef<number | null>(null);
-    const inputRef = useRef({ left: false, right: false });
+    const inputRef = useRef({ left: false, right: false, up: false, down: false });
 
     // Store latest params in ref to avoid closure staleness in loop
-    const paramsRef = useRef({ level, f, g });
-    paramsRef.current = { level, f, g };
+    const paramsRef = useRef({ level, f, g, gRulesFunctions });
+    paramsRef.current = { level, f, g, gRulesFunctions };
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'ArrowLeft') inputRef.current.left = true;
             if (e.key === 'ArrowRight') inputRef.current.right = true;
+            if (e.key === 'ArrowUp') inputRef.current.up = true;
+            if (e.key === 'ArrowDown') inputRef.current.down = true;
         };
         const handleKeyUp = (e: KeyboardEvent) => {
             if (e.key === 'ArrowLeft') inputRef.current.left = false;
             if (e.key === 'ArrowRight') inputRef.current.right = false;
+            if (e.key === 'ArrowUp') inputRef.current.up = false;
+            if (e.key === 'ArrowDown') inputRef.current.down = false;
         };
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
@@ -56,11 +73,24 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         };
     }, []);
 
+    const decideG = (x: number, y: number, t: number, a: number, defaultG: MathFunction, rules: { fn: MathFunction, cond: string }[]) => {
+        if (!rules || rules.length === 0) return defaultG;
+        const scope = { x, y, X: x, Y: y, t, T: t, a };
+        for (const rule of rules) {
+            if (MathEngine.evaluateCondition(rule.cond, scope)) {
+                return rule.fn;
+            }
+        }
+        return defaultG;
+    };
+
     const startGame = useCallback(() => {
         let startY = 0;
+        const initialT = 0.01; // Start at 0.01s to avoid 1/t errors
+        const initialA = 0;
         try {
-            // Use evaluateChain
-            startY = MathEngine.evaluateChain(g, f, level.startPoint.x, 0);
+            const effectiveG = decideG(level.startPoint.x, 0, initialT, initialA, g, gRulesFunctions);
+            startY = MathEngine.evaluateChain(effectiveG, f, level.startPoint.x, initialT, 0, initialA);
         } catch { startY = 0; }
 
         setGameState({
@@ -68,13 +98,14 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
             x: level.startPoint.x,
             y: startY,
             vx: 0,
-            t: 0,
+            t: initialT,
+            a: initialA,
             status: 'playing',
             currentWaypointIndex: 0
         });
         lastTimeRef.current = performance.now();
         requestRef.current = requestAnimationFrame(updateKey);
-    }, [level, f, g]);
+    }, [level, f, g, gRulesFunctions]);
 
     const stopGame = useCallback(() => {
         // Reset to initial state
@@ -83,7 +114,8 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
             x: level.startPoint.x,
             y: level.startPoint.y,
             vx: 0,
-            t: 0,
+            t: 0.01,
+            a: 0,
             status: 'idle',
             currentWaypointIndex: 0
         });
@@ -97,51 +129,51 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         const deltaTime = time - (lastTimeRef.current || time);
         lastTimeRef.current = time;
 
-        const { level, f, g } = paramsRef.current;
+        const { level, f, g, gRulesFunctions } = paramsRef.current;
 
-        // Physics: Units per Second
-        const MAX_SPEED = level.playerSpeed ?? 5.0; // Default 5 units/sec
-        // Acceleration to reach max speed in 0.2 seconds
-        const TIME_TO_MAX = 0.2;
-        const ACCEL = (MAX_SPEED / TIME_TO_MAX) * (deltaTime / 1000);
-
-        let { x, y, vx, t, currentWaypointIndex } = stateRef.current;
+        let { x, y, vx, t, a, currentWaypointIndex } = stateRef.current;
 
         t += deltaTime / 1000;
+
+        // Player Variable 'a' Physics
+        if (level.playerVar?.enabled) {
+            const speed = level.playerVar.speed ?? 1.0; // Default 1.0 as requested
+            const change = speed * (deltaTime / 1000);
+            if (inputRef.current.up) a += change;
+            if (inputRef.current.down) a -= change;
+        }
+
+        // Logic Physics: Units per Second
+        const MAX_SPEED = level.playerSpeed ?? 5.0;
+        const TIME_TO_MAX = 0.2;
+        const ACCEL = (MAX_SPEED / TIME_TO_MAX) * (deltaTime / 1000);
 
         let moving = false;
         if (inputRef.current.left) { vx -= ACCEL; moving = true; }
         if (inputRef.current.right) { vx += ACCEL; moving = true; }
 
         if (!moving) {
-            // Strong friction to stop
             const damping = Math.pow(0.01, deltaTime / 1000);
             vx *= damping;
             if (Math.abs(vx) < 0.1) vx = 0;
         }
 
-        // Clamp Speed
         if (Math.abs(vx) > MAX_SPEED) vx = Math.sign(vx) * MAX_SPEED;
-
-        // Apply Velocity (Units/sec * sec)
         x += vx * (deltaTime / 1000);
-
 
         let nextY = 0;
         try {
-            // Use evaluateChain
-            nextY = MathEngine.evaluateChain(g, f, x, t, y);
+            const effectiveG = decideG(x, y, t, a, g, gRulesFunctions);
+            nextY = MathEngine.evaluateChain(effectiveG, f, x, t, y, a);
         } catch { nextY = NaN; }
         y = nextY;
 
-        const scope = { x, y, X: x, Y: y, T: t, t };
+        const scope = { x, y, X: x, Y: y, T: t, t, a };
 
         let hitConstraint = false;
-        // Check Inequality Constraints (OR of ANDs)
         if (level.constraints) {
             for (const group of level.constraints) {
                 let groupActive = true;
-                // All conditions in a group must be true for the group to be active (Forbidden)
                 for (const condition of group) {
                     if (!MathEngine.evaluateCondition(condition, scope)) {
                         groupActive = false;
@@ -176,15 +208,12 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
 
         if (hitConstraint) {
             audioService.playSE('gameover');
-            setGameState(prev => ({ ...prev, isPlaying: false, status: 'lost', x, y, vx, t }));
+            setGameState(prev => ({ ...prev, isPlaying: false, status: 'lost', x, y, vx, t, a }));
             return;
         }
 
-        // Check Waypoints
         if (level.waypoints && currentWaypointIndex < level.waypoints.length) {
             const wp = level.waypoints[currentWaypointIndex];
-
-            // Dynamic Position
             let wx = wp.x;
             let wy = wp.y;
             try {
@@ -200,7 +229,6 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
             }
         }
 
-        // Check Goal
         if (!level.waypoints || currentWaypointIndex >= level.waypoints.length) {
             let gx = level.goalPoint.x;
             let gy = level.goalPoint.y;
@@ -215,17 +243,17 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
 
             if (distSq < hitR * hitR) {
                 audioService.playSE('clear');
-                setGameState(prev => ({ ...prev, isPlaying: false, status: 'won', x, y, vx, t }));
+                setGameState(prev => ({ ...prev, isPlaying: false, status: 'won', x, y, vx, t, a }));
                 return;
             }
         }
 
         if (isNaN(y) || !isFinite(y)) {
-            setGameState(prev => ({ ...prev, isPlaying: false, status: 'lost', x, y, vx, t }));
+            setGameState(prev => ({ ...prev, isPlaying: false, status: 'lost', x, y, vx, t, a }));
             return;
         }
 
-        const newState = { isPlaying: true, x, y, vx, t, status: 'playing' as const, currentWaypointIndex };
+        const newState = { isPlaying: true, x, y, vx, t, a, status: 'playing' as const, currentWaypointIndex };
         setGameState(newState);
         stateRef.current = newState;
         requestRef.current = requestAnimationFrame(updateKey);

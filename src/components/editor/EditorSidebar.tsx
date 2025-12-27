@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Square, Settings, HelpCircle, Target, Circle, Trash2, Plus, Ban, RotateCcw, RotateCw, RefreshCw, AlertTriangle, Save, FolderOpen, Download, FolderInput, CloudUpload, User as UserIcon, ShieldCheck } from 'lucide-react';
+import { Play, Square, Settings, HelpCircle, Target, Circle, Trash2, Plus, Ban, RotateCcw, RotateCw, RefreshCw, AlertTriangle, Save, FolderOpen, Download, FolderInput, CloudUpload, User as UserIcon, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { ADMIN_UIDS } from '../../constants/admin';
 import type { InteractionMode } from '../game/GameCanvas';
 import type { LevelConfig } from '../../types/Level';
@@ -49,6 +49,9 @@ interface EditorSidebarProps {
 
     isVerifying: boolean;
     setIsVerifying: (v: boolean) => void;
+
+    showForbidden: boolean;
+    setShowForbidden: (v: boolean) => void;
 }
 
 export const EditorSidebar: React.FC<EditorSidebarProps> = ({
@@ -58,7 +61,8 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
     snapStep, setSnapStep,
     gameState, handleTogglePlay, stopGame,
     onHelpClick,
-    isVerifying, setIsVerifying
+    isVerifying, setIsVerifying,
+    showForbidden, setShowForbidden
 }) => {
     const [showSettings, setShowSettings] = useState(false);
     const [user, setUser] = useState<User | null>(null);
@@ -254,6 +258,28 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
         });
     };
 
+    const addGRule = () => {
+        setLevel(prev => ({
+            ...prev,
+            gRules: [...(prev.gRules || []), { expression: '', condition: '' }]
+        }));
+    };
+
+    const updateGRule = (index: number, field: 'expression' | 'condition', value: string) => {
+        setLevel(prev => {
+            const newRules = [...(prev.gRules || [])];
+            newRules[index] = { ...newRules[index], [field]: value };
+            return { ...prev, gRules: newRules };
+        });
+    };
+
+    const removeGRule = (index: number) => {
+        setLevel(prev => ({
+            ...prev,
+            gRules: (prev.gRules || []).filter((_, i) => i !== index)
+        }));
+    };
+
 
     // File Handling
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -281,10 +307,12 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
         e.target.value = '';
     };
 
-    const handleSaveConfirm = (name: string, memo: string, difficulty: string, saveAsNew: boolean) => {
+    const handleSaveConfirm = (name: string, memo: string, difficulty: string, saveAsNew: boolean, slotId?: string) => {
         let newId = level.id;
-        // Generate new ID if strictly 'draft' OR if user explicitly asks to save as new
-        if (newId === 'draft' || saveAsNew) {
+
+        if (slotId) {
+            newId = slotId;
+        } else if (saveAsNew || newId === 'draft') {
             newId = 'lvl_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
         }
 
@@ -436,21 +464,46 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
                     {/* Function Section */}
                     <div className="bg-neon-surface/50 p-2 rounded border border-white/10">
-                        <label className="text-xs text-neon-blue font-bold mb-1 block">Game Function g(f)(x)</label>
-                        <div className="text-[10px] text-gray-400 mb-1">Use 'f' for previous function, 'x', 't', 'X'</div>
-                        <MathInput
-                            value={level.g_raw || ''}
-                            onChange={onGChange}
-                        />
-                        {!gFunc.isValid && (
-                            <div className="text-red-500 text-[10px] mt-1 flex items-center gap-1">
-                                <AlertTriangle size={10} />
-                                {gFunc.error || "Invalid Expression"}
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="text-xs text-neon-blue font-bold">Game Function g(f)(x)</label>
+                            <button onClick={() => { audioService.playSE('click'); addGRule(); }} className="text-[10px] flex items-center gap-1 bg-neon-blue/10 border border-neon-blue/30 px-1 rounded text-neon-blue hover:bg-neon-blue/20">
+                                <Plus size={8} /> Add Condition
+                            </button>
+                        </div>
+                        <div className="text-[10px] text-gray-400 mb-2">Use 'f', 'x', 't', 'a'. Evaluates top-down.</div>
+
+                        <div className="space-y-2">
+                            {/* Rules */}
+                            {level.gRules?.map((rule, i) => (
+                                <div key={i} className="bg-black/30 p-2 rounded border border-white/10 relative">
+                                    <button onClick={() => { audioService.playSE('click'); removeGRule(i); }} className="absolute top-1 right-1 text-gray-600 hover:text-red-500"><Trash2 size={10} /></button>
+
+                                    <div className="mb-1">
+                                        <div className="text-[10px] text-gray-500 mb-0.5">Condition (if true)</div>
+                                        <MathInput value={rule.condition} onChange={v => updateGRule(i, 'condition', v)} placeholder="e.g. t < 5" />
+                                    </div>
+                                    <div>
+                                        <div className="text-[10px] text-gray-500 mb-0.5">Expression</div>
+                                        <MathInput value={rule.expression} onChange={v => updateGRule(i, 'expression', v)} placeholder="e.g. sin(f)" />
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Default */}
+                            <div className="p-1">
+                                <div className="text-[10px] text-gray-500 mb-0.5 font-bold">Default / Else</div>
+                                <MathInput
+                                    value={level.g_raw || ''}
+                                    onChange={onGChange}
+                                />
+                                {!gFunc.isValid && (
+                                    <div className="text-red-500 text-[10px] mt-1 flex items-center gap-1">
+                                        <AlertTriangle size={10} />
+                                        {gFunc.error || "Invalid Expression"}
+                                    </div>
+                                )}
                             </div>
-                        )}
-
-
-
+                        </div>
                     </div>
 
                     <div className="mt-4">
@@ -458,9 +511,62 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                         <MathInput value={testF} onChange={setTestF} />
                     </div>
 
+                    {/* Parameters Section */}
+                    <div className="mt-4">
+                        <label className="text-gray-400 text-sm mb-1 block font-bold">Parameters</label>
+                        <div className="bg-white/5 rounded p-2 border border-white/10">
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-xs text-gray-300 flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={level.playerVar?.enabled ?? false}
+                                        onChange={(e) => setLevel(prev => ({
+                                            ...prev,
+                                            playerVar: {
+                                                speed: 5.0,
+                                                ...(prev.playerVar || {}),
+                                                enabled: e.target.checked
+                                            }
+                                        }))}
+                                        className="accent-neon-blue"
+                                    />
+                                    Enable Parameter 'a'
+                                </label>
+                            </div>
+                            {(level.playerVar?.enabled) && (
+                                <div className="flex items-center gap-2 pl-5">
+                                    <span className="text-[10px] text-gray-500">Speed</span>
+                                    <input
+                                        type="number"
+                                        className="bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white w-16 focus:border-neon-blue focus:outline-none"
+                                        value={level.playerVar.speed ?? 5.0}
+                                        onChange={(e) => {
+                                            const v = parseFloat(e.target.value);
+                                            setLevel(prev => ({ ...prev, playerVar: { ...prev.playerVar!, speed: isNaN(v) ? 0 : v } }));
+                                        }}
+                                        step={0.5}
+                                    />
+                                    <span className="text-[10px] text-gray-600">/sec</span>
+                                </div>
+                            )}
+                            <div className="text-[10px] text-gray-500 mt-1 pl-5 italic">
+                                Use Up/Down keys to control 'a'.
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Forbidden Areas */}
                     <div className="border-t border-white/10 pt-4">
-                        <h3 className="text-red-500 font-bold mb-3 flex items-center gap-2"><Ban size={18} /> Forbidden Areas</h3>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-red-500 font-bold flex items-center gap-2"><Ban size={18} /> Forbidden Areas</h3>
+                            <button
+                                onClick={() => { audioService.playSE('click'); setShowForbidden(!showForbidden); }}
+                                className={`p-1 rounded transition-colors ${showForbidden ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-400'}`}
+                                title={showForbidden ? "Hide Inequalities" : "Show Inequalities"}
+                            >
+                                {showForbidden ? <Eye size={16} /> : <EyeOff size={16} />}
+                            </button>
+                        </div>
 
                         <div className="grid grid-cols-2 gap-2 mb-4">
                             <button onClick={() => { audioService.playSE('click'); setMode('create_rect'); }} className={`p-2 rounded border flex items-center gap-2 justify-center text-xs transition-all ${mode === 'create_rect' ? 'bg-red-500 text-black border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'border-dashed border-red-500/50 text-red-500 hover:bg-red-500/10 hover:border-solid hover:shadow-[0_0_10px_rgba(239,68,68,0.2)]'} `}>

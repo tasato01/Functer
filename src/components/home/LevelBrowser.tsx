@@ -5,7 +5,7 @@ import { levelService } from '../../services/FirebaseLevelService';
 import { audioService } from '../../services/AudioService';
 import { auth } from '../../services/firebase';
 import { ADMIN_UIDS } from '../../constants/admin';
-import { Play, User, Clock, Heart, RefreshCw, Trash2, PenSquare, Copy, Save } from 'lucide-react';
+import { Play, User, Clock, Heart, RefreshCw, Trash2, PenSquare, Copy, Save, CheckCircle } from 'lucide-react';
 import { StageThumbnail } from './StageThumbnail';
 import { MathBackground } from '../common/MathBackground';
 import { LevelEditDialog } from '../editor/LevelEditDialog';
@@ -21,6 +21,7 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
     const [currentUser, setCurrentUser] = useState(auth.currentUser);
     const [sort, setSort] = useState<'newest' | 'oldest' | 'likes' | 'rating' | 'plays'>('newest');
     const [authorName, setAuthorName] = useState<string | null>(null);
+    const [clearedLevelIds, setClearedLevelIds] = useState<string[]>([]);
 
     // Admin DnD State
     const [dragSourceIndex, setDragSourceIndex] = useState<number | null>(null);
@@ -34,6 +35,11 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
         setLoading(true);
         setHasUnsavedChanges(false);
         try {
+            // Fetch Cleared Levels if user is logged in
+            if (currentUser) {
+                UserService.getClearedLevels(currentUser.uid).then(ids => setClearedLevelIds(ids));
+            }
+
             if (type === 'official') {
                 const data = await levelService.getOfficialLevels(force);
                 setLevels(data);
@@ -196,6 +202,8 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
                     <>
                         {levels.map((level, index) => {
                             const isDraggable = !!isAdmin && type === 'official';
+                            const isCleared = clearedLevelIds.includes(level.id);
+
                             return (
                                 <div
                                     key={level.id}
@@ -219,7 +227,14 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
                                                 <h3 className="text-xl font-bold group-hover:text-neon-pink transition-colors break-words truncate pr-8">
                                                     {level.name}
                                                 </h3>
-                                                <div className="flex gap-2 shrink-0">
+                                                <div className="flex gap-2 shrink-0 items-center">
+                                                    {/* Cleared Badge */}
+                                                    {isCleared && (
+                                                        <div className="flex items-center gap-1 bg-neon-green/20 border border-neon-green px-1.5 py-0.5 rounded text-[10px] font-bold text-neon-green" title="Cleared">
+                                                            <CheckCircle size={10} /> CLEARED
+                                                        </div>
+                                                    )}
+
                                                     {/* Difficulty Badge */}
                                                     <span className={`px-2 py-0.5 rounded text-xs font-black border ${level.difficulty === 'EX' ? 'bg-purple-900/50 text-purple-200 border-purple-500' :
                                                         level.difficulty === 'C' ? 'bg-orange-900/50 text-orange-200 border-orange-500' :

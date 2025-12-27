@@ -369,7 +369,7 @@ export class MathEngine {
                 const funcArgs = MathEngine.mathJsonToMathJs(right[1]); // Content of delimiter
 
                 // Implicit Multiplication Fix: If funcName is a basic variable, treat as multiplication
-                if (['x', 'y', 't', 'T', 'X', 'Y'].includes(funcName)) {
+                if (['x', 'y', 't', 'T', 'X', 'Y', 'a'].includes(funcName)) {
                     return `${funcName} * (${funcArgs})`;
                 }
 
@@ -390,7 +390,7 @@ export class MathEngine {
         // Generic Function Call: ["f", x] -> f(x)
         if (typeof op === 'string') {
             // Implicit Multiplication Fix: If op is a basic variable, treat as multiplication
-            if (['x', 'y', 't', 'T', 'X', 'Y'].includes(op)) {
+            if (['x', 'y', 't', 'T', 'X', 'Y', 'a'].includes(op)) {
                 return `${op} * (${args.map(MathEngine.mathJsonToMathJs).join(' * ')})`;
             }
             return `${op}(${args.map(MathEngine.mathJsonToMathJs).join(', ')})`;
@@ -415,7 +415,7 @@ export class MathEngine {
             const normalized = MathEngine.cleanExpression(expr);
             // Use regex on normalized (mathjs) string
             // Check for t, T, X, Y as variables (Dynamic dependencies)
-            return !/\b[tTXY]\b/.test(normalized);
+            return !/\b[tTXYa]\b/.test(normalized);
         } catch {
             return true;
         }
@@ -446,7 +446,7 @@ export class MathEngine {
                 const jsCode = MathEngine.mathJsonToNativeJs(boxed.json);
                 if (jsCode) {
                     const body = `
-                        const { x, y, X, Y, t, T, f, g, derivative_f } = scope;
+                        const { x, y, X, Y, t, T, f, g, derivative_f, a } = scope;
                         return ${jsCode};
                     `;
                     nativeFn = new Function('scope', body);
@@ -488,15 +488,16 @@ export class MathEngine {
         }
     }
 
-    static evaluateChain(g: MathFunction, f: MathFunction, x: number, t: number = 0, y: number = 0): number {
+    static evaluateChain(g: MathFunction, f: MathFunction, x: number, t: number = 0, y: number = 0, a: number = 0): number {
         try {
-            // f(x) should NOT depend on t or T. Only x.
-            const fScope = { x };
+            // f(x) should NOT depend on t or T (unless allowed? usually f is player input). 
+            // If explicit 'a' support is needed in 'f', allow it.
+            const fScope = { x, a };
             const fx = f.compiled(fScope);
 
             // Function wrapper for f(x) to be used in g
             const F = (val: number) => {
-                try { return f.compiled({ x: val }); } catch { return 0; }
+                try { return f.compiled({ x: val, a }); } catch { return 0; }
             };
 
             // Numeric Derivative Wrapper
@@ -504,7 +505,7 @@ export class MathEngine {
                 return MathEngine.numericalDerivative(F, val);
             };
 
-            const gScope = { f: fx, x, X: x, Y: y, t, T: t, F, derivative_f };
+            const gScope = { f: fx, x, X: x, Y: y, t, T: t, F, derivative_f, a };
             return g.compiled(gScope);
         } catch (e) {
             return NaN;

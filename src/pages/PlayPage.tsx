@@ -196,7 +196,8 @@ export const PlayPage: React.FC = () => {
                     f={fFn}
                     g={gFn}
                     level={level!}
-                    t={gameState.isPlaying ? gameState.t : 0}
+                    t={gameState.isPlaying ? gameState.t : 0.001}
+                    a={gameState.isPlaying ? gameState.a : 0}
                     player={gameState.isPlaying ? { x: gameState.x, y: gameState.y } : undefined}
                     currentWaypointIndex={gameState.currentWaypointIndex}
 

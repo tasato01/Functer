@@ -67,6 +67,8 @@ export const EditPage: React.FC = () => {
 
     const [showHelp, setShowHelp] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false); // Verification for Publish
+    const [showForbidden, setShowForbidden] = useState(true); // Toggle visibility of Forbidden Areas
+
 
     const fFn = useMemo(() => MathEngine.compile(testF), [testF]);
     const gFn = useMemo(() => MathEngine.compile(level.g_raw), [level.g_raw]);
@@ -304,6 +306,8 @@ export const EditPage: React.FC = () => {
                     onHelpClick={() => setShowHelp(true)}
                     isVerifying={isVerifying}
                     setIsVerifying={setIsVerifying}
+                    showForbidden={showForbidden}
+                    setShowForbidden={setShowForbidden}
                 />
 
                 {/* Main Graph Area */}
@@ -319,8 +323,11 @@ export const EditPage: React.FC = () => {
                         g={gFn}
                         level={level}
                         t={gameState.isPlaying ? gameState.t : 0}
+                        a={gameState.isPlaying ? gameState.a : 0} // Pass 'a'
                         player={gameState.isPlaying ? { x: gameState.x, y: gameState.y } : undefined}
                         currentWaypointIndex={gameState.currentWaypointIndex}
+
+                        showForbiddenOverlay={showForbidden}
 
                         viewOffset={viewOffset}
                         scale={scale}

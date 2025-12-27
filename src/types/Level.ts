@@ -32,6 +32,18 @@ export interface RectConstraint {
     height: number;
 }
 
+// Piecewise Function Rule
+export interface PiecewiseRule {
+    expression: string;
+    condition: string;
+}
+
+// Player Variable 'a' Configuration
+export interface PlayerVariableConfig {
+    enabled: boolean;
+    speed: number; // Default 5.0
+}
+
 // Level Configuration
 export interface LevelConfig {
     id: string;
@@ -41,7 +53,15 @@ export interface LevelConfig {
     hint?: string; // Optional hint for players
 
     // Functions
-    g_raw: string; // "g(f)(x)" definition (e.g. "sin(f) + x")
+    g_raw: string; // "g(f)(x)" definition (e.g. "sin(f) + x") - Default / Fallback
+    gRules?: PiecewiseRule[]; // Piecewise definitions (Top priority)
+
+    // Player Variable 'a'
+    playerVar?: PlayerVariableConfig;
+
+    // Display Settings
+    showCoordinates?: boolean; // Default true
+    showInequalities?: boolean; // Default true
 
     // Entities
     startPoint: DynamicPoint;
@@ -79,6 +99,10 @@ export const DEFAULT_LEVEL: LevelConfig = {
     description: 'Learn to use trigonometric functions.',
     hint: 'Try using the sin(x) function. Values between -1 and 1 might be safe.',
     g_raw: 'f',
+    gRules: [],
+    playerVar: { enabled: false, speed: 5.0 },
+    showCoordinates: true,
+    showInequalities: true,
     startPoint: { x: 0, y: 0 },
     startRadius: 0.5,
     goalPoint: { x: 10, y: 0 },
@@ -105,6 +129,10 @@ export const EMPTY_LEVEL: LevelConfig = {
     description: '',
     hint: '',
     g_raw: 'f',
+    gRules: [],
+    playerVar: { enabled: false, speed: 5.0 },
+    showCoordinates: true,
+    showInequalities: true,
     startPoint: { x: 0, y: 0 },
     startRadius: 0,
     goalPoint: { x: 10, y: 0 },

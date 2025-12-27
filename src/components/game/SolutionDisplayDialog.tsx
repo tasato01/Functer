@@ -25,13 +25,18 @@ export const SolutionDisplayDialog: React.FC<SolutionDisplayDialogProps> = ({ is
     const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
 
     useEffect(() => {
+        let active = true;
         if (isOpen && levelId) {
+            setSolutions([]); // Clear old data
             setLoading(true);
             levelService.getLevelSolutions(levelId).then(data => {
-                setSolutions(data);
-                setLoading(false);
+                if (active) {
+                    setSolutions(data);
+                    setLoading(false);
+                }
             });
         }
+        return () => { active = false; };
     }, [isOpen, levelId]);
 
     const copyToClipboard = (text: string, index: string) => {
