@@ -195,7 +195,7 @@ export function drawFunction(
     width: number,
     toWorldX: (s: number) => number,
     toScreenY: (y: number) => number,
-    t: number, pX: number, pY: number
+    t: number, pX: number, pY: number, a: number = 0
 ) {
     ctx.save();
     ctx.lineWidth = 2;
@@ -209,13 +209,13 @@ export function drawFunction(
         const x = toWorldX(sx);
         let y = NaN;
         try {
-            const fx = f.compiled({ x, t, T: t });
+            const fx = f.compiled({ x, t, T: t, a });
             // Expose F for integration inside g
             const F = (val: number) => {
-                try { return f.compiled({ x: val, t, T: t }); } catch { return 0; }
+                try { return f.compiled({ x: val, t, T: t, a }); } catch { return 0; }
             };
             const derivative_f = (val: number) => MathEngine.numericalDerivative(F, val);
-            y = g.compiled({ f: fx, x, X: pX, Y: pY, t, T: t, F, derivative_f });
+            y = g.compiled({ f: fx, x, X: pX, Y: pY, t, T: t, F, derivative_f, a });
         } catch { y = NaN; }
 
         if (isNaN(y) || !isFinite(y)) { first = true; continue; }

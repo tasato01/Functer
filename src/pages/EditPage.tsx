@@ -71,9 +71,45 @@ export const EditPage: React.FC = () => {
 
 
     const fFn = useMemo(() => MathEngine.compile(testF), [testF]);
-    const gFn = useMemo(() => MathEngine.compile(level.g_raw), [level.g_raw]);
+    const gFn = useMemo(() => {
+        // Compile default
+        const defaultFn = MathEngine.compile(level.g_raw || '0');
+        if (!level.gRules || level.gRules.length === 0) return defaultFn;
+
+        // Compile rules
+        const rules = level.gRules.map(r => ({
+            fn: MathEngine.compile(r.expression),
+            cond: r.condition
+        }));
+
+        // Return wrapped function
+        return {
+            ...defaultFn,
+            compiled: (scope: any) => {
+                for (const rule of rules) {
+                    try {
+                        if (MathEngine.evaluateCondition(rule.cond, scope)) {
+                            return rule.fn.compiled(scope);
+                        }
+                    } catch { } // formatting error or similar
+                }
+                return defaultFn.compiled(scope);
+            }
+        };
+    }, [level.g_raw, level.gRules]);
 
     const { gameState, startGame, stopGame } = useGameLoop(fFn, gFn, level);
+
+    // ... (rest of code)
+
+    const handleRightClick = useCallback(() => {
+        if (selectedId) {
+            setSelectedId(null);
+            audioService.playSE('click');
+        } else {
+            setMode('select');
+        }
+    }, [selectedId]);
 
     // Initialize/Reset on mount
     useEffect(() => {
@@ -334,7 +370,7 @@ export const EditPage: React.FC = () => {
                         onViewChange={(o, s) => { setViewOffset(o); setScale(s); }}
 
                         mode={mode}
-                        onRightClick={() => setMode('select')} // Add this
+                        onRightClick={handleRightClick}
                         selectedId={selectedId}
                         onSelect={setSelectedId}
                         onLevelChange={newL => setLevel(newL)}

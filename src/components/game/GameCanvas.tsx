@@ -182,7 +182,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 if (f && f.isValid && g && g.isValid) {
                     const pX = player?.x ?? level.startPoint.x ?? 0;
                     const pY = player?.y ?? level.startPoint.y ?? 0;
-                    drawFunction(ctx, f, g, width, toWorldX, toScreenY, t, pX, pY);
+                    drawFunction(ctx, f, g, width, toWorldX, toScreenY, t, pX, pY, a);
                 }
 
                 if (level.waypoints) level.waypoints.forEach((wp, i) => {

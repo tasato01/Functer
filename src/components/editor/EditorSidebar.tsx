@@ -479,10 +479,12 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                     <button onClick={() => { audioService.playSE('click'); removeGRule(i); }} className="absolute top-1 right-1 text-gray-600 hover:text-red-500"><Trash2 size={10} /></button>
 
                                     <div className="mb-1">
-                                        <div className="text-[10px] text-gray-500 mb-0.5">Condition (if true)</div>
-                                        <MathInput value={rule.condition} onChange={v => updateGRule(i, 'condition', v)} placeholder="e.g. t < 5" />
+                                        <div className="text-[10px] text-gray-500 mb-0.5 font-bold text-neon-yellow/80">Condition</div>
+                                        <div className="border-l-2 border-neon-yellow/50 pl-1">
+                                            <MathInput value={rule.condition} onChange={v => updateGRule(i, 'condition', v)} placeholder="e.g. t < 5" />
+                                        </div>
                                     </div>
-                                    <div>
+                                    <div className="mb-0.5">
                                         <div className="text-[10px] text-gray-500 mb-0.5">Expression</div>
                                         <MathInput value={rule.expression} onChange={v => updateGRule(i, 'expression', v)} placeholder="e.g. sin(f)" />
                                     </div>
@@ -523,7 +525,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                         onChange={(e) => setLevel(prev => ({
                                             ...prev,
                                             playerVar: {
-                                                speed: 5.0,
+                                                speed: 1.0,
                                                 ...(prev.playerVar || {}),
                                                 enabled: e.target.checked
                                             }
