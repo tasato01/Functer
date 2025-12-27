@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Check, X, User, AlertTriangle, Send } from 'lucide-react';
+import { ShieldCheck, Check, X, User, AlertTriangle, Send, HelpCircle } from 'lucide-react';
 import { UserService, type AdminRequest, type UserProfile } from '../../services/UserService';
 import { AnnouncementService } from '../../services/AnnouncementService';
 import { audioService } from '../../services/AudioService';
@@ -74,7 +74,7 @@ export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ is
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-900 border border-neon-blue rounded-xl w-full max-w-lg shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col h-[70vh]">
+            <div className="bg-gray-900 border border-neon-blue rounded-xl w-full max-w-7xl shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col h-[85vh]">
 
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-800">
@@ -188,6 +188,7 @@ const AdminAnnouncementPanel: React.FC = () => {
     const [mode, setMode] = useState<'list' | 'edit'>('list');
     const [announcements, setAnnouncements] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
 
     // Edit State
     const [editId, setEditId] = useState<string | null>(null);
@@ -279,12 +280,65 @@ const AdminAnnouncementPanel: React.FC = () => {
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full relative">
+            {/* Help Modal */}
+            {showHelp && (
+                <div className="absolute inset-0 z-20 bg-gray-900/95 backdrop-blur flex flex-col p-6 overflow-y-auto animate-in fade-in">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-white">Markdown Cheat Sheet</h3>
+                        <button onClick={() => setShowHelp(false)} className="bg-white/10 p-2 rounded-full"><X size={20} /></button>
+                    </div>
+                    <div className="space-y-4 text-sm text-gray-300">
+                        <div>
+                            <div className="font-bold text-neon-blue mb-1">Headers</div>
+                            <code># Large Header</code><br />
+                            <code>## Medium Header</code>
+                        </div>
+                        <div>
+                            <div className="font-bold text-neon-blue mb-1">Emphasis</div>
+                            <code>**Bold Text**</code> &rarr; <b>Bold Text</b><br />
+                            <code>*Italic Text*</code> &rarr; <i>Italic Text</i>
+                        </div>
+                        <div>
+                            <div className="font-bold text-neon-blue mb-1">Lists</div>
+                            <code>- Item 1</code><br />
+                            <code>- Item 2</code>
+                        </div>
+                        <div>
+                            <div className="font-bold text-neon-blue mb-1">Code</div>
+                            <code>`inline code`</code> (Backticks) &rarr; <code className="bg-black/50 px-1 rounded text-neon-pink">inline code</code><br />
+                            <pre className="bg-black/50 p-2 mt-1 border border-white/10 rounded">
+                                ```
+                                Block Code
+                                ```
+                            </pre>
+                        </div>
+                        <div>
+                            <div className="font-bold text-neon-blue mb-1">Quotes</div>
+                            <code>&gt; Blockquote text</code>
+                        </div>
+                        <div>
+                            <div className="font-bold text-neon-blue mb-1">Math (LaTeX)</div>
+                            <code>$E = mc^2$</code>
+                        </div>
+                        <div>
+                            <div className="font-bold text-neon-blue mb-1">Colors (Experimental)</div>
+                            <p>Markdown doesn't support colors by default. However, headers and bold text are styled with theme colors automatically.</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex justify-between items-center mb-4">
                 <button onClick={() => setMode('list')} className="text-gray-400 hover:text-white flex items-center gap-1 text-sm">
                     <X size={16} /> CANCEL
                 </button>
-                <div className="font-bold text-white">{editId ? "EDIT ANNOUNCEMENT" : "NEW ANNOUNCEMENT"}</div>
+                <div className="flex items-center gap-4">
+                    <div className="font-bold text-white">{editId ? "EDIT ANNOUNCEMENT" : "NEW ANNOUNCEMENT"}</div>
+                    <button onClick={() => setShowHelp(!showHelp)} className="text-neon-blue hover:text-white flex items-center gap-1 text-xs px-2 py-1 bg-neon-blue/10 rounded border border-neon-blue/30">
+                        <HelpCircle size={14} /> Markdown Help
+                    </button>
+                </div>
                 <button onClick={handleSave} className="text-neon-green hover:text-white flex items-center gap-1 text-sm font-bold">
                     <Check size={16} /> SAVE
                 </button>
@@ -317,18 +371,27 @@ const AdminAnnouncementPanel: React.FC = () => {
                         onChange={e => setMsg(e.target.value)}
                         placeholder="Message (Markdown & LaTeX supported)"
                         className="flex-1 bg-black/50 border border-gray-700 rounded p-2 text-white text-xs resize-none font-mono focus:border-neon-blue focus:outline-none"
+                        spellCheck={false}
                     />
-                    <div className="flex-1 bg-gray-900 border border-gray-700 rounded p-2 overflow-y-auto">
+                    <div className="flex-1 bg-gray-900 border border-gray-700 rounded p-4 overflow-y-auto">
                         <div className="text-[10px] text-gray-500 font-bold mb-2 border-b border-gray-800 pb-1">PREVIEW</div>
-                        <div className="text-xs text-gray-300 markdown-content">
+                        <div className="text-sm text-gray-300 markdown-content">
                             <ReactMarkdown
                                 remarkPlugins={[remarkMath]}
                                 rehypePlugins={[rehypeKatex]}
                                 components={{
-                                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                    h1: ({ node, ...props }) => <h2 className="text-xl font-bold mt-4 mb-2 border-l-4 border-neon-blue pl-2 text-white" {...props} />,
+                                    h2: ({ node, ...props }) => <h3 className="text-lg font-bold mt-3 mb-2 text-neon-blue" {...props} />,
+                                    h3: ({ node, ...props }) => <h4 className="text-base font-bold mt-2 mb-1 text-white" {...props} />,
+                                    p: ({ node, ...props }) => <p className="mb-2 leading-relaxed text-gray-300" {...props} />,
+                                    strong: ({ node, ...props }) => <strong className="font-bold text-white relative inline-block after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-neon-blue/50" {...props} />,
+                                    em: ({ node, ...props }) => <em className="italic text-gray-400" {...props} />,
                                     a: ({ node, ...props }) => <a className="text-neon-blue hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
                                     ul: ({ node, ...props }) => <ul className="list-disc list-inside ml-2 mb-2" {...props} />,
-                                    ol: ({ node, ...props }) => <ol className="list-decimal list-inside ml-2 mb-2" {...props} />
+                                    ol: ({ node, ...props }) => <ol className="list-decimal list-inside ml-2 mb-2" {...props} />,
+                                    code: ({ node, ...props }) => <code className="bg-black/50 rounded px-1.5 py-0.5 text-neon-pink font-mono text-xs border border-white/10" {...props} />,
+                                    pre: ({ node, ...props }) => <pre className="bg-black/50 rounded p-3 mb-2 overflow-x-auto border border-white/10 text-xs" {...props} />,
+                                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-gray-600 pl-3 py-1 italic text-gray-400 bg-white/5 my-2 rounded-r" {...props} />,
                                 }}
                             >
                                 {msg}
