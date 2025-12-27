@@ -129,6 +129,18 @@ export const PlayPage: React.FC = () => {
                 return;
             }
 
+            // Validation: Check for forbidden symbols (specifically 'X')
+            const allowed = new Set(['x', 't', 'T']); // Basic allowed
+            if (level.playerVar?.enabled) allowed.add('a');
+            if (level.allowX) allowed.add('X');
+            // We can also allow 'Y' if we want, but X is the main request.
+
+            const valResult = MathEngine.validateSymbols(fRaw, allowed);
+            if (!valResult.valid) {
+                alert(`Function Error: ${valResult.error}\n(You can enable 'X' in Level Settings if you are the creator.)`);
+                return;
+            }
+
             // Check if f(x) passes through Start Point
             let startY = 0;
             try {

@@ -160,7 +160,7 @@ export const AnnouncementDialog: React.FC<AnnouncementDialogProps> = ({ isOpen, 
                                         </h1>
                                     </div>
 
-                                    <div className="prose prose-invert prose-p:text-gray-300 prose-headings:text-white prose-a:text-neon-blue max-w-none">
+                                    <div className="markdown-content prose prose-invert prose-p:text-gray-300 prose-headings:text-white prose-a:text-neon-blue max-w-none">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkMath]}
                                             rehypePlugins={[rehypeKatex]}

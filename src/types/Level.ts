@@ -62,6 +62,7 @@ export interface LevelConfig {
     // Display Settings
     showCoordinates?: boolean; // Default true
     showInequalities?: boolean; // Default true
+    allowX?: boolean; // Default false (If true, users can use 'X' in input f)
 
     // Entities
     startPoint: DynamicPoint;

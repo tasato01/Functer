@@ -421,6 +421,46 @@ export class MathEngine {
         }
     }
 
+    static validateSymbols(expr: string, allowedSymbols: Set<string>): { valid: boolean; error?: string } {
+        try {
+            // First clean to get MathJS compliant string (handles LaTeX)
+            const mathJsExpr = MathEngine.cleanExpression(expr);
+            const root = math.parse(mathJsExpr);
+            const usedSymbols = new Set<string>();
+            root.traverse((node: any) => {
+                if (node.isSymbolNode) {
+                    usedSymbols.add(node.name);
+                }
+            });
+
+            // Filter out math constants and allowed symbols
+            const invalid: string[] = [];
+            usedSymbols.forEach(s => {
+                if (allowedSymbols.has(s)) return;
+                // Allow known Math constants/functions if they exist in math scope? 
+                // MathJS functions (sin, cos) are symbols too.
+                // We should check if it's a known function/constant OR in allowed set.
+                // Simple heuristic: If it's x, y, t, T, X, Y, a -> check allowed.
+                // If generic -> assume function or constant?
+                // Actually, the requirement is "Allow X". So we specifically check for blocked symbols.
+
+                // If 'X' is present and NOT in allowedSymbols, then it is invalid.
+                if (s === 'X' && !allowedSymbols.has('X')) {
+                    invalid.push(s);
+                }
+            });
+
+            if (invalid.length > 0) {
+                return { valid: false, error: `Symbol '${invalid[0]}' is disabled.` };
+            }
+
+            return { valid: true };
+        } catch (e) {
+            // Parse error will be caught during compile, so ignore here or return valid
+            return { valid: true };
+        }
+    }
+
     static compile(expression: string): MathFunction {
         if (!expression || !expression.trim()) {
             return {

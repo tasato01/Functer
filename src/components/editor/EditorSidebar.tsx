@@ -555,6 +555,24 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                 Use Up/Down keys to control 'a'.
                             </div>
                         </div>
+
+                        {/* Allow 'X' Setting */}
+                        <div className="bg-white/5 rounded p-2 border border-white/10 mt-2">
+                            <label className="text-xs text-gray-300 flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={level.allowX ?? false}
+                                    onChange={(e) => setLevel(prev => ({
+                                        ...prev,
+                                        allowX: e.target.checked
+                                    }))}
+                                    className="accent-neon-blue"
+                                />
+                                <span className="flex items-center gap-1">
+                                    Allow <b>X</b> in f(x) <span className="text-gray-500 text-[10px]">(Advanced)</span>
+                                </span>
+                            </label>
+                        </div>
                     </div>
 
                     {/* Forbidden Areas */}

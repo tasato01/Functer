@@ -186,6 +186,17 @@ export const EditPage: React.FC = () => {
                 alert("Functions are invalid!");
                 return;
             }
+            // Validation: Check for forbidden symbols for Test Play
+            const allowed = new Set(['x', 't', 'T']);
+            if (level.playerVar?.enabled) allowed.add('a');
+            if (level.allowX) allowed.add('X');
+
+            const valResult = MathEngine.validateSymbols(testF, allowed);
+            if (!valResult.valid) {
+                alert(`Function Error: ${valResult.error}\n(Enable 'Allow X' in Sidebar Parameters if needed.)`);
+                return;
+            }
+
             const sx = level.startPoint.x;
             const sy = level.startPoint.y;
             let gy = 0;
