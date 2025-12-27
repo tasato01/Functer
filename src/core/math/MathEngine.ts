@@ -422,9 +422,15 @@ export class MathEngine {
     }
 
     static compile(expression: string): MathFunction {
+        if (!expression || !expression.trim()) {
+            return {
+                raw: expression || '',
+                compiled: () => NaN,
+                isValid: false,
+                error: "Empty"
+            };
+        }
         try {
-            if (!expression || !expression.trim()) throw new Error("Empty");
-
             // Preprocess to fix <= / >=
             const cleanedExpr = MathEngine.preprocess(expression);
 
