@@ -166,29 +166,7 @@ export const EditPage: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedId, level, undo, redo]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Mobile Viewport Height Fix
-    const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
-    useEffect(() => {
-        const updateHeight = () => {
-            if (window.visualViewport) {
-                setViewportHeight(window.visualViewport.height);
-            } else {
-                setViewportHeight(window.innerHeight);
-            }
-        };
-        updateHeight();
-        window.addEventListener('resize', updateHeight);
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', updateHeight);
-        }
-        return () => {
-            window.removeEventListener('resize', updateHeight);
-            if (window.visualViewport) {
-                window.visualViewport.removeEventListener('resize', updateHeight);
-            }
-        };
-    }, []);
 
     // Layout Fix: Added min-h-0 to flex container to ensure proper shrinking
     // const styles = { height: `${viewportHeight}px` };  <-- removed
@@ -276,7 +254,6 @@ export const EditPage: React.FC = () => {
     return (
         <div
             className="fixed inset-0 flex flex-col bg-black overflow-hidden"
-            style={{ height: `${viewportHeight}px` }}
         >
             {/* Header / Nav (Consistent with PlayPage) */}
             <div className="h-14 bg-neon-surface/80 border-b border-neon-blue/30 flex items-center justify-between px-6 backdrop-blur-md z-20 shrink-0">
