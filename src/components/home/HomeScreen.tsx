@@ -87,8 +87,8 @@ export const HomeScreen: React.FC = () => {
                         <div className="flex-1 text-xs md:text-sm overflow-hidden">
                             <div className="font-bold flex justify-between items-center mb-1">
                                 <span className={`uppercase tracking-wider opacity-90 text-[10px] ${announcement.type === 'important' ? 'text-red-300' :
-                                        announcement.type === 'maintenance' ? 'text-orange-300' :
-                                            announcement.type === 'update' ? 'text-green-300' : 'text-blue-300'
+                                    announcement.type === 'maintenance' ? 'text-orange-300' :
+                                        announcement.type === 'update' ? 'text-green-300' : 'text-blue-300'
                                     }`}>
                                     {announcement.title || announcement.type}
                                 </span>
@@ -205,9 +205,9 @@ export const HomeScreen: React.FC = () => {
                 </button>
             </div>
 
-            {/* Version Footer - Absolute Bottom Right */}
-            <div className="absolute bottom-2 right-4 text-[10px] text-gray-800 font-mono select-none pointer-events-none z-0">
-                v0.1.1
+            {/* Version Footer - Fixed Bottom Right */}
+            <div className="fixed bottom-2 right-2 text-[10px] text-gray-500 font-mono select-none pointer-events-none z-50 opacity-50">
+                v0.1.2
             </div>
             <div className="absolute top-6 right-6 z-20 flex gap-3">
                 {user ? (

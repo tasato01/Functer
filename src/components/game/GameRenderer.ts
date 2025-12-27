@@ -430,10 +430,10 @@ export function drawHoverTooltip(ctx: CanvasRenderingContext2D, p: Point, toSX: 
     ctx.fillText(text, cx + 15, cy + 20);
 }
 
-export function drawCoordinateLabel(ctx: CanvasRenderingContext2D, p: Point, toSX: any, toSY: any) {
+export function drawCoordinateLabel(ctx: CanvasRenderingContext2D, p: Point, toSX: any, toSY: any, customText?: string) {
     const cx = toSX(p.x);
     const cy = toSY(p.y);
-    const text = `(${p.x.toFixed(2)}, ${p.y.toFixed(2)})`;
+    const text = customText || `(${p.x.toFixed(2)}, ${p.y.toFixed(2)})`;
 
     ctx.font = 'bold 12px sans-serif';
     const metrics = ctx.measureText(text);

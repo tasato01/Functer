@@ -447,6 +447,8 @@ export class MathEngine {
                 if (jsCode) {
                     const body = `
                         const { x, y, X, Y, t, T, f, g, derivative_f, a } = scope;
+                        const e = Math.E;
+                        const pi = Math.PI;
                         return ${jsCode};
                     `;
                     nativeFn = new Function('scope', body);

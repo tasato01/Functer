@@ -197,12 +197,12 @@ export const EditPage: React.FC = () => {
             const sy = level.startPoint.y;
             let gy = 0;
             try {
-                // Use evaluateChain to ensure consistent scope (including derivative_f)
-                gy = MathEngine.evaluateChain(gFn, fFn, sx, 0);
+                // Use evaluateChain to ensure consistent scope (including derivative_f), t=0.01 to match physics
+                gy = MathEngine.evaluateChain(gFn, fFn, sx, 0.01);
             } catch { gy = NaN; }
 
-            if (Math.abs(sy - gy) > 0.1) {
-                alert(`Cannot start! \nStart Point (${sy.toFixed(2)}) is not on the function graph (${gy.toFixed(2)}).\nDifference must be within ±0.1.`);
+            if (isNaN(gy) || Math.abs(sy - gy) > 0.1) {
+                alert(`Cannot start! \nStart Point (${sy.toFixed(2)}) is not on the function graph (${Number.isNaN(gy) ? 'NaN' : gy.toFixed(2)}).\nDifference must be within ±0.1.`);
                 return;
             }
             startGame();

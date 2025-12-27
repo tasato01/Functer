@@ -228,15 +228,28 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
                 // Draw Coordinate Labels
                 const showCoords = level.showCoordinates !== false;
+
+                // HIDE coordinates if game is playing (indicated by player existing and not static)
+                // Actually, player object exists even in Editor if we seek T?
+                // But in PlayPage, player is passed ONLY when isPlaying.
+                // in GameCanvas props: player?: {x, y}.
+                // In Editor, player prop is passed? No, it uses internal state for editor?
+                // Wait, EditorSidebar passes `player={undefined}` usually?
+                // Let's check EditorSidebar... It passes `player` only if we want to visualize it?
+                // Actually, let's use a simpler logic: If we are in Play Mode (implied by !isStatic and player being present?), hide labels.
+
+                const isPlaying = !!player && !isStatic;
+                const shouldShowLabels = showCoords && !isPlaying;
+
                 const pointsToLabel: { p: DynamicPoint, label?: string }[] = [];
 
-                if (showCoords) {
+                if (shouldShowLabels) {
                     // Show labels for Start, Goal, Waypoints
                     pointsToLabel.push({ p: level.startPoint });
                     pointsToLabel.push({ p: level.goalPoint });
                     level.waypoints?.forEach(wp => pointsToLabel.push({ p: wp }));
-                } else if (selectedId) {
-                    // Show only selected
+                } else if (!isPlaying && selectedId) {
+                    // Show only selected if not playing (redundant if showCoords is true, but covers false case)
                     if (selectedId === 'start') pointsToLabel.push({ p: level.startPoint });
                     else if (selectedId === 'goal') pointsToLabel.push({ p: level.goalPoint });
                     else if (selectedId.startsWith('wp_')) {
@@ -246,17 +259,27 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 }
 
                 // Draw accumulated labels
-                // Use Set to avoid duplicates if selected is already included
                 const uniquePoints = new Set(pointsToLabel);
                 uniquePoints.forEach(({ p }) => {
                     let px = p.x;
                     let py = p.y;
+
+                    // Display Text Logic
+                    let labelText = '';
+                    if (p.xFormula || p.yFormula) {
+                        // Use formula if available
+                        const xStr = p.xFormula || p.x.toString();
+                        const yStr = p.yFormula || p.y.toString();
+                        labelText = `(${xStr}, ${yStr})`;
+                    }
+
                     try {
                         const scope = { t, T: t, X: pX, Y: pY, a };
                         if (p.xFormula) px = MathEngine.evaluateScalar(p.xFormula, scope) || px;
                         if (p.yFormula) py = MathEngine.evaluateScalar(p.yFormula, scope) || py;
                     } catch { }
-                    drawCoordinateLabel(ctx, { ...p, x: px, y: py }, toScreenX, toScreenY);
+
+                    drawCoordinateLabel(ctx, { ...p, x: px, y: py }, toScreenX, toScreenY, labelText);
                 });
 
                 // If Static, STOP loop here (after one successful render)

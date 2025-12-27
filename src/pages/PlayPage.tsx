@@ -130,8 +130,8 @@ export const PlayPage: React.FC = () => {
             // Check if f(x) passes through Start Point
             let startY = 0;
             try {
-                // t=0 for start check
-                startY = MathEngine.evaluateChain(gFn, fFn, level.startPoint.x, 0);
+                // t=0.01 for start check to avoid singularities at t=0
+                startY = MathEngine.evaluateChain(gFn, fFn, level.startPoint.x, 0.01);
             } catch { startY = NaN; }
 
             if (isNaN(startY) || Math.abs(startY - level.startPoint.y) > 0.1) {
