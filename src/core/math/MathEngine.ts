@@ -527,6 +527,20 @@ export class MathEngine {
         }
     }
 
+    static compileCondition(conditionRaw: string): { evaluate: (scope: any) => boolean } {
+        try {
+            const cleaned = MathEngine.cleanExpression(conditionRaw);
+            const code = math.parse(cleaned).compile();
+            return {
+                evaluate: (scope: any) => {
+                    try { return !!code.evaluate(scope); } catch { return false; }
+                }
+            };
+        } catch {
+            return { evaluate: () => false };
+        }
+    }
+
     static getBoundaries(expression: string): { fn: MathFunction, type: 'solid' | 'dotted', axis: 'x' | 'y' }[] {
         const boundaries: { fn: MathFunction, type: 'solid' | 'dotted', axis: 'x' | 'y' }[] = [];
         try {

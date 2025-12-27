@@ -14,39 +14,56 @@ import { audioService } from '../services/AudioService';
 
 // ... (useHistory hook remains unchanged)
 function useHistory<T>(initialState: T) {
-    const [history, setHistory] = useState<T[]>([initialState]);
-    const [index, setIndex] = useState(0);
+    const [historyState, setHistoryState] = useState<{ history: T[], index: number }>({
+        history: [initialState],
+        index: 0
+    });
 
-    const state = history[index];
+    const state = historyState.history[historyState.index];
 
     const setState = useCallback((newState: T | ((prev: T) => T)) => {
-        setHistory(prevHist => {
-            const current = prevHist[index];
+        setHistoryState(prev => {
+            const current = prev.history[prev.index];
             const val = typeof newState === 'function' ? (newState as any)(current) : newState;
-            const newHist = prevHist.slice(0, index + 1);
+            const newHist = prev.history.slice(0, prev.index + 1);
             newHist.push(val);
-            return newHist;
+            return {
+                history: newHist,
+                index: prev.index + 1
+            };
         });
-        setIndex(prev => prev + 1);
-    }, [index]);
+    }, []);
 
     const undo = useCallback(() => {
-        setIndex(prev => Math.max(0, prev - 1));
+        setHistoryState(prev => ({
+            ...prev,
+            index: Math.max(0, prev.index - 1)
+        }));
     }, []);
 
     const redo = useCallback(() => {
-        setHistory(prev => {
-            setIndex(idx => Math.min(prev.length - 1, idx + 1));
-            return prev;
-        });
+        setHistoryState(prev => ({
+            ...prev,
+            index: Math.min(prev.history.length - 1, prev.index + 1)
+        }));
     }, []);
 
     const reset = useCallback((val: T) => {
-        setHistory([val]);
-        setIndex(0);
+        setHistoryState({
+            history: [val],
+            index: 0
+        });
     }, []);
 
-    return { state, setState, undo, redo, canUndo: index > 0, canRedo: index < history.length - 1, reset };
+    return {
+        state,
+        setState,
+        undo,
+        redo,
+        canUndo: historyState.index > 0,
+        canRedo: historyState.index < historyState.history.length - 1,
+        reset
+    };
 }
 
 export const EditPage: React.FC = () => {
@@ -79,7 +96,7 @@ export const EditPage: React.FC = () => {
         // Compile rules
         const rules = level.gRules.map(r => ({
             fn: MathEngine.compile(r.expression),
-            cond: r.condition
+            cond: MathEngine.compileCondition(r.condition)
         }));
 
         // Return wrapped function
@@ -88,7 +105,7 @@ export const EditPage: React.FC = () => {
             compiled: (scope: any) => {
                 for (const rule of rules) {
                     try {
-                        if (MathEngine.evaluateCondition(rule.cond, scope)) {
+                        if (rule.cond.evaluate(scope)) {
                             const res = rule.fn.compiled(scope);
                             return res; // MathEngine will cast to number later if needed
                         }
