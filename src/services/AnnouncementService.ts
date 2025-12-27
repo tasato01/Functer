@@ -35,6 +35,44 @@ export const AnnouncementService = {
         }
     },
 
+    async getAllAnnouncements(): Promise<Announcement[]> {
+        try {
+            const q = query(
+                collection(db, 'announcements'),
+                orderBy('createdAt', 'desc'),
+                limit(20)
+            );
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    title: data.title,
+                    message: data.message,
+                    type: data.type || 'info',
+                    createdAt: (data.createdAt as Timestamp).toMillis()
+                };
+            });
+        } catch (e) {
+            console.error("Failed to fetch all announcements", e);
+            return [];
+        }
+    },
+
+    async updateAnnouncement(id: string, data: Partial<Omit<Announcement, 'id' | 'createdAt'>>): Promise<boolean> {
+        try {
+            // Dynamically import doc and updateDoc to avoid initial load weight if possible, or just use existing db import
+            // Need to import updateDoc/doc from firebase/firestore
+            const { doc, updateDoc } = await import("firebase/firestore");
+            const ref = doc(db, 'announcements', id);
+            await updateDoc(ref, { ...data });
+            return true;
+        } catch (e) {
+            console.error("Failed to update announcement", e);
+            return false;
+        }
+    },
+
     async addAnnouncement(message: string, type: 'info' | 'maintenance' | 'update' | 'important', title?: string): Promise<boolean> {
         try {
             await addDoc(collection(db, 'announcements'), {

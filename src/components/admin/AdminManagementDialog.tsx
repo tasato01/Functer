@@ -5,6 +5,10 @@ import { AnnouncementService } from '../../services/AnnouncementService';
 import { audioService } from '../../services/AudioService';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../../services/firebase';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
 interface AdminManagementDialogProps {
     isOpen: boolean;
@@ -17,11 +21,6 @@ export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ is
     const [requests, setRequests] = useState<AdminRequest[]>([]);
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loading, setLoading] = useState(true);
-
-    // Announcement State
-    const [announceMsg, setAnnounceMsg] = useState('');
-    const [announceTitle, setAnnounceTitle] = useState('');
-    const [announceType, setAnnounceType] = useState<'info' | 'maintenance' | 'update' | 'important'>('info');
 
     const fetchData = async () => {
         setLoading(true);
@@ -69,25 +68,7 @@ export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ is
         }
     };
 
-    const handlePostAnnouncement = async () => {
-        if (!announceMsg.trim()) {
-            alert("Message cannot be empty.");
-            return;
-        }
-        if (!confirm("Post this announcement to all users?")) return;
 
-        setLoading(true);
-        const success = await AnnouncementService.addAnnouncement(announceMsg, announceType, announceTitle);
-        if (success) {
-            audioService.playSE('save');
-            alert("Announcement Posted Successfully!");
-            setAnnounceMsg('');
-            setAnnounceTitle('');
-        } else {
-            alert("Failed to post announcement.");
-        }
-        setLoading(false);
-    };
 
     if (!isOpen) return null;
 
@@ -193,59 +174,177 @@ export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ is
                             )}
 
                             {activeTab === 'announce' && (
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-400 mb-1">TYPE</label>
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {(['info', 'maintenance', 'update', 'important'] as const).map(type => (
-                                                <button
-                                                    key={type}
-                                                    onClick={() => setAnnounceType(type)}
-                                                    className={`py-2 text-xs font-bold rounded uppercase transition-colors border ${announceType === type
-                                                        ? type === 'important' ? 'bg-red-500/20 border-red-500 text-red-400'
-                                                            : type === 'maintenance' ? 'bg-orange-500/20 border-orange-500 text-orange-400'
-                                                                : type === 'update' ? 'bg-neon-green/20 border-neon-green text-neon-green'
-                                                                    : 'bg-blue-500/20 border-blue-500 text-blue-400'
-                                                        : 'bg-black/50 border-gray-700 text-gray-500 hover:bg-white/5'
-                                                        }`}
-                                                >
-                                                    {type}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-400 mb-1">TITLE (Optional)</label>
-                                        <input
-                                            type="text"
-                                            value={announceTitle}
-                                            onChange={(e) => setAnnounceTitle(e.target.value)}
-                                            className="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-white text-sm focus:border-neon-blue focus:outline-none mb-4"
-                                            placeholder="Announcement Title"
-                                        />
-
-                                        <label className="block text-xs font-bold text-gray-400 mb-1">MESSAGE (Markdown supported)</label>
-                                        <textarea
-                                            value={announceMsg}
-                                            onChange={(e) => setAnnounceMsg(e.target.value)}
-                                            className="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-white text-sm focus:border-neon-blue focus:outline-none min-h-[150px]"
-                                            placeholder="Enter announcement message..."
-                                        />
-                                    </div>
-
-                                    <button
-                                        onClick={handlePostAnnouncement}
-                                        className="w-full py-3 bg-neon-blue/20 border border-neon-blue text-neon-blue font-bold rounded-lg hover:bg-neon-blue/30 transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <Send size={18} /> POST ANNOUNCEMENT
-                                    </button>
-                                </div>
+                                <AdminAnnouncementPanel />
                             )}
                         </>
                     )}
                 </div>
             </div>
         </div>
+    );
+};
+
+const AdminAnnouncementPanel: React.FC = () => {
+    const [mode, setMode] = useState<'list' | 'edit'>('list');
+    const [announcements, setAnnouncements] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    // Edit State
+    const [editId, setEditId] = useState<string | null>(null);
+    const [msg, setMsg] = useState('');
+    const [title, setTitle] = useState('');
+    const [type, setType] = useState<'info' | 'maintenance' | 'update' | 'important'>('info');
+
+    const fetchAll = async () => {
+        setLoading(true);
+        const data = await AnnouncementService.getAllAnnouncements();
+        setAnnouncements(data);
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        if (mode === 'list') fetchAll();
+    }, [mode]);
+
+    const handleEdit = (item: any) => {
+        setEditId(item.id);
+        setTitle(item.title || '');
+        setMsg(item.message);
+        setType(item.type);
+        setMode('edit');
+    };
+
+    const handleCreate = () => {
+        setEditId(null);
+        setTitle('');
+        setMsg('');
+        setType('info');
+        setMode('edit');
+    };
+
+    const handleSave = async () => {
+        if (!msg.trim()) return alert("Message is empty");
+        if (!confirm(editId ? "Update this announcement?" : "Post this announcement?")) return;
+
+        setLoading(true);
+        let success = false;
+        if (editId) {
+            success = await AnnouncementService.updateAnnouncement(editId, { title, message: msg, type });
+        } else {
+            success = await AnnouncementService.addAnnouncement(msg, type, title);
+        }
+
+        if (success) {
+            audioService.playSE('save');
+            alert("Success!");
+            setMode('list');
+        } else {
+            alert("Failed.");
+        }
+        setLoading(false);
+    };
+
+    if (mode === 'list') {
+        return (
+            <div className="space-y-4">
+                <button
+                    onClick={handleCreate}
+                    className="w-full py-3 bg-neon-blue/20 border border-neon-blue text-neon-blue font-bold rounded-lg hover:bg-neon-blue/30 transition-all flex items-center justify-center gap-2"
+                >
+                    <Send size={18} /> CREATE NEW
+                </button>
+
+                {loading ? <div>Loading...</div> : (
+                    <div className="space-y-2">
+                        {announcements.map(a => (
+                            <div key={a.id} className="bg-black/50 border border-gray-700 rounded-lg p-3 flex justify-between items-center hover:border-white/30">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[10px] uppercase font-bold px-1.5 rounded border ${a.type === 'important' ? 'border-red-500 text-red-500' :
+                                            a.type === 'maintenance' ? 'border-orange-500 text-orange-500' :
+                                                a.type === 'update' ? 'border-neon-green text-neon-green' : 'border-blue-500 text-blue-500'
+                                            }`}>{a.type}</span>
+                                        <span className="text-xs text-gray-500">{new Date(a.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                    <div className="font-bold text-sm text-white">{a.title}</div>
+                                    <div className="text-xs text-gray-400 truncate w-64">{a.message.substring(0, 50)}...</div>
+                                </div>
+                                <button onClick={() => handleEdit(a)} className="px-3 py-1 bg-white/10 rounded hover:bg-white/20 text-sm">EDIT</button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col h-full">
+            <div className="flex justify-between items-center mb-4">
+                <button onClick={() => setMode('list')} className="text-gray-400 hover:text-white flex items-center gap-1 text-sm">
+                    <X size={16} /> CANCEL
+                </button>
+                <div className="font-bold text-white">{editId ? "EDIT ANNOUNCEMENT" : "NEW ANNOUNCEMENT"}</div>
+                <button onClick={handleSave} className="text-neon-green hover:text-white flex items-center gap-1 text-sm font-bold">
+                    <Check size={16} /> SAVE
+                </button>
+            </div>
+
+            <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+                {/* Controls */}
+                <div className="grid grid-cols-4 gap-2 shrink-0">
+                    {(['info', 'maintenance', 'update', 'important'] as const).map(t => (
+                        <button
+                            key={t}
+                            onClick={() => setType(t)}
+                            className={`py-1 text-[10px] font-bold rounded uppercase border ${type === t ? 'bg-white/20 border-white text-white' : 'bg-black/40 border-gray-700 text-gray-500'}`}
+                        >
+                            {t}
+                        </button>
+                    ))}
+                </div>
+                <input
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    placeholder="Title"
+                    className="bg-black/50 border border-gray-700 rounded p-2 text-white text-sm shrink-0"
+                />
+
+                {/* Editor & Preview Split */}
+                <div className="flex-1 flex gap-2 min-h-0">
+                    <textarea
+                        value={msg}
+                        onChange={e => setMsg(e.target.value)}
+                        placeholder="Message (Markdown & LaTeX supported)"
+                        className="flex-1 bg-black/50 border border-gray-700 rounded p-2 text-white text-xs resize-none font-mono focus:border-neon-blue focus:outline-none"
+                    />
+                    <div className="flex-1 bg-gray-900 border border-gray-700 rounded p-2 overflow-y-auto">
+                        <div className="text-[10px] text-gray-500 font-bold mb-2 border-b border-gray-800 pb-1">PREVIEW</div>
+                        <div className="text-xs text-gray-300 markdown-content">
+                            <ReactMarkdown
+                                remarkPlugins={[remarkMath]}
+                                rehypePlugins={[rehypeKatex]}
+                                components={{
+                                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                    a: ({ node, ...props }) => <a className="text-neon-blue hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                                    ul: ({ node, ...props }) => <ul className="list-disc list-inside ml-2 mb-2" {...props} />,
+                                    ol: ({ node, ...props }) => <ol className="list-decimal list-inside ml-2 mb-2" {...props} />
+                                }}
+                            >
+                                {msg}
+                            </ReactMarkdown>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            );
+};
+        /* END component */
+        </>
+    )
+}
+                </div >
+            </div >
+        </div >
     );
 };

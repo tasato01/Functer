@@ -8,7 +8,7 @@ import 'katex/dist/katex.min.css';
 
 import { levelService } from '../../services/FirebaseLevelService';
 import { audioService } from '../../services/AudioService';
-import { AnnouncementService, type Announcement } from '../../services/AnnouncementService';
+import { AnnouncementService } from '../../services/AnnouncementService';
 import { AuthDialog } from '../editor/AuthDialog';
 import { AdminManagementDialog } from '../admin/AdminManagementDialog';
 import { UserMenuDialog } from './UserMenuDialog';
@@ -16,6 +16,7 @@ import { auth } from '../../services/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { UserService } from '../../services/UserService';
 import { MathBackground } from '../common/MathBackground';
+import { AnnouncementDialog } from './AnnouncementDialog';
 
 export const HomeScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -24,23 +25,31 @@ export const HomeScreen: React.FC = () => {
     const [showSettings, setShowSettings] = useState(false);
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [showNews, setShowNews] = useState(false);
+
     const [bgmVolume, setBgmVolume] = useState(audioService.getBGMVolume() * 100);
     const [seVolume, setSeVolume] = useState(audioService.getSEVolume() * 100);
     const [isAdmin, setIsAdmin] = useState(false);
-    const [announcement, setAnnouncement] = useState<Announcement | null>(null);
+    const [hasUnreadNews, setHasUnreadNews] = useState(false);
 
     // Auth & Prefetch
     useEffect(() => {
         levelService.getOfficialLevels().catch(console.error);
         levelService.getUserLevels().catch(console.error);
-        AnnouncementService.getLatestAnnouncement().then(setAnnouncement); // Fetch Announcement
+
+        // Check for unread news
+        AnnouncementService.getAllAnnouncements().then(list => {
+            const stored = localStorage.getItem('functer_read_announcements');
+            const readIds = new Set(stored ? JSON.parse(stored) : []);
+            const hasUnread = list.some(a => !readIds.has(a.id));
+            setHasUnreadNews(hasUnread);
+        });
 
         const unsubscribe = onAuthStateChanged(auth, async (u) => {
             setUser(u);
             if (u) {
                 const adminStatus = await UserService.isAdmin(u.uid);
                 setIsAdmin(adminStatus);
-                // Sync user data
                 UserService.syncUser({
                     uid: u.uid,
                     email: u.email,
@@ -51,14 +60,14 @@ export const HomeScreen: React.FC = () => {
             }
         });
         return () => unsubscribe();
-    }, []);
+    }, [showNews]); // Re-check when news dialog closes (showNews changes)
 
     return (
         <div className="h-full flex flex-col items-center relative overflow-y-auto text-white font-sans bg-black">
             <MathBackground />
 
             {/* Title / Header */}
-            <div className="z-10 text-center flex-none pt-12 pb-4 animate-in fade-in zoom-in duration-700">
+            <div className="z-10 text-center flex-none pt-24 pb-12 animate-in fade-in zoom-in duration-700">
                 <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-neon-pink via-white to-neon-blue drop-shadow-[0_0_20px_rgba(255,255,255,0.4)] italic py-2 px-4 leading-normal">
                     FUNCTER
                 </h1>
@@ -66,54 +75,6 @@ export const HomeScreen: React.FC = () => {
                     Functional Graph Action Puzzle
                 </p>
             </div>
-
-            {/* Announcement Banner */}
-            {announcement && (
-                <div className="z-20 w-full max-w-lg px-6 mb-2 animate-in slide-in-from-top-4 fade-in duration-500">
-                    <div className={`
-                        p-3 rounded-xl border flex items-start gap-3 backdrop-blur-md shadow-lg
-                        ${announcement.type === 'important' ? 'bg-red-900/40 border-red-500/50' :
-                            announcement.type === 'maintenance' ? 'bg-orange-900/40 border-orange-500/50' :
-                                announcement.type === 'update' ? 'bg-neon-green/20 border-neon-green/50' :
-                                    'bg-blue-900/40 border-blue-500/50'}
-                    `}>
-                        <div className="mt-1 shrink-0">
-                            {announcement.type === 'important' ? <AlertTriangle className="text-red-400" size={20} /> :
-                                announcement.type === 'maintenance' ? <Wrench className="text-orange-400" size={20} /> :
-                                    announcement.type === 'update' ? <Bell className="text-neon-green" size={20} /> :
-                                        <Info className="text-blue-400" size={20} />}
-                        </div>
-
-                        <div className="flex-1 text-xs md:text-sm overflow-hidden">
-                            <div className="font-bold flex justify-between items-center mb-1">
-                                <span className={`uppercase tracking-wider opacity-90 text-[10px] ${announcement.type === 'important' ? 'text-red-300' :
-                                    announcement.type === 'maintenance' ? 'text-orange-300' :
-                                        announcement.type === 'update' ? 'text-green-300' : 'text-blue-300'
-                                    }`}>
-                                    {announcement.title || announcement.type}
-                                </span>
-                                <span className="text-[10px] opacity-50 shrink-0 ml-2">
-                                    {new Date(announcement.createdAt).toLocaleDateString()}
-                                </span>
-                            </div>
-                            <div className="text-white/90 font-medium leading-tight whitespace-pre-wrap markdown-content">
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkMath]}
-                                    rehypePlugins={[rehypeKatex]}
-                                    components={{
-                                        p: ({ node, ...props }) => <p className="mb-1 last:mb-0" {...props} />,
-                                        a: ({ node, ...props }) => <a className="text-neon-blue hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
-                                        ul: ({ node, ...props }) => <ul className="list-disc list-inside ml-1" {...props} />,
-                                        ol: ({ node, ...props }) => <ol className="list-decimal list-inside ml-1" {...props} />
-                                    }}
-                                >
-                                    {announcement.message}
-                                </ReactMarkdown>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Main Center Stack */}
             <div className="z-10 flex flex-col gap-3 md:gap-6 w-full max-w-lg px-6 flex-1 justify-center min-h-0 shrink-0">
@@ -170,8 +131,25 @@ export const HomeScreen: React.FC = () => {
                 </button>
             </div>
 
-            {/* Bottom Dock - Changed to relative flex item to prevent overlap */}
-            <div className="z-20 flex gap-6 p-4 bg-gray-900/60 backdrop-blur-md rounded-full border border-white/10 shadow-2xl mt-4 mb-8 shrink-0">
+            {/* Bottom Dock */}
+            <div className="z-20 flex gap-6 p-4 bg-gray-900/60 backdrop-blur-md rounded-full border border-white/10 shadow-2xl mt-4 mb-8 shrink-0 relative">
+
+                {/* News Button */}
+                <button
+                    onClick={() => { audioService.playSE('click'); setShowNews(true); }}
+                    className="group flex flex-col items-center gap-1 text-gray-400 hover:text-white transition-colors w-16 relative"
+                >
+                    <div className="p-2 rounded-full group-hover:bg-white/20 group-hover:shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-300">
+                        <Bell size={20} className="group-hover:text-white" />
+                    </div>
+                    <span className="text-[9px] font-bold group-hover:text-white">NEWS</span>
+
+                    {/* Unread Indicator */}
+                    {hasUnreadNews && (
+                        <div className="absolute top-0 right-2 w-3 h-3 bg-neon-pink rounded-full border border-black animate-pulse shadow-[0_0_8px_theme(colors.neon.pink)]" />
+                    )}
+                </button>
+
                 {user && (
                     <button
                         onClick={() => { audioService.playSE('click'); navigate('/mine'); }}
@@ -206,8 +184,8 @@ export const HomeScreen: React.FC = () => {
             </div>
 
             {/* Version Footer - Fixed Bottom Right */}
-            <div className="fixed bottom-2 right-2 text-[10px] text-gray-500 font-mono select-none pointer-events-none z-50 opacity-50">
-                v0.1.2
+            <div className="fixed bottom-2 right-2 text-xs text-gray-400 font-mono select-none pointer-events-none z-50 opacity-80 shadow-black drop-shadow-md">
+                v0.1.3
             </div>
             <div className="absolute top-6 right-6 z-20 flex gap-3">
                 {user ? (
@@ -248,6 +226,8 @@ export const HomeScreen: React.FC = () => {
 
             {/* Dialogs */}
             <AuthDialog isOpen={showAuthDialog} onClose={() => setShowAuthDialog(false)} />
+
+            <AnnouncementDialog isOpen={showNews} onClose={() => setShowNews(false)} />
 
             <UserMenuDialog
                 isOpen={showUserMenu}
