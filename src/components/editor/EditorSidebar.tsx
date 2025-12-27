@@ -155,11 +155,11 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
     // Refs for auto-scroll
     const itemRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
-    // Auto-scroll to selected item
+    // Auto-scroll to selected item - DISABLED to prevent jumping when clicking inputs
     React.useEffect(() => {
-        if (selectedId && itemRefs.current[selectedId]) {
-            itemRefs.current[selectedId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        // if (selectedId && itemRefs.current[selectedId]) {
+        //     itemRefs.current[selectedId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // }
     }, [selectedId]);
 
     const handlePointUpdate = (targetId: string, field: 'x' | 'y', valStr: string) => {
