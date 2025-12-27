@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Square, Settings, HelpCircle, Target, Circle, Trash2, Plus, Ban, RotateCcw, RotateCw, RefreshCw, AlertTriangle, Save, FolderOpen, Download, FolderInput, CloudUpload, User as UserIcon, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Play, Square, Settings, HelpCircle, Target, Circle, Trash2, Plus, Ban, RotateCcw, RotateCw, RefreshCw, AlertTriangle, Save, FolderOpen, Download, FolderInput, CloudUpload, User as UserIcon, ShieldCheck, Eye, EyeOff, Hash } from 'lucide-react';
 import { ADMIN_UIDS } from '../../constants/admin';
 import type { InteractionMode } from '../game/GameCanvas';
 import type { LevelConfig } from '../../types/Level';
@@ -561,10 +561,11 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                             <h3 className="text-red-500 font-bold flex items-center gap-2"><Ban size={18} /> Forbidden Areas</h3>
                             <button
                                 onClick={() => { audioService.playSE('click'); setShowForbidden(!showForbidden); }}
-                                className={`p-1 rounded transition-colors ${showForbidden ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-400'}`}
-                                title={showForbidden ? "Hide Inequalities" : "Show Inequalities"}
+                                className={`px-2 py-1 rounded transition-colors text-xs font-bold flex items-center gap-1 ${showForbidden ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}
+                                title={showForbidden ? "Hide Forbidden Areas" : "Show Forbidden Areas"}
                             >
-                                {showForbidden ? <Eye size={16} /> : <EyeOff size={16} />}
+                                {showForbidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                                {showForbidden ? "VISIBLE" : "HIDDEN"}
                             </button>
                         </div>
 
@@ -614,7 +615,17 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
                     {/* Objects Section */}
                     <div className="border-t border-white/10 pt-4 pb-4">
-                        <h3 className="text-neon-blue font-bold mb-3 flex items-center gap-2"><Target size={18} /> Objects</h3>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-neon-blue font-bold flex items-center gap-2"><Target size={18} /> Objects</h3>
+                            <button
+                                onClick={() => { audioService.playSE('click'); setLevel(l => ({ ...l, showCoordinates: !(l.showCoordinates !== false) })); }}
+                                className={`px-2 py-1 rounded transition-colors text-xs font-bold flex items-center gap-1 ${level.showCoordinates !== false ? 'bg-neon-blue/10 text-neon-blue border border-neon-blue/30' : 'bg-gray-800 text-gray-500 border border-transparent'}`}
+                                title="Toggle Coordinates Display"
+                            >
+                                <Hash size={14} />
+                                {level.showCoordinates !== false ? "COORDS ON" : "COORDS OFF"}
+                            </button>
+                        </div>
 
                         <div className="flex flex-col gap-4">
                             {/* Waypoints List */}

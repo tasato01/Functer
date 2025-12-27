@@ -33,7 +33,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, label, di
         if (!mf) return;
 
         // Revert to standard virtual keyboard policy
-        mf.mathVirtualKeyboardPolicy = "auto";
+        mf.mathVirtualKeyboardPolicy = "manual";
 
         const handleInput = () => {
             onChange(mf.getValue());
