@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PenTool, Database, Trophy, User as UserIcon, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize, Bell, AlertTriangle, Info, Wrench } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import 'katex/dist/katex.min.css';
+import { PenTool, Database, Trophy, User as UserIcon, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize, Bell } from 'lucide-react';
 
 import { levelService } from '../../services/FirebaseLevelService';
 import { audioService } from '../../services/AudioService';
@@ -185,7 +181,7 @@ export const HomeScreen: React.FC = () => {
 
             {/* Version Footer - Fixed Bottom Right */}
             <div className="fixed bottom-2 right-2 text-xs text-gray-400 font-mono select-none pointer-events-none z-50 opacity-80 shadow-black drop-shadow-md">
-                v0.1.3
+                v0.1.4
             </div>
             <div className="absolute top-6 right-6 z-20 flex gap-3">
                 {user ? (

@@ -339,12 +339,4 @@ const AdminAnnouncementPanel: React.FC = () => {
             </div>
             );
 };
-        /* END component */
-        </>
-    )
-}
-                </div >
-            </div >
-        </div >
-    );
-};
+
