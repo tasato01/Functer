@@ -229,9 +229,13 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
                                                 </h3>
                                                 <div className="flex gap-2 shrink-0 items-center">
                                                     {/* Cleared Badge */}
-                                                    {isCleared && (
+                                                    {isCleared ? (
                                                         <div className="flex items-center gap-1 bg-neon-green/20 border border-neon-green px-1.5 py-0.5 rounded text-[10px] font-bold text-neon-green" title="Cleared">
                                                             <CheckCircle size={10} /> CLEARED
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-1 bg-neon-pink/20 border border-neon-pink px-1.5 py-0.5 rounded text-[10px] font-bold text-neon-pink animate-pulse">
+                                                            NEW
                                                         </div>
                                                     )}
 

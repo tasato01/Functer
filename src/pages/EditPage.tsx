@@ -161,6 +161,10 @@ export const EditPage: React.FC = () => {
                 if (e.shiftKey) redo();
                 else undo();
             }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                handleTogglePlay();
+            }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);

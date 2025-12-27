@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Check, X, User, AlertTriangle, Send, HelpCircle } from 'lucide-react';
+import { ShieldCheck, Check, X, User, AlertTriangle, Send, HelpCircle, Trash2 } from 'lucide-react';
 import { UserService, type AdminRequest, type UserProfile } from '../../services/UserService';
 import { AnnouncementService } from '../../services/AnnouncementService';
 import { audioService } from '../../services/AudioService';
@@ -287,7 +287,28 @@ const AdminAnnouncementPanel: React.FC = () => {
                                     <div className="font-bold text-sm text-white">{a.title}</div>
                                     <div className="text-xs text-gray-400 truncate w-64">{a.message.substring(0, 50)}...</div>
                                 </div>
-                                <button onClick={() => handleEdit(a)} className="px-3 py-1 bg-white/10 rounded hover:bg-white/20 text-sm">EDIT</button>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => handleEdit(a)} className="px-3 py-1 bg-white/10 rounded hover:bg-white/20 text-sm">EDIT</button>
+                                    <button
+                                        onClick={async () => {
+                                            if (confirm("Delete this announcement?")) {
+                                                setLoading(true);
+                                                const success = await AnnouncementService.deleteAnnouncement(a.id);
+                                                if (success) {
+                                                    audioService.playSE('save'); // 'pico'? 'trash'?
+                                                    fetchAll();
+                                                } else {
+                                                    alert("Failed to delete.");
+                                                }
+                                                setLoading(false);
+                                            }
+                                        }}
+                                        className="p-1.5 bg-red-900/40 border border-red-500/20 text-red-400 rounded hover:bg-red-900/60 transition-colors"
+                                        title="Delete"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>

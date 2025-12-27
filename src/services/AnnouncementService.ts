@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, query, orderBy, limit, Timestamp } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, orderBy, limit, Timestamp, doc, deleteDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
 export interface Announcement {
@@ -84,6 +84,16 @@ export const AnnouncementService = {
             return true;
         } catch (e) {
             console.error("Failed to add announcement", e);
+            return false;
+        }
+    },
+
+    async deleteAnnouncement(id: string): Promise<boolean> {
+        try {
+            await deleteDoc(doc(db, 'announcements', id));
+            return true;
+        } catch (e) {
+            console.error("Failed to delete announcement", e);
             return false;
         }
     }

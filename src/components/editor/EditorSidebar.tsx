@@ -532,7 +532,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                         }))}
                                         className="accent-neon-blue"
                                     />
-                                    Enable Parameter 'a'
+                                    Enable Parameter 'a' to f(x)
                                 </label>
                             </div>
                             {(level.playerVar?.enabled) && (

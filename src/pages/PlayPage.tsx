@@ -76,6 +76,8 @@ export const PlayPage: React.FC = () => {
         setIsLiked(false);
     }, [level?.id, stopGame]); // Only reset if level ID changes
 
+
+
     // Auto-center on load
     useEffect(() => {
         if (!level) return; // Only center if level data is loaded
@@ -143,6 +145,21 @@ export const PlayPage: React.FC = () => {
             levelService.incrementPlayCount(level.id);
         }
     };
+
+    // Space Key to Toggle Play
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const activeTag = document.activeElement?.tagName.toLowerCase();
+            if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'math-field') return;
+
+            if (e.code === 'Space') {
+                e.preventDefault(); // Prevent scrolling
+                handleTogglePlay();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleTogglePlay]);
 
     // Auto-center on load
     useEffect(() => {
