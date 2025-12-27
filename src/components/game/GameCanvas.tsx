@@ -249,7 +249,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                     pointsToLabel.push({ p: level.goalPoint });
                     level.waypoints?.forEach(wp => pointsToLabel.push({ p: wp }));
                 } else if (!isPlaying && selectedId) {
-                    // Show only selected if not playing (redundant if showCoords is true, but covers false case)
+                    // Cautious check: Only show if explicitly selected
                     if (selectedId === 'start') pointsToLabel.push({ p: level.startPoint });
                     else if (selectedId === 'goal') pointsToLabel.push({ p: level.goalPoint });
                     else if (selectedId.startsWith('wp_')) {

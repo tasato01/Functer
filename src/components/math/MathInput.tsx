@@ -35,6 +35,9 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, label, di
         // Revert to standard virtual keyboard policy
         mf.mathVirtualKeyboardPolicy = "manual";
 
+        // Prevent MathLive from scrolling the element into view on focus
+        (mf as any).scrollIntoView = () => { };
+
         const handleInput = () => {
             onChange(mf.getValue());
         };

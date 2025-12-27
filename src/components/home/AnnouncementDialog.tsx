@@ -6,6 +6,22 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
+// Custom styles for KaTeX and Markdown
+const markdownStyles = `
+    .katex-display {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px;
+        margin: 16px 0;
+        overflow-x: auto;
+    }
+    .katex {
+        font-size: 1.1em;
+        color: #e0f2fe; /* Light blue text for math */
+    }
+`;
+
 interface AnnouncementDialogProps {
     isOpen: boolean;
     onClose: () => void;

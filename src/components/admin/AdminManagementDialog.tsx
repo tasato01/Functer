@@ -10,6 +10,22 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
+// Markdown Styles
+const markdownStyles = `
+    .katex-display {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 8px;
+        margin: 8px 0;
+        overflow-x: auto;
+    }
+    .katex {
+        font-size: 1.1em;
+        color: #e0f2fe;
+    }
+`;
+
 interface AdminManagementDialogProps {
     isOpen: boolean;
     onClose: () => void;
@@ -74,6 +90,7 @@ export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ is
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <style>{markdownStyles}</style>
             <div className="bg-gray-900 border border-neon-blue rounded-xl w-full max-w-7xl shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col h-[85vh]">
 
                 {/* Header */}
