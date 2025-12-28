@@ -58,7 +58,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 }) => {
     // Identity transformation for drawing raw f(x)
     const IDENTITY_G: MathFunction = {
-        expression: 'f',
+        raw: 'f',
         compiled: (params: any) => params.f,
         isValid: true
     };
