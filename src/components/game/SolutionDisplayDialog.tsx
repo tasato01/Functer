@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Copy, Check } from 'lucide-react';
+import { X, Copy, Check, Trash2 } from 'lucide-react';
 import { levelService } from '../../services/FirebaseLevelService';
 import { audioService } from '../../services/AudioService';
+import { auth } from '../../services/firebase'; // Import auth
+import { ADMIN_UIDS } from '../../constants/admin'; // Import admin list
 
 // Ensure MathField is available
 declare global {
@@ -20,9 +22,11 @@ interface SolutionDisplayDialogProps {
 }
 
 export const SolutionDisplayDialog: React.FC<SolutionDisplayDialogProps> = ({ isOpen, onClose, levelId, levelSolution }) => {
-    const [solutions, setSolutions] = useState<{ solution: string; userName: string; createdAt: number }[]>([]);
+    const [solutions, setSolutions] = useState<{ id: string; solution: string; userName: string; createdAt: number }[]>([]);
     const [loading, setLoading] = useState(false);
     const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
+
+    const isAdmin = auth.currentUser && ADMIN_UIDS.includes(auth.currentUser.uid);
 
     useEffect(() => {
         let active = true;
@@ -44,6 +48,18 @@ export const SolutionDisplayDialog: React.FC<SolutionDisplayDialogProps> = ({ is
         setCopiedIndex(index);
         audioService.playSE('click');
         setTimeout(() => setCopiedIndex(null), 2000);
+    };
+
+    const handleDelete = async (solutionId: string) => {
+        if (!confirm("Are you sure you want to delete this solution?")) return;
+
+        const success = await levelService.deleteSolution(levelId, solutionId);
+        if (success) {
+            setSolutions(prev => prev.filter(s => s.id !== solutionId));
+            audioService.playSE('click');
+        } else {
+            alert("Failed to delete solution.");
+        }
     };
 
     if (!isOpen) return null;
@@ -109,10 +125,25 @@ export const SolutionDisplayDialog: React.FC<SolutionDisplayDialogProps> = ({ is
                         ) : (
                             <div className="space-y-3">
                                 {solutions.map((item, idx) => (
-                                    <div key={idx} className="bg-white/5 rounded-lg p-3 border border-white/5 hover:border-white/10 transition-colors">
+                                    <div key={item.id || idx} className="bg-white/5 rounded-lg p-3 border border-white/5 hover:border-white/10 transition-colors">
                                         <div className="flex justify-between items-center mb-1">
-                                            <span className="text-xs text-gray-400 font-bold">{item.userName}</span>
-                                            <span className="text-[10px] text-gray-600">{new Date(item.createdAt).toLocaleDateString()}</span>
+                                            <div className="flex flex-col">
+                                                <span className="text-xs text-gray-400 font-bold">{item.userName}</span>
+                                                <span className="text-[10px] text-gray-600">{new Date(item.createdAt).toLocaleDateString()}</span>
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                {/* Admin Delete Button */}
+                                                {isAdmin && (
+                                                    <button
+                                                        onClick={() => handleDelete(item.id)}
+                                                        className="text-gray-600 hover:text-red-500 transition-colors p-1"
+                                                        title="Delete (Admin)"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="relative group">
                                             {(() => {

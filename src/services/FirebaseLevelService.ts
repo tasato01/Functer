@@ -383,20 +383,26 @@ export class FirebaseLevelService implements ILevelService {
 
     async submitPlayerSolution(levelId: string, solution: string): Promise<void> {
         const user = auth.currentUser;
+        if (!user) return; // Anonymous not supported for now or handled differently
+
+        // Prevent ADMIN solutions from polluting the community list
+        if (ADMIN_UIDS.includes(user.uid)) {
+            console.log("Admin solution blocked from community list.");
+            return;
+        }
+
         try {
             const solutionsRef = collection(db, LEVELS_COLLECTION, levelId, "solutions");
 
             // We can store it as a simple doc
             await addDoc(solutionsRef, {
                 solution,
-                userId: user?.uid || 'anonymous',
-                userName: user?.displayName || 'Anonymous',
+                userId: user.uid,
+                userName: user.displayName || 'Anonymous',
                 createdAt: Timestamp.now()
             });
 
-            if (user) {
-                await UserService.addClearedLevel(user.uid, levelId);
-            }
+            await UserService.addClearedLevel(user.uid, levelId);
 
             console.log("Solution submitted for", levelId);
         } catch (e) {
@@ -404,7 +410,7 @@ export class FirebaseLevelService implements ILevelService {
         }
     }
 
-    async getLevelSolutions(levelId: string, limitCount = 20): Promise<{ solution: string, userName: string, createdAt: number }[]> {
+    async getLevelSolutions(levelId: string, limitCount = 20): Promise<{ id: string, solution: string, userName: string, createdAt: number }[]> {
         try {
             const solutionsRef = collection(db, LEVELS_COLLECTION, levelId, "solutions");
             const q = query(
@@ -413,13 +419,9 @@ export class FirebaseLevelService implements ILevelService {
                 limit(limitCount)
             );
 
-            // Note: If orderBy fails without index, we might just fetch and soft.
-            // For now, let's try without strict orderBy or just accept it might require index creation.
-            // Safest for MVP without index creation is just getDocs (it usually returns insertion order roughly or undefined).
-            // Let's add orderBy in memory or try simple query.
-
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => ({
+                id: doc.id,
                 solution: doc.data().solution,
                 userName: doc.data().userName,
                 createdAt: (doc.data().createdAt as Timestamp).toMillis()
@@ -427,6 +429,20 @@ export class FirebaseLevelService implements ILevelService {
         } catch (e) {
             console.error("Failed to fetch solutions", e);
             return [];
+        }
+    }
+
+    async deleteSolution(levelId: string, solutionId: string): Promise<boolean> {
+        const user = auth.currentUser;
+        if (!user || !ADMIN_UIDS.includes(user.uid)) return false;
+
+        try {
+            const docRef = doc(db, LEVELS_COLLECTION, levelId, "solutions", solutionId);
+            await deleteDoc(docRef);
+            return true;
+        } catch (e) {
+            console.error("Failed to delete solution", e);
+            return false;
         }
     }
 

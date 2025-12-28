@@ -330,7 +330,7 @@ export const PlayPage: React.FC = () => {
                                             const MathFieldTag = 'math-field' as any;
                                             return (
                                                 <div key={j} className="inline-block">
-                                                    {j > 0 && <span className="text-red-400 text-xs mx-1 font-bold">OR</span>}
+                                                    {j > 0 && <span className="text-red-400 text-xs mx-1 font-bold">AND</span>}
                                                     {/* Use math-field for proper LaTeX rendering */}
                                                     <MathFieldTag
                                                         read-only

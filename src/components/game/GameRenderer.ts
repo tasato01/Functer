@@ -195,13 +195,22 @@ export function drawFunction(
     width: number,
     toWorldX: (s: number) => number,
     toScreenY: (y: number) => number,
-    t: number, pX: number, pY: number, a: number = 0
+    t: number, pX: number, pY: number, a: number = 0,
+    isDotted: boolean = false
 ) {
     ctx.save();
     ctx.lineWidth = 2;
     ctx.strokeStyle = COLORS.NEON_PINK;
     ctx.shadowColor = COLORS.NEON_PINK;
     ctx.shadowBlur = 10;
+
+    if (isDotted) {
+        ctx.setLineDash([4, 8]);
+        ctx.shadowBlur = 0; // Reduce glow for dotted reference
+        ctx.strokeStyle = 'rgba(255, 0, 255, 0.4)'; // Dimmer for reference
+    } else {
+        ctx.setLineDash([]);
+    }
 
     ctx.beginPath();
     let first = true;
