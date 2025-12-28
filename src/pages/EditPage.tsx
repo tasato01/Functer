@@ -85,6 +85,7 @@ export const EditPage: React.FC = () => {
     const [showHelp, setShowHelp] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false); // Verification for Publish
     const [showForbidden, setShowForbidden] = useState(true); // Toggle visibility of Forbidden Areas
+    const [refreshCount, setRefreshCount] = useState(0);
 
 
     const fFn = useMemo(() => MathEngine.compile(testF), [testF]);
@@ -164,6 +165,12 @@ export const EditPage: React.FC = () => {
             if (e.code === 'Space') {
                 e.preventDefault();
                 handleTogglePlay();
+            }
+            if (e.code === 'KeyR') {
+                e.preventDefault();
+                setSelectedId(null);
+                setRefreshCount(c => c + 1);
+                audioService.playSE('click');
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -340,6 +347,8 @@ export const EditPage: React.FC = () => {
                         onWaypointCreate={handleAddWaypoint}
 
                         snapStep={snapStep}
+
+                        refreshTrigger={refreshCount}
 
                         className="w-full h-full"
                     />

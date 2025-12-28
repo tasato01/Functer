@@ -39,6 +39,7 @@ interface GameCanvasProps {
     className?: string;
     isStatic?: boolean;
     showForbiddenOverlay?: boolean;
+    refreshTrigger?: number; // Added for manual refresh
 }
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -52,12 +53,33 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     snapStep,
     className,
     isStatic = false,
-    showForbiddenOverlay = true
+    showForbiddenOverlay = true,
+    refreshTrigger
 }) => {
+    // Identity transformation for drawing raw f(x)
+    const IDENTITY_G: MathFunction = {
+        expression: 'f',
+        compiled: (params: any) => params.f,
+        isValid: true
+    };
+
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const [rotation, setRotation] = useState({ w: 800, h: 600 });
+
+    // Refresh Logic
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const measure = () => {
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (rect) {
+                setRotation({ w: Math.floor(rect.width), h: Math.floor(rect.height) });
+            }
+        };
+        measure();
+        // If refreshTrigger changes, re-measure
+    }, [refreshTrigger, containerRef]);
 
     const [hoverPos, setHoverPos] = useState<Point | null>(null);
     const [dragState, setDragState] = useState<{
@@ -179,15 +201,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 }
                 if (tempShape) drawShape(ctx, tempShape, toScreenX, toScreenY, scale, true);
 
-                if (f && f.isValid && g && g.isValid) {
+                if (f && f.isValid) {
                     const pX = player?.x ?? level.startPoint.x ?? 0;
                     const pY = player?.y ?? level.startPoint.y ?? 0;
 
-                    // Logic: Hide graph when game is running (player exists). Show as dotted otherwise.
                     const isGameRunning = !!player && !isStatic;
 
+                    // 1. Reference Graph y=f(x)
+                    // Dotted, Hidden only if running
                     if (!isGameRunning) {
-                        drawFunction(ctx, f, g, width, toWorldX, toScreenY, t, pX, pY, a, true); // true = dotted
+                        drawFunction(ctx, f, IDENTITY_G, width, toWorldX, toScreenY, t, pX, pY, a, true);
+                    }
+
+                    // 2. Transformed Graph y=g(f(x))
+                    // Solid, ALWAYS Visible (Requested by user)
+                    if (g && g.isValid) {
+                        drawFunction(ctx, f, g, width, toWorldX, toScreenY, t, pX, pY, a, false);
                     }
                 }
 

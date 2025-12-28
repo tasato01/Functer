@@ -158,6 +158,13 @@ export const PlayPage: React.FC = () => {
                 e.preventDefault(); // Prevent scrolling
                 handleTogglePlay();
             }
+            if (e.code === 'Enter') {
+                if (gameState.isPlaying) {
+                    e.preventDefault();
+                    stopGame();
+                    audioService.playSE('click');
+                }
+            }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
