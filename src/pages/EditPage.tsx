@@ -4,7 +4,7 @@ import { GameCanvas } from '../components/game/GameCanvas';
 import type { InteractionMode } from '../components/game/GameCanvas';
 
 import { EMPTY_LEVEL } from '../types/Level';
-import type { LevelConfig, Point, CircleConstraint, RectConstraint } from '../types/Level';
+import type { LevelConfig } from '../types/Level';
 import { MathEngine } from '../core/math/MathEngine';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { EditorSidebar } from '../components/editor/EditorSidebar';
@@ -117,7 +117,7 @@ export const EditPage: React.FC = () => {
         };
     }, [level.g_raw, level.gRules]);
 
-    const { gameState, startGame, stopGame } = useGameLoop(fFn, gFn, level);
+    const { gameState, startGame, stopGame, activeShapeIds } = useGameLoop(fFn, gFn, level);
 
     // ... (rest of code)
 
@@ -150,36 +150,6 @@ export const EditPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            const activeTag = document.activeElement?.tagName.toLowerCase();
-            if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'math-field') return;
-
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-                handleDeleteSelected();
-            }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-                if (e.shiftKey) redo();
-                else undo();
-            }
-            if (e.code === 'Space') {
-                e.preventDefault();
-                handleTogglePlay();
-            }
-            if (e.code === 'KeyR') {
-                // ...
-                // ...
-                window.addEventListener('keydown', handleKeyDown);
-                return () => window.removeEventListener('keydown', handleKeyDown);
-            }, [selectedId, level, undo, redo, handleTogglePlay]); // Added handleTogglePlay
-
-
-
-    // Layout Fix: Added min-h-0 to flex container to ensure proper shrinking
-    // const styles = { height: `${viewportHeight}px` };  <-- removed
-
-
-    // ... (handleTogglePlay)
     const handleTogglePlay = () => {
         audioService.playSE('play');
         if (gameState.isPlaying) {
@@ -189,7 +159,6 @@ export const EditPage: React.FC = () => {
                 alert("Functions are invalid!");
                 return;
             }
-
 
             const sx = level.startPoint.x;
             const sy = level.startPoint.y;
@@ -211,6 +180,43 @@ export const EditPage: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const activeTag = document.activeElement?.tagName.toLowerCase();
+            if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'math-field') return;
+
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                handleDeleteSelected();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                if (e.shiftKey) redo();
+                else undo();
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                handleTogglePlay();
+            }
+            if (e.code === 'KeyR') {
+                e.preventDefault();
+                setRefreshCount(c => c + 1);
+                setSelectedId(null);
+                setMode('select');
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedId, level, undo, redo, handleTogglePlay, setRefreshCount, setSelectedId, setMode]);
+
+
+
+    // Layout Fix: Added min-h-0 to flex container to ensure proper shrinking
+    // const styles = { height: `${viewportHeight}px` };  <-- removed
+
+
+    // ... (handleTogglePlay)
+
+
     const resetView = useCallback(() => {
         const cx = (level.startPoint.x + level.goalPoint.x) / 2;
         const cy = (level.startPoint.y + level.goalPoint.y) / 2;
@@ -223,13 +229,6 @@ export const EditPage: React.FC = () => {
         resetView();
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-
-
-    const handleAddShape = (shape: CircleConstraint | RectConstraint) => {
-        setLevel(prev => ({ ...prev, shapes: [...(prev.shapes || []), shape] }));
-        setMode('select');
-        setSelectedId(shape.id);
-    };
 
     const handleDeleteSelected = () => {
         if (!selectedId) return;
@@ -254,9 +253,11 @@ export const EditPage: React.FC = () => {
 
 
 
-    const handleAddWaypoint = (p: Point) => {
-        setLevel(prev => ({ ...prev, waypoints: [...prev.waypoints, p] }));
-    };
+    // const handleAddWaypoint = (p: Point) => {
+    //     setLevel(prev => ({ ...prev, waypoints: [...(prev.waypoints || []), p] }));
+    //     setMode('select');
+    //     audioService.playSE('click');
+    // };
 
 
 
@@ -347,7 +348,7 @@ export const EditPage: React.FC = () => {
                             setMode('select');
                             audioService.playSE('click');
                         }}
-                        onObjectClick={(info) => { /* ... */ }}
+                        onObjectClick={() => { /* ... */ }}
 
                         onRightClick={handleRightClick}
                         snapStep={0.5}
@@ -357,6 +358,9 @@ export const EditPage: React.FC = () => {
                         className="w-full h-full"
                         activeShapeIds={activeShapeIds}
                     />
+
+                    {/* Modals */}
+                    <HelpDialog isOpen={showHelp} onClose={() => setShowHelp(false)} />
 
                     {/* Game Status */}
                     {gameState.status !== 'idle' && gameState.status !== 'playing' && !isVerifying && (

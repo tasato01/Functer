@@ -1,4 +1,3 @@
-```typescript
 // Native Audio Service
 class AudioService {
     private bgm: HTMLAudioElement | null = null;
@@ -10,14 +9,14 @@ class AudioService {
     // Assuming the user intended to define a static or private member for SE sources
     // This block is added based on the user's "Code Edit" snippet,
     // making it a private member for syntactic correctness.
-    private SESources = {
-        checkpoint: 'sounds/se_checkpoint.mp3',
-        clear: 'sounds/se_fanfare.mp3',
-        gameover: 'sounds/se_gameover.mp3',
-        save: 'sounds/se_save.mp3', // Placeholder
-        play: 'sounds/se_play.mp3', // Placeholder
-        se_area: 'sounds/se_area.mp3',
-    };
+    // private _SESources = {
+    //     checkpoint: 'sounds/se_checkpoint.mp3',
+    //     clear: 'sounds/se_fanfare.mp3',
+    //     gameover: 'sounds/se_gameover.mp3',
+    //     save: 'sounds/se_save.mp3', // Placeholder
+    //     play: 'sounds/se_play.mp3', // Placeholder
+    //     se_area: 'sounds/se_area.mp3',
+    // };
 
     constructor() {
         // Load settings from localStorage
@@ -43,8 +42,8 @@ class AudioService {
     getSEVolume() { return this.seVolume; }
 
     playBGM(name: string, fadeDuration: number = 1000) {
-        const path = `sounds / bgm_${ name }.mp3`;
-        console.log(`[Audio] Request BGM: ${ name } `);
+        const path = `sounds / bgm_${name}.mp3`;
+        console.log(`[Audio] Request BGM: ${name} `);
 
         if (this.currentBgmName === name && this.bgm && !this.bgm.paused) return;
 
@@ -78,7 +77,7 @@ class AudioService {
     }
 
     playSE(name: string) {
-        const path = `sounds / se_${ name }.mp3`;
+        const path = `sounds / se_${name}.mp3`;
 
         let audio = this.seCache.get(name);
         if (!audio) {
@@ -88,7 +87,7 @@ class AudioService {
 
         const clone = audio.cloneNode() as HTMLAudioElement;
         clone.volume = this.seVolume;
-        clone.play().catch(e => console.error(`[Audio] SE failed(${ name }): `, e));
+        clone.play().catch(e => console.error(`[Audio] SE failed(${name}): `, e));
     }
 
     // Helper: Fade In

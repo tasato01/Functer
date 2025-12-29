@@ -228,6 +228,7 @@ export const PlayPage: React.FC = () => {
                     currentWaypointIndex={gameState.currentWaypointIndex}
 
                     viewOffset={viewOffset}
+                    activeShapeIds={activeShapeIds}
                     scale={scale}
                     onViewChange={(o, s) => { setViewOffset(o); setScale(s); }}
 

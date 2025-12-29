@@ -40,6 +40,7 @@ interface GameCanvasProps {
     isStatic?: boolean;
     showForbiddenOverlay?: boolean;
     refreshTrigger?: number; // Added for manual refresh
+    activeShapeIds?: Set<string>;
 }
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -54,7 +55,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     className,
     isStatic = false,
     showForbiddenOverlay = true,
-    refreshTrigger
+    refreshTrigger,
+    activeShapeIds
 }) => {
     // Identity transformation for drawing raw f(x)
     const IDENTITY_G: MathFunction = {
@@ -123,7 +125,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const latestProps = useRef({
         f, g, t, a, level, player, currentWaypointIndex,
         viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-        compiledConstraints, isStatic, showForbiddenOverlay
+        compiledConstraints, isStatic, showForbiddenOverlay, activeShapeIds
     });
 
     // Update ref when props change
@@ -131,9 +133,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         latestProps.current = {
             f, g, t, a, level, player, currentWaypointIndex,
             viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-            compiledConstraints, isStatic, showForbiddenOverlay
+            compiledConstraints, isStatic, showForbiddenOverlay, activeShapeIds
         };
-    }, [f, g, t, a, level, player, currentWaypointIndex, viewOffset, scale, selectedId, hoverPos, tempShape, rotation, compiledConstraints, isStatic, showForbiddenOverlay]);
+    }, [f, g, t, a, level, player, currentWaypointIndex, viewOffset, scale, selectedId, hoverPos, tempShape, rotation, compiledConstraints, isStatic, showForbiddenOverlay, activeShapeIds]);
 
     // Loop
     useEffect(() => {
