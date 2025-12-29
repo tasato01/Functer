@@ -172,6 +172,13 @@ export const EditPage: React.FC = () => {
                 setRefreshCount(c => c + 1);
                 audioService.playSE('click');
             }
+            if (e.key === 'Enter') {
+                if (gameState.isPlaying) {
+                    e.preventDefault();
+                    audioService.playSE('click');
+                    stopGame();
+                }
+            }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PenTool, Database, Trophy, User as UserIcon, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize, Bell } from 'lucide-react';
+import { PenTool, Database, Trophy, User as UserIcon, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize, Bell, AlertTriangle } from 'lucide-react';
 
 import { levelService } from '../../services/FirebaseLevelService';
 import { audioService } from '../../services/AudioService';
@@ -22,6 +22,7 @@ export const HomeScreen: React.FC = () => {
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showNews, setShowNews] = useState(false);
+    const [latestAnnouncement, setLatestAnnouncement] = useState<any>(null);
 
     const [bgmVolume, setBgmVolume] = useState(audioService.getBGMVolume() * 100);
     const [seVolume, setSeVolume] = useState(audioService.getSEVolume() * 100);

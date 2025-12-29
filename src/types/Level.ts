@@ -21,6 +21,7 @@ export interface CircleConstraint {
     id: string;
     center: Point;
     radius: number;
+    condition?: string;
 }
 
 export interface RectConstraint {
@@ -30,6 +31,7 @@ export interface RectConstraint {
     y: number;
     width: number;
     height: number;
+    condition?: string;
 }
 
 // Piecewise Function Rule

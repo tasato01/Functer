@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Square, Settings, HelpCircle, Target, Circle, Trash2, Plus, Ban, RotateCcw, RotateCw, RefreshCw, AlertTriangle, Save, FolderOpen, Download, FolderInput, CloudUpload, User as UserIcon, ShieldCheck, Eye, EyeOff, Hash } from 'lucide-react';
+import { Play, Square, Settings, HelpCircle, Target, Circle, Trash2, Plus, Ban, RotateCcw, RotateCw, RefreshCw, AlertTriangle, Save, FolderOpen, Download, FolderInput, CloudUpload, User as UserIcon, ShieldCheck, Eye, EyeOff, Hash, ChevronUp, ChevronDown, Copy } from 'lucide-react';
 import { ADMIN_UIDS } from '../../constants/admin';
 import type { InteractionMode } from '../game/GameCanvas';
 import type { LevelConfig } from '../../types/Level';
@@ -69,6 +69,9 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
     const [showAuthDialog, setShowAuthDialog] = useState(false);
     const [showPublishDialog, setShowPublishDialog] = useState(false);
     const [solution, setSolution] = useState<string | null>(null);
+    // Math Tool State
+    const [showMathTool, setShowMathTool] = useState(false);
+    const [mathToolValue, setMathToolValue] = useState('');
     // isVerifying is now a prop
 
     const isAdmin = user && ADMIN_UIDS.includes(user.uid);
@@ -799,6 +802,44 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                 min={0.5}
                                 className="bg-transparent text-white text-xs w-full focus:outline-none text-right"
                             />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Math Tool (Pull-up) */}
+                <div className={`bg-black/90 border-t border-neon-blue/30 transition-all duration-300 z-30 flex flex-col ${showMathTool ? 'h-40' : 'h-8'}`}>
+                    <button
+                        onClick={() => { audioService.playSE('click'); setShowMathTool(!showMathTool); }}
+                        className="w-full flex items-center justify-center h-8 bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue transition-colors gap-2"
+                    >
+                        {showMathTool ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                        <span className="text-[10px] font-bold tracking-widest">MATH TOOL</span>
+                    </button>
+
+                    {/* Tool Content */}
+                    <div className={`flex-1 p-2 overflow-hidden flex flex-col gap-2 ${showMathTool ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                        <div className="flex gap-2 items-center">
+                            <div className="flex-1">
+                                <MathInput
+                                    value={mathToolValue}
+                                    onChange={setMathToolValue}
+                                    placeholder="Type formula (e.g. sin(x)^2)"
+                                />
+                            </div>
+                            <button
+                                onClick={() => {
+                                    audioService.playSE('click');
+                                    navigator.clipboard.writeText(mathToolValue);
+                                    alert("Copied!");
+                                }}
+                                className="p-2 bg-white/10 rounded hover:bg-white/20 text-white transition-colors"
+                                title="Copy to Clipboard"
+                            >
+                                <Copy size={16} />
+                            </button>
+                        </div>
+                        <div className="text-[10px] text-gray-500 text-center">
+                            Use this scratchpad to construct complex formulas.
                         </div>
                     </div>
                 </div>

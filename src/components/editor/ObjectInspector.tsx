@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Trash2 } from 'lucide-react';
+import { MathInput } from '../math/MathInput';
 import type { LevelConfig, CircleConstraint, RectConstraint } from '../../types/Level';
 
 interface ObjectInspectorProps {
@@ -68,6 +69,16 @@ export const ObjectInspector: React.FC<ObjectInspectorProps> = ({
                                     }}
                                 />
                             </div>
+                            <div className="mt-2 text-xs border-t border-white/10 pt-2">
+                                <label className="text-neon-yellow mb-1 block">Active Condition</label>
+                                <MathInput
+                                    value={(selectedObject.val as CircleConstraint).condition || ''}
+                                    onChange={v => {
+                                        setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, condition: v } : s) }));
+                                    }}
+                                    placeholder="Always active (e.g. t < 5)"
+                                />
+                            </div>
                         </>
                     ) : (
                         /* RECT Inspector */
@@ -120,6 +131,16 @@ export const ObjectInspector: React.FC<ObjectInspectorProps> = ({
                                         }}
                                     />
                                 </div>
+                            </div>
+                            <div className="mt-2 text-xs border-t border-white/10 pt-2">
+                                <label className="text-neon-yellow mb-1 block">Active Condition</label>
+                                <MathInput
+                                    value={(selectedObject.val as RectConstraint).condition || ''}
+                                    onChange={v => {
+                                        setLevel(l => ({ ...l, shapes: l.shapes.map(sh => sh.id === selectedId ? { ...sh, condition: v } : sh) }));
+                                    }}
+                                    placeholder="Always active (e.g. t < 5)"
+                                />
                             </div>
                         </>
                     )}

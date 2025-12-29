@@ -189,6 +189,13 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
 
         if (!hitConstraint && level.shapes) {
             for (const shape of level.shapes) {
+                // Condition Check
+                if (shape.condition && shape.condition.trim() !== '') {
+                    if (!MathEngine.evaluateCondition(shape.condition, scope)) {
+                        continue; // Skip if condition not met
+                    }
+                }
+
                 if (shape.type === 'circle') {
                     const dx = x - shape.center.x;
                     const dy = y - shape.center.y;
