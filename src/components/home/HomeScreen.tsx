@@ -34,12 +34,19 @@ export const HomeScreen: React.FC = () => {
         levelService.getOfficialLevels().catch(console.error);
         levelService.getUserLevels().catch(console.error);
 
-        // Check for unread news
+        // Check for unread news & Banner
         AnnouncementService.getAllAnnouncements().then(list => {
             const stored = localStorage.getItem('functer_read_announcements');
             const readIds = new Set(stored ? JSON.parse(stored) : []);
             const hasUnread = list.some(a => !readIds.has(a.id));
             setHasUnreadNews(hasUnread);
+
+            if (list.length > 0) {
+                const latest = list[0];
+                if (latest.type === 'maintenance' || latest.type === 'important') {
+                    setLatestAnnouncement(latest);
+                }
+            }
         });
 
         const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -324,6 +331,18 @@ export const HomeScreen: React.FC = () => {
                                 CLOSE
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Maintenance/Important Banner */}
+            {latestAnnouncement && (
+                <div className={`fixed bottom-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(0,0,0,0.5)] ${latestAnnouncement.type === 'maintenance' ? 'bg-orange-600/90 text-white' : 'bg-red-600/90 text-white'
+                    }`}>
+                    <AlertTriangle className="animate-pulse" size={20} />
+                    <div className="font-bold text-sm">
+                        <span className="uppercase mr-2">[{latestAnnouncement.type}]</span>
+                        {latestAnnouncement.title}: {latestAnnouncement.message}
                     </div>
                 </div>
             )}
