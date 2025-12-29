@@ -159,7 +159,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 const {
                     f, g, t, a, level, player, currentWaypointIndex,
                     viewOffset, scale, selectedId, hoverPos, tempShape, rotation,
-                    compiledConstraints, isStatic, showForbiddenOverlay
+                    compiledConstraints, isStatic, showForbiddenOverlay, activeShapeIds
                 } = latestProps.current;
 
                 const width = rotation.w;
@@ -185,6 +185,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 ctx.fillRect(0, 0, width, height);
 
                 // Draw Inequality Constraints (OR of ANDs)
+                // Filter out conditional shapes that might be part of constraints? 
+                // Currently constraints are separate from shapes logic in useGameLoop, BUT 
+                // in GameRenderer, drawConstraintsOverlay implementation relies on compiledConstraints passed as prop. 
+                // Those are from level.constraints string[]?
+                // Wait, useGameLoop separates 'shapes' and 'constraints'.
+                // 'constraints' implies the complex inequality string array.
+                // 'shapes' implies the Circle/Rect objects.
+                // The implementation for visual cue requested is for 'Forbidden Areas' which usually means 'Shapes' in this context since we added 'condition' to Circle/Rect.
+                // So I only need to touch the shapes drawing loop below.
+
                 const showInequalities = (level.showInequalities !== false) && (showForbiddenOverlay !== false);
                 if (showInequalities && level.constraints && level.constraints.length > 0) {
                     const pX = player?.x ?? level.startPoint.x ?? 0;
@@ -197,9 +207,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 drawGrid(ctx, width, height, scale, ORIGIN_X, ORIGIN_Y, toWorldX, toWorldY);
 
                 if (level.shapes) {
-                    level.shapes.forEach(s => drawShape(ctx, s, toScreenX, toScreenY, scale, selectedId === s.id));
+                    level.shapes.forEach(s => {
+                        // Check if active. Default to true if no condition or if static/editor mode?
+                        // In Editor (isStatic?), conditions might not be evaluating continuously. 
+                        // If isStatic is true, activeShapeIds might be undefined? 
+                        // If activeShapeIds is provided, use it. If not, assume active (filled).
+                        // Or maybe assume active if no activeShapeIds passed.
+                        const isActive = activeShapeIds ? activeShapeIds.has(s.id) : true;
+                        // If shape has NO condition, it is always active (logic in useGameLoop confirms this: !isActive only if condition checks fail).
+                        // useGameLoop: "activeShapeIds" only tracks shape.id IF isActive is true.
+                        // So has(s.id) is correct check.
+
+                        drawShape(ctx, s, toScreenX, toScreenY, scale, selectedId === s.id, isActive);
+                    });
                 }
-                if (tempShape) drawShape(ctx, tempShape, toScreenX, toScreenY, scale, true);
+                if (tempShape) drawShape(ctx, tempShape, toScreenX, toScreenY, scale, true, true);
+
 
                 if (f && f.isValid) {
                     const pX = player?.x ?? level.startPoint.x ?? 0;

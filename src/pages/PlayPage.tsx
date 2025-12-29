@@ -60,7 +60,7 @@ export const PlayPage: React.FC = () => {
     const fFn = useMemo(() => MathEngine.compile(fRaw || '0'), [fRaw]);
     const gFn = useMemo(() => MathEngine.compile(level?.g_raw || '0'), [level?.g_raw]);
 
-    const { gameState, startGame, stopGame } = useGameLoop(fFn, gFn, level || DEFAULT_LEVEL);
+    const { gameState, startGame, stopGame, activeShapeIds } = useGameLoop(fFn, gFn, level || DEFAULT_LEVEL);
 
     // List Context for "Next Stage"
     const listContextIds = location.state?.listContextIds as string[] | undefined;

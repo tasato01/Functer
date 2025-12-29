@@ -807,10 +807,10 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 </div>
 
                 {/* Math Tool (Pull-up) */}
-                <div className={`bg-black/90 border-t border-neon-blue/30 transition-all duration-300 z-30 flex flex-col ${showMathTool ? 'h-40' : 'h-8'}`}>
+                <div className={`bg-black/90 border-t border-neon-blue/30 transition-all duration-300 z-30 flex flex-col ${showMathTool ? 'h-40' : 'h-12'}`}>
                     <button
                         onClick={() => { audioService.playSE('click'); setShowMathTool(!showMathTool); }}
-                        className="w-full flex items-center justify-center h-8 bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue transition-colors gap-2"
+                        className="w-full flex items-center justify-center h-12 bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue transition-colors gap-2"
                     >
                         {showMathTool ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                         <span className="text-[10px] font-bold tracking-widest">MATH TOOL</span>
@@ -830,7 +830,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                 onClick={() => {
                                     audioService.playSE('click');
                                     navigator.clipboard.writeText(mathToolValue);
-                                    alert("Copied!");
+                                    setMathToolValue(''); // Clear input
                                 }}
                                 className="p-2 bg-white/10 rounded hover:bg-white/20 text-white transition-colors"
                                 title="Copy to Clipboard"

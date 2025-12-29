@@ -237,10 +237,16 @@ export function drawFunction(
     ctx.restore();
 }
 
-export function drawShape(ctx: CanvasRenderingContext2D, s: CircleConstraint | RectConstraint, toSX: any, toSY: any, scale: number, selected: boolean) {
-    ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
-    ctx.strokeStyle = selected ? '#fff' : 'rgba(255, 0, 0, 0.5)';
+export function drawShape(ctx: CanvasRenderingContext2D, s: CircleConstraint | RectConstraint, toSX: any, toSY: any, scale: number, selected: boolean, isActive: boolean = true) {
+    ctx.fillStyle = isActive ? 'rgba(255, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0)';
+    ctx.strokeStyle = selected ? '#fff' : (isActive ? 'rgba(255, 0, 0, 0.5)' : 'rgba(150, 150, 150, 0.5)'); // Grey-ish outline if inactive to distinguish from active red
     ctx.lineWidth = 2;
+
+    if (!isActive) {
+        ctx.setLineDash([4, 4]); // Dashed outline for inactive
+    } else {
+        ctx.setLineDash([]);
+    }
 
     if (s.type === 'circle') {
         const cx = toSX(s.center.x);
@@ -248,6 +254,7 @@ export function drawShape(ctx: CanvasRenderingContext2D, s: CircleConstraint | R
         const r = s.radius * scale;
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         if (selected) {
+            ctx.setLineDash([]);
             ctx.fillStyle = '#fff';
             ctx.beginPath(); ctx.arc(cx + r, cy, 4, 0, Math.PI * 2); ctx.fill();
         }
@@ -262,6 +269,7 @@ export function drawShape(ctx: CanvasRenderingContext2D, s: CircleConstraint | R
         ctx.fill(); ctx.stroke();
 
         if (selected) {
+            ctx.setLineDash([]);
             ctx.fillStyle = '#fff';
             const screenBottom = toSY(s.y);
             [
@@ -274,6 +282,8 @@ export function drawShape(ctx: CanvasRenderingContext2D, s: CircleConstraint | R
             });
         }
     }
+    // Reset dash
+    ctx.setLineDash([]);
 }
 
 export function drawWaypoint(ctx: CanvasRenderingContext2D, p: DynamicPoint, i: number, toSX: any, toSY: any, selected: boolean, passed: boolean, t: number, pX: number, pY: number) {

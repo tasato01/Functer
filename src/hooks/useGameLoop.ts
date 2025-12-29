@@ -21,11 +21,14 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         x: level.startPoint.x,
         y: level.startPoint.y,
         vx: 0,
-        t: 0.001, // Fix division by zero
+        t: 0.001,
         a: 0,
         status: 'idle',
         currentWaypointIndex: 0
     });
+
+    const [activeShapeIds, setActiveShapeIds] = useState<Set<string>>(new Set());
+    const activeShapeIdsRef = useRef<Set<string>>(new Set());
 
     const [gRulesFunctions, setGRulesFunctions] = useState<{ fn: MathFunction, cond: string }[]>([]);
 
@@ -86,7 +89,7 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
 
     const startGame = useCallback(() => {
         let startY = 0;
-        const initialT = 0.01; // Start at 0.01s to avoid 1/t errors
+        const initialT = 0.01;
         const initialA = 0;
         try {
             const effectiveG = decideG(level.startPoint.x, 0, initialT, initialA, g, gRulesFunctions);
@@ -103,12 +106,16 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
             status: 'playing',
             currentWaypointIndex: 0
         });
+
+        // Reset active shapes
+        activeShapeIdsRef.current = new Set();
+        setActiveShapeIds(new Set());
+
         lastTimeRef.current = performance.now();
         requestRef.current = requestAnimationFrame(updateKey);
     }, [level, f, g, gRulesFunctions]);
 
     const stopGame = useCallback(() => {
-        // Reset to initial state
         setGameState({
             isPlaying: false,
             x: level.startPoint.x,
@@ -119,6 +126,9 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
             status: 'idle',
             currentWaypointIndex: 0
         });
+        // Clear active shapes
+        activeShapeIdsRef.current = new Set();
+        setActiveShapeIds(new Set());
         if (requestRef.current) cancelAnimationFrame(requestRef.current);
         requestRef.current = null;
     }, [level]);
@@ -130,14 +140,13 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         lastTimeRef.current = time;
 
         const { level, f, g, gRulesFunctions } = paramsRef.current;
-
         let { x, y, vx, t, a, currentWaypointIndex } = stateRef.current;
 
         t += deltaTime / 1000;
 
         // Player Variable 'a' Physics
         if (level.playerVar?.enabled) {
-            const speed = level.playerVar.speed ?? 1.0; // Default 1.0 as requested
+            const speed = level.playerVar.speed ?? 1.0;
             const change = speed * (deltaTime / 1000);
             if (inputRef.current.up) a += change;
             if (inputRef.current.down) a -= change;
@@ -187,14 +196,28 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
             }
         }
 
+        const newActiveIds = new Set(activeShapeIdsRef.current);
+        let statusChanged = false;
+
         if (!hitConstraint && level.shapes) {
             for (const shape of level.shapes) {
                 // Condition Check
+                let isActive = true;
                 if (shape.condition && shape.condition.trim() !== '') {
                     if (!MathEngine.evaluateCondition(shape.condition, scope)) {
-                        continue; // Skip if condition not met
+                        isActive = false;
                     }
                 }
+
+                // Logic for Sound Effect on State Change
+                const wasActive = activeShapeIdsRef.current.has(shape.id);
+                if (isActive !== wasActive) {
+                    statusChanged = true;
+                    if (isActive) newActiveIds.add(shape.id);
+                    else newActiveIds.delete(shape.id);
+                }
+
+                if (!isActive) continue; // Skip physical collision if inactive
 
                 if (shape.type === 'circle') {
                     const dx = x - shape.center.x;
@@ -211,6 +234,12 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
                     }
                 }
             }
+        }
+
+        if (statusChanged) {
+            audioService.playSE('se_area');
+            activeShapeIdsRef.current = newActiveIds;
+            setActiveShapeIds(new Set(newActiveIds));
         }
 
         if (hitConstraint) {
@@ -266,5 +295,5 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         requestRef.current = requestAnimationFrame(updateKey);
     };
 
-    return { gameState, startGame, stopGame };
+    return { gameState, startGame, stopGame, activeShapeIds };
 };

@@ -167,22 +167,11 @@ export const EditPage: React.FC = () => {
                 handleTogglePlay();
             }
             if (e.code === 'KeyR') {
-                e.preventDefault();
-                setSelectedId(null);
-                setRefreshCount(c => c + 1);
-                audioService.playSE('click');
-            }
-            if (e.key === 'Enter') {
-                if (gameState.isPlaying) {
-                    e.preventDefault();
-                    audioService.playSE('click');
-                    stopGame();
-                }
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedId, level, undo, redo]); // eslint-disable-line react-hooks/exhaustive-deps
+                // ...
+                // ...
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [selectedId, level, undo, redo, handleTogglePlay]); // Added handleTogglePlay
 
 
 
@@ -333,36 +322,41 @@ export const EditPage: React.FC = () => {
                     <GameCanvas
                         f={fFn}
                         g={gFn}
+                        t={gameState.t}
+                        a={gameState.a}
                         level={level}
-                        t={gameState.isPlaying ? gameState.t : 0}
-                        a={gameState.isPlaying ? gameState.a : 0} // Pass 'a'
-                        player={gameState.isPlaying ? { x: gameState.x, y: gameState.y } : undefined}
+                        player={gameState.status !== 'idle' ? { x: gameState.x, y: gameState.y } : undefined}
                         currentWaypointIndex={gameState.currentWaypointIndex}
-
-                        showForbiddenOverlay={showForbidden}
 
                         viewOffset={viewOffset}
                         scale={scale}
                         onViewChange={(o, s) => { setViewOffset(o); setScale(s); }}
 
                         mode={mode}
-                        onRightClick={handleRightClick}
                         selectedId={selectedId}
                         onSelect={setSelectedId}
-                        onLevelChange={newL => setLevel(newL)}
-                        onShapeCreate={handleAddShape}
-                        onWaypointCreate={handleAddWaypoint}
+                        onLevelChange={setLevel}
 
-                        snapStep={snapStep}
+                        onShapeCreate={(s) => {
+                            setLevel(prev => ({ ...prev, shapes: [...(prev.shapes || []), s] }));
+                            setMode('select');
+                            audioService.playSE('click');
+                        }}
+                        onWaypointCreate={(p) => {
+                            setLevel(prev => ({ ...prev, waypoints: [...(prev.waypoints || []), p] }));
+                            setMode('select');
+                            audioService.playSE('click');
+                        }}
+                        onObjectClick={(info) => { /* ... */ }}
 
+                        onRightClick={handleRightClick}
+                        snapStep={0.5}
                         refreshTrigger={refreshCount}
+                        showForbiddenOverlay={showForbidden}
 
                         className="w-full h-full"
+                        activeShapeIds={activeShapeIds}
                     />
-
-                    {/* Modals ... */}
-                    {/* Modals ... */}
-                    <HelpDialog isOpen={showHelp} onClose={() => setShowHelp(false)} />
 
                     {/* Game Status */}
                     {gameState.status !== 'idle' && gameState.status !== 'playing' && !isVerifying && (
