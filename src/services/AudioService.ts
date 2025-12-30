@@ -42,7 +42,7 @@ class AudioService {
     getSEVolume() { return this.seVolume; }
 
     playBGM(name: string, fadeDuration: number = 1000) {
-        const path = `sounds / bgm_${name}.mp3`;
+        const path = `sounds/bgm_${name}.mp3`;
         console.log(`[Audio] Request BGM: ${name} `);
 
         if (this.currentBgmName === name && this.bgm && !this.bgm.paused) return;
@@ -77,7 +77,7 @@ class AudioService {
     }
 
     playSE(name: string) {
-        const path = `sounds / se_${name}.mp3`;
+        const path = `sounds/se_${name}.mp3`;
 
         let audio = this.seCache.get(name);
         if (!audio) {
