@@ -237,7 +237,7 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         }
 
         if (statusChanged) {
-            audioService.playSE('se_area');
+            audioService.playSE('area');
             activeShapeIdsRef.current = newActiveIds;
             setActiveShapeIds(new Set(newActiveIds));
         }

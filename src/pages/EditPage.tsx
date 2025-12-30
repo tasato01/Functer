@@ -356,7 +356,7 @@ export const EditPage: React.FC = () => {
                         showForbiddenOverlay={showForbidden}
 
                         className="w-full h-full"
-                        activeShapeIds={activeShapeIds}
+                        activeShapeIds={gameState.status === 'idle' ? undefined : activeShapeIds}
                     />
 
                     {/* Modals */}
