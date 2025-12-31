@@ -229,11 +229,11 @@ export const LevelBrowser: React.FC<{ type: 'official' | 'user' | 'mine' | 'auth
                                                 </h3>
                                                 <div className="flex gap-2 shrink-0 items-center">
                                                     {/* Cleared Badge - HIDDEN */}
-                                                    {isCleared ? null : (
+                                                    {(!isCleared && !isAdmin) ? (
                                                         <div className="flex items-center gap-1 bg-neon-pink/20 border border-neon-pink px-1.5 py-0.5 rounded text-[10px] font-bold text-neon-pink animate-pulse">
                                                             NEW
                                                         </div>
-                                                    )}
+                                                    ) : null}
 
                                                     {/* Difficulty Badge */}
                                                     <span className={`px-2 py-0.5 rounded text-xs font-black border ${level.difficulty === 'EX' ? 'bg-purple-900/50 text-purple-200 border-purple-500' :

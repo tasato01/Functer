@@ -60,11 +60,32 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, label, di
             }
         };
 
+        const onCopy = (e: ClipboardEvent) => {
+            // Override default copy to remove "$$" delimiters
+            const selection = mf.selection;
+            if (!selection.isCollapsed) {
+                try {
+                    // Get raw LaTeX of the selection
+                    const latex = mf.getValue(selection, 'latex');
+                    if (latex) {
+                        e.clipboardData?.setData('text/plain', latex);
+                        e.preventDefault(); // Prevent default MathLive copy (which adds $$)
+                        e.stopPropagation();
+                    }
+                } catch (err) {
+                    console.error("Copy error:", err);
+                    // Fallback to default if error
+                }
+            }
+        };
+
         mf.addEventListener('input', handleInput);
         mf.addEventListener('keydown', onKeyDown);
+        mf.addEventListener('copy', onCopy);
         return () => {
             mf.removeEventListener('input', handleInput);
             mf.removeEventListener('keydown', onKeyDown);
+            mf.removeEventListener('copy', onCopy);
         };
     }, [onChange]);
 

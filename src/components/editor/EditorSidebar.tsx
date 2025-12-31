@@ -559,13 +559,13 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                     e.stopPropagation();
                                     audioService.playSE('click');
                                     // Toggle Level Setting for Play Mode
-                                    setLevel(prev => ({ ...prev, showInequalities: !(prev.showInequalities !== false) })); // Default is true, so toggle. Logic: false->true, undefined(true)->false
+                                    setLevel(prev => ({ ...prev, showInequalities: !(prev.showInequalities !== false) }));
                                 }}
-                                className={`px-2 py-0.5 rounded transition-colors text-[10px] font-bold flex items-center gap-1 ${(level.showInequalities !== false) ? 'bg-neon-yellow/10 text-neon-yellow hover:bg-neon-yellow/20' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}
+                                className={`px-2 py-0.5 rounded transition-colors text-[10px] font-bold flex items-center gap-1 ${(level.showInequalities !== false) ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}
                                 title={(level.showInequalities !== false) ? "Play Mode: INFO SHOWN" : "Play Mode: INFO HIDDEN"}
                             >
                                 {(level.showInequalities !== false) ? <Eye size={10} /> : <EyeOff size={10} />}
-                                {(level.showInequalities !== false) ? "PLAY INFO: ON" : "PLAY INFO: OFF"}
+                                {(level.showInequalities !== false) ? "HIDE" : "SHOW"}
                             </button>
                         }
                     >
