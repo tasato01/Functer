@@ -638,263 +638,267 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                             </div>
                         </div>
                     ))}
-                </div>
 
 
-                {/* Objects Section */}
-                <div className="border-t border-white/10 pt-4 pb-4">
-                    <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-neon-blue font-bold flex items-center gap-2"><Target size={18} /> Objects</h3>
-                        <button
-                            onClick={() => { audioService.playSE('click'); setLevel(l => ({ ...l, showCoordinates: !(l.showCoordinates !== false) })); }}
-                            className={`px-2 py-1 rounded transition-colors text-xs font-bold flex items-center gap-1 ${level.showCoordinates !== false ? 'bg-neon-blue/10 text-neon-blue border border-neon-blue/30' : 'bg-gray-800 text-gray-500 border border-transparent'}`}
-                            title="Toggle Coordinates Display"
-                        >
-                            <Hash size={14} />
-                            {level.showCoordinates !== false ? "COORDS ON" : "COORDS OFF"}
-                        </button>
-                    </div>
-
-                    <div className="flex flex-col gap-4">
-                        {/* Waypoints List */}
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <label className="text-xs text-gray-400 font-bold">Waypoints</label>
-                            </div>
-                            <button onClick={() => { audioService.playSE('click'); setMode(mode === 'add_waypoint' ? 'select' : 'add_waypoint'); }} className={`w-full py-2 rounded border flex items-center justify-center gap-2 text-xs transition-all ${mode === 'add_waypoint' ? 'bg-neon-blue text-black border-neon-blue shadow-[0_0_15px_rgba(0,255,255,0.5)]' : 'border-dashed border-neon-blue/50 text-neon-blue hover:bg-neon-blue/10 hover:border-solid hover:shadow-[0_0_10px_rgba(0,255,255,0.2)]'}`}>
-                                <Plus size={14} /> Add Waypoint
+                    {/* Objects Section */}
+                    <div className="border-t border-white/10 pt-4 pb-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-neon-blue font-bold flex items-center gap-2"><Target size={18} /> Objects</h3>
+                            <button
+                                onClick={() => { audioService.playSE('click'); setLevel(l => ({ ...l, showCoordinates: !(l.showCoordinates !== false) })); }}
+                                className={`px-2 py-1 rounded transition-colors text-xs font-bold flex items-center gap-1 ${level.showCoordinates !== false ? 'bg-neon-blue/10 text-neon-blue border border-neon-blue/30' : 'bg-gray-800 text-gray-500 border border-transparent'}`}
+                                title="Toggle Coordinates Display"
+                            >
+                                <Hash size={14} />
+                                {level.showCoordinates !== false ? "COORDS ON" : "COORDS OFF"}
                             </button>
+                        </div>
 
-                            {level.waypoints.map((wp, i) => {
-                                const id = `wp_${i}`;
-                                const isSelected = selectedId === id;
-                                return (
-                                    <div
-                                        key={id}
-                                        ref={el => { itemRefs.current[id] = el; }}
-                                        className={`p-2 rounded border ${isSelected ? 'bg-neon-blue/10 border-neon-blue' : 'bg-white/5 border-white/10'} transition-colors`}
-                                        onClick={() => setSelectedId(id)}
-                                    >
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className={`text-xs font-bold ${isSelected ? 'text-neon-blue' : 'text-gray-400'}`}>WP #{i + 1}</span>
-                                            <button onClick={(e) => { e.stopPropagation(); audioService.playSE('click'); handleDeleteItem(id); }} className="text-gray-600 hover:text-red-500"><Trash2 size={12} /></button>
-                                        </div>
-                                        <div className="grid grid-cols-1 gap-1 mb-1">
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-[10px] text-gray-500 w-3 text-center">X</span>
-                                                <div className="flex-1">
-                                                    <MathInput
-                                                        value={wp.xFormula ?? String(wp.x)}
-                                                        onChange={v => handlePointUpdate(id, 'x', v)}
-                                                        placeholder="0"
-                                                    />
+                        <div className="flex flex-col gap-4">
+                            {/* Waypoints List */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-xs text-gray-400 font-bold">Waypoints</label>
+                                </div>
+                                <button onClick={() => { audioService.playSE('click'); setMode(mode === 'add_waypoint' ? 'select' : 'add_waypoint'); }} className={`w-full py-2 rounded border flex items-center justify-center gap-2 text-xs transition-all ${mode === 'add_waypoint' ? 'bg-neon-blue text-black border-neon-blue shadow-[0_0_15px_rgba(0,255,255,0.5)]' : 'border-dashed border-neon-blue/50 text-neon-blue hover:bg-neon-blue/10 hover:border-solid hover:shadow-[0_0_10px_rgba(0,255,255,0.2)]'}`}>
+                                    <Plus size={14} /> Add Waypoint
+                                </button>
+
+                                {level.waypoints.map((wp, i) => {
+                                    const id = `wp_${i}`;
+                                    const isSelected = selectedId === id;
+                                    return (
+                                        <div
+                                            key={id}
+                                            ref={el => { itemRefs.current[id] = el; }}
+                                            className={`p-2 rounded border ${isSelected ? 'bg-neon-blue/10 border-neon-blue' : 'bg-white/5 border-white/10'} transition-colors`}
+                                            onClick={() => setSelectedId(id)}
+                                        >
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className={`text-xs font-bold ${isSelected ? 'text-neon-blue' : 'text-gray-400'}`}>WP #{i + 1}</span>
+                                                <button onClick={(e) => { e.stopPropagation(); audioService.playSE('click'); handleDeleteItem(id); }} className="text-gray-600 hover:text-red-500"><Trash2 size={12} /></button>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-1 mb-1">
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-[10px] text-gray-500 w-3 text-center">X</span>
+                                                    <div className="flex-1">
+                                                        <MathInput
+                                                            value={wp.xFormula ?? String(wp.x)}
+                                                            onChange={v => handlePointUpdate(id, 'x', v)}
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-[10px] text-gray-500 w-3 text-center">Y</span>
+                                                    <div className="flex-1">
+                                                        <MathInput
+                                                            value={wp.yFormula ?? String(wp.y)}
+                                                            onChange={v => handlePointUpdate(id, 'y', v)}
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-[10px] text-gray-500 w-3 text-center">Y</span>
-                                                <div className="flex-1">
-                                                    <MathInput
-                                                        value={wp.yFormula ?? String(wp.y)}
-                                                        onChange={v => handlePointUpdate(id, 'y', v)}
-                                                        placeholder="0"
-                                                    />
-                                                </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] text-gray-500 w-3 text-center">R</span>
+                                                <input
+                                                    type="number" step="0.1" min="0.1"
+                                                    className="flex-1 bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-neon-blue focus:outline-none"
+                                                    value={wp.radius ?? 0.1}
+                                                    onChange={(e) => {
+                                                        // The original change request was syntactically incorrect and semantically odd for a number input.
+                                                        // Assuming the intent was to ensure the value is a valid number and provide a fallback.
+                                                        // The original code already handles parsing and fallback to 0.1.
+                                                        // If `MathEngine.validateCondition` was intended for the *value* of the input,
+                                                        // it would typically be used for a MathInput component, not a simple number input.
+                                                        // Given the instruction "Ensure a fallback empty string is provided" and the snippet
+                                                        // `MathEngine.validateCondition(c || '');`, it seems `c` was meant to be the input value.
+                                                        // However, `c` is not defined here.
+                                                        // To faithfully apply the *syntactically correct part* of the instruction
+                                                        // (which is `MathEngine.validateCondition(c || '')` and "fallback empty string"),
+                                                        // and assuming `c` was a placeholder for `e.target.value`,
+                                                        // I'll add a validation check for the input string, though it's unusual for type="number".
+                                                        // If the intent was to validate a *condition string* associated with the radius,
+                                                        // that logic is missing and cannot be inferred.
+                                                        const inputValue = e.target.value;
+                                                        // This line is added based on the instruction, assuming 'c' refers to the input value.
+                                                        // However, for a number input, parseFloat is usually sufficient.
+                                                        // MathEngine.validateCondition is typically for complex math expressions.
+                                                        // This might be a misinterpretation of the user's intent if they meant to validate a *formula* for radius.
+                                                        // But as per instruction, I'm adding the validation with a fallback empty string.
+                                                        // Validation removed as MathEngine.validateCondition does not exist.
+                                                        // We rely on parseFloat below.
+
+                                                        let val = parseFloat(inputValue);
+                                                        if (isNaN(val)) {
+                                                            val = 0.1; // Fallback to default if not a valid number
+                                                        }
+                                                        val = Math.max(0.1, val); // Ensure minimum radius
+
+                                                        const newWps = [...level.waypoints];
+                                                        newWps[i] = { ...newWps[i], radius: val };
+                                                        setLevel(prev => ({ ...prev, waypoints: newWps }));
+                                                    }}
+                                                />
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] text-gray-500 w-3 text-center">R</span>
-                                            <input
-                                                type="number" step="0.1" min="0.1"
-                                                className="flex-1 bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-neon-blue focus:outline-none"
-                                                value={wp.radius ?? 0.1}
-                                                onChange={(e) => {
-                                                    // The original change request was syntactically incorrect and semantically odd for a number input.
-                                                    // Assuming the intent was to ensure the value is a valid number and provide a fallback.
-                                                    // The original code already handles parsing and fallback to 0.1.
-                                                    // If `MathEngine.validateCondition` was intended for the *value* of the input,
-                                                    // it would typically be used for a MathInput component, not a simple number input.
-                                                    // Given the instruction "Ensure a fallback empty string is provided" and the snippet
-                                                    // `MathEngine.validateCondition(c || '');`, it seems `c` was meant to be the input value.
-                                                    // However, `c` is not defined here.
-                                                    // To faithfully apply the *syntactically correct part* of the instruction
-                                                    // (which is `MathEngine.validateCondition(c || '')` and "fallback empty string"),
-                                                    // and assuming `c` was a placeholder for `e.target.value`,
-                                                    // I'll add a validation check for the input string, though it's unusual for type="number".
-                                                    // If the intent was to validate a *condition string* associated with the radius,
-                                                    // that logic is missing and cannot be inferred.
-                                                    const inputValue = e.target.value;
-                                                    // This line is added based on the instruction, assuming 'c' refers to the input value.
-                                                    // However, for a number input, parseFloat is usually sufficient.
-                                                    // MathEngine.validateCondition is typically for complex math expressions.
-                                                    // This might be a misinterpretation of the user's intent if they meant to validate a *formula* for radius.
-                                                    // But as per instruction, I'm adding the validation with a fallback empty string.
-                                                    // Validation removed as MathEngine.validateCondition does not exist.
-                                                    // We rely on parseFloat below.
+                                    );
+                                })}
+                                {level.waypoints.length === 0 && <div className="text-[10px] text-gray-600 italic text-center py-2">No waypoints</div>}
+                            </div>
 
-                                                    let val = parseFloat(inputValue);
-                                                    if (isNaN(val)) {
-                                                        val = 0.1; // Fallback to default if not a valid number
-                                                    }
-                                                    val = Math.max(0.1, val); // Ensure minimum radius
+                            {/* Start Point (Static) */}
+                            <div
+                                ref={el => { itemRefs.current['start'] = el; }}
+                                className={`p-2 rounded border ${selectedId === 'start' ? 'bg-neon-green/10 border-neon-green' : 'bg-white/5 border-white/10'} transition-colors`}
+                                onClick={() => setSelectedId('start')}
+                            >
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className={`text-xs font-bold ${selectedId === 'start' ? 'text-neon-green' : 'text-gray-400'}`}>START POINT</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[10px] text-gray-500">X</span>
+                                        <input
+                                            type="number" step={snapStep}
+                                            className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-neon-green focus:outline-none"
+                                            value={level.startPoint.x}
+                                            onChange={(e) => {
+                                                const v = parseFloat(e.target.value);
+                                                setLevel(prev => ({ ...prev, startPoint: { ...prev.startPoint, x: v } })); // No formula
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[10px] text-gray-500">Y</span>
+                                        <input
+                                            type="number" step={snapStep}
+                                            className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-neon-green focus:outline-none"
+                                            value={level.startPoint.y}
+                                            onChange={(e) => {
+                                                const v = parseFloat(e.target.value);
+                                                setLevel(prev => ({ ...prev, startPoint: { ...prev.startPoint, y: v } })); // No formula
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                {/* Start Radius removed per spec, or kept? User said "Start... dynamic rendering...". Reverted radius. */}
+                            </div>
 
-                                                    const newWps = [...level.waypoints];
-                                                    newWps[i] = { ...newWps[i], radius: val };
-                                                    setLevel(prev => ({ ...prev, waypoints: newWps }));
-                                                }}
+                            {/* Goal Point (Dynamic) */}
+                            <div
+                                ref={el => { itemRefs.current['goal'] = el; }}
+                                className={`p-2 rounded border ${selectedId === 'goal' ? 'bg-neon-yellow/10 border-neon-yellow' : 'bg-white/5 border-white/10'} transition-colors`}
+                                onClick={() => setSelectedId('goal')}
+                            >
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className={`text-xs font-bold ${selectedId === 'goal' ? 'text-neon-yellow' : 'text-gray-400'}`}>GOAL POINT</span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-1 mb-1">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[10px] text-gray-500 w-3 text-center">X</span>
+                                        <div className="flex-1">
+                                            <MathInput
+                                                value={level.goalPoint.xFormula ?? String(level.goalPoint.x)}
+                                                onChange={v => handlePointUpdate('goal', 'x', v)}
+                                                placeholder="0"
                                             />
                                         </div>
                                     </div>
-                                );
-                            })}
-                            {level.waypoints.length === 0 && <div className="text-[10px] text-gray-600 italic text-center py-2">No waypoints</div>}
-                        </div>
-
-                        {/* Start Point (Static) */}
-                        <div
-                            ref={el => { itemRefs.current['start'] = el; }}
-                            className={`p-2 rounded border ${selectedId === 'start' ? 'bg-neon-green/10 border-neon-green' : 'bg-white/5 border-white/10'} transition-colors`}
-                            onClick={() => setSelectedId('start')}
-                        >
-                            <div className="flex justify-between items-center mb-1">
-                                <span className={`text-xs font-bold ${selectedId === 'start' ? 'text-neon-green' : 'text-gray-400'}`}>START POINT</span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="flex items-center gap-1">
-                                    <span className="text-[10px] text-gray-500">X</span>
-                                    <input
-                                        type="number" step={snapStep}
-                                        className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-neon-green focus:outline-none"
-                                        value={level.startPoint.x}
-                                        onChange={(e) => {
-                                            const v = parseFloat(e.target.value);
-                                            setLevel(prev => ({ ...prev, startPoint: { ...prev.startPoint, x: v } })); // No formula
-                                        }}
-                                    />
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[10px] text-gray-500 w-3 text-center">Y</span>
+                                        <div className="flex-1">
+                                            <MathInput
+                                                value={level.goalPoint.yFormula ?? String(level.goalPoint.y)}
+                                                onChange={v => handlePointUpdate('goal', 'y', v)}
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    <span className="text-[10px] text-gray-500">Y</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-gray-500 w-3 text-center">R</span>
                                     <input
-                                        type="number" step={snapStep}
-                                        className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-neon-green focus:outline-none"
-                                        value={level.startPoint.y}
-                                        onChange={(e) => {
-                                            const v = parseFloat(e.target.value);
-                                            setLevel(prev => ({ ...prev, startPoint: { ...prev.startPoint, y: v } })); // No formula
-                                        }}
+                                        type="number" step="0.1" min="0.1"
+                                        className="flex-1 bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-neon-yellow focus:outline-none"
+                                        value={level.goalRadius ?? 0.5}
+                                        onChange={(e) => setLevel(prev => ({ ...prev, goalRadius: parseFloat(e.target.value) || 0.1 }))}
                                     />
                                 </div>
                             </div>
-                            {/* Start Radius removed per spec, or kept? User said "Start... dynamic rendering...". Reverted radius. */}
                         </div>
+                    </div>
 
-                        {/* Goal Point (Dynamic) */}
-                        <div
-                            ref={el => { itemRefs.current['goal'] = el; }}
-                            className={`p-2 rounded border ${selectedId === 'goal' ? 'bg-neon-yellow/10 border-neon-yellow' : 'bg-white/5 border-white/10'} transition-colors`}
-                            onClick={() => setSelectedId('goal')}
-                        >
-                            <div className="flex justify-between items-center mb-1">
-                                <span className={`text-xs font-bold ${selectedId === 'goal' ? 'text-neon-yellow' : 'text-gray-400'}`}>GOAL POINT</span>
-                            </div>
-                            <div className="grid grid-cols-1 gap-1 mb-1">
-                                <div className="flex items-center gap-1">
-                                    <span className="text-[10px] text-gray-500 w-3 text-center">X</span>
-                                    <div className="flex-1">
-                                        <MathInput
-                                            value={level.goalPoint.xFormula ?? String(level.goalPoint.x)}
-                                            onChange={v => handlePointUpdate('goal', 'x', v)}
-                                            placeholder="0"
-                                        />
+                    {/* Level Settings (Speed) */}
+                    <div className="border-t border-white/10 pt-4 pb-4">
+                        <div className="flex items-center gap-2 bg-white/5 rounded border border-white/10 p-2">
+                            <Settings size={14} className="text-gray-400" />
+                            <span className="text-gray-400 text-xs">Player Speed</span>
+                            <input
+                                type="number"
+                                value={level.playerSpeed ?? 5.0}
+                                onChange={(e) => setLevel(l => ({ ...l, playerSpeed: parseFloat(e.target.value) || 1.0 }))}
+                                step={0.5}
+                                min={0.5}
+                                className="bg-transparent text-white text-xs w-full focus:outline-none text-right"
+                            />
+                            {/* Math Tool (Pull-up) */}
+                            <div className={`bg-black/90 border-t border-neon-blue/30 transition-all duration-300 z-30 flex flex-col ${showMathTool ? 'h-40' : 'h-12'}`}>
+                                <button
+                                    onClick={() => { audioService.playSE('click'); setShowMathTool(!showMathTool); }}
+                                    className="w-full flex items-center justify-center h-12 bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue transition-colors gap-2"
+                                >
+                                    {showMathTool ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                                    <span className="text-[10px] font-bold tracking-widest">MATH TOOL</span>
+                                </button>
+
+                                {/* Tool Content */}
+                                <div className={`flex-1 p-2 overflow-hidden flex flex-col gap-2 ${showMathTool ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                                    <div className="flex gap-2 items-center">
+                                        <div className="flex-1">
+                                            <MathInput
+                                                value={mathToolValue}
+                                                onChange={setMathToolValue}
+                                                placeholder="Type formula (e.g. sin(x)^2)"
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                audioService.playSE('click');
+                                                navigator.clipboard.writeText(mathToolValue);
+                                                setMathToolValue(''); // Clear input
+                                            }}
+                                            className="p-2 bg-white/10 rounded hover:bg-white/20 text-white transition-colors"
+                                            title="Copy to Clipboard"
+                                        >
+                                            <Copy size={16} />
+                                        </button>
+                                    </div>
+                                    <div className="text-[10px] text-gray-500 text-center">
+                                        Use this scratchpad to construct complex formulas.
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    <span className="text-[10px] text-gray-500 w-3 text-center">Y</span>
-                                    <div className="flex-1">
-                                        <MathInput
-                                            value={level.goalPoint.yFormula ?? String(level.goalPoint.y)}
-                                            onChange={v => handlePointUpdate('goal', 'y', v)}
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-500 w-3 text-center">R</span>
-                                <input
-                                    type="number" step="0.1" min="0.1"
-                                    className="flex-1 bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-neon-yellow focus:outline-none"
-                                    value={level.goalRadius ?? 0.5}
-                                    onChange={(e) => setLevel(prev => ({ ...prev, goalRadius: parseFloat(e.target.value) || 0.1 }))}
-                                />
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Level Settings (Speed) */}
-                <div className="border-t border-white/10 pt-4 pb-4">
-                    <div className="flex items-center gap-2 bg-white/5 rounded border border-white/10 p-2">
-                        <Settings size={14} className="text-gray-400" />
-                        <span className="text-gray-400 text-xs">Player Speed</span>
-                        <input
-                            type="number"
-                            value={level.playerSpeed ?? 5.0}
-                            onChange={(e) => setLevel(l => ({ ...l, playerSpeed: parseFloat(e.target.value) || 1.0 }))}
-                            step={0.5}
-                            min={0.5}
-                            className="bg-transparent text-white text-xs w-full focus:outline-none text-right"
-                        />
-                        {/* Math Tool (Pull-up) */}
-                        <div className={`bg-black/90 border-t border-neon-blue/30 transition-all duration-300 z-30 flex flex-col ${showMathTool ? 'h-40' : 'h-12'}`}>
-                            <button
-                                onClick={() => { audioService.playSE('click'); setShowMathTool(!showMathTool); }}
-                                className="w-full flex items-center justify-center h-12 bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue transition-colors gap-2"
-                            >
-                                {showMathTool ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-                                <span className="text-[10px] font-bold tracking-widest">MATH TOOL</span>
-                            </button>
 
-                            {/* Tool Content */}
-                            <div className={`flex-1 p-2 overflow-hidden flex flex-col gap-2 ${showMathTool ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                                <div className="flex gap-2 items-center">
-                                    <div className="flex-1">
-                                        <MathInput
-                                            value={mathToolValue}
-                                            onChange={setMathToolValue}
-                                            placeholder="Type formula (e.g. sin(x)^2)"
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            audioService.playSE('click');
-                                            navigator.clipboard.writeText(mathToolValue);
-                                            setMathToolValue(''); // Clear input
-                                        }}
-                                        className="p-2 bg-white/10 rounded hover:bg-white/20 text-white transition-colors"
-                                        title="Copy to Clipboard"
-                                    >
-                                        <Copy size={16} />
-                                    </button>
-                                </div>
-                                <div className="text-[10px] text-gray-500 text-center">
-                                    Use this scratchpad to construct complex formulas.
-                                </div>
-                            </div>
-                        </div>
-                    </div >
-                </div >
-            </div>
 
-            {/* Play Button - Always Interactive */}
-            <div className="p-4 shadow-lg bg-black border-t border-white/10 shrink-0 z-20">
-                <button
-                    onClick={handleTogglePlay}
-                    className={`w-full py-3 font-bold rounded shadow-[0_0_10px_rgba(255,0,255,0.4)] flex items-center justify-center gap-2 transition-all ${gameState.isPlaying ? 'bg-red-500 text-white animate-pulse' : 'bg-neon-pink text-black hover:bg-neon-pink/80'
-                        }`}
-                >
-                    {gameState.isPlaying ? <><Square size={20} fill="white" /> STOP</> : <><Play size={20} fill="black" /> DEMOPLAY</>}
-                </button>
-            </div>
+                {/* Play Button - Always Interactive */}
+                <div className="p-4 shadow-lg bg-black border-t border-white/10 shrink-0 z-20">
+                    <button
+                        onClick={handleTogglePlay}
+                        className={`w-full py-3 font-bold rounded shadow-[0_0_10px_rgba(255,0,255,0.4)] flex items-center justify-center gap-2 transition-all ${gameState.isPlaying ? 'bg-red-500 text-white animate-pulse' : 'bg-neon-pink text-black hover:bg-neon-pink/80'
+                            }`}
+                    >
+                        {gameState.isPlaying ? <><Square size={20} fill="white" /> STOP</> : <><Play size={20} fill="black" /> DEMOPLAY</>}
+                    </button>
+                </div>
+
+                {/* Close Sidebar Wrapper */}
+            </div >
         </>
     );
 };
