@@ -5,6 +5,8 @@ import { AnnouncementService } from '../../services/AnnouncementService';
 import { audioService } from '../../services/AudioService';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../../services/firebase';
+import { levelService } from '../../services/FirebaseLevelService'; // Ensure this points to the Firebase implementation
+import { OFFICIAL_LEVELS } from '../../data/OfficialLevels';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -33,7 +35,7 @@ interface AdminManagementDialogProps {
 
 export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<'requests' | 'users' | 'announce'>('requests');
+    const [activeTab, setActiveTab] = useState<'requests' | 'users' | 'announce' | 'levels'>('requests');
     const [requests, setRequests] = useState<AdminRequest[]>([]);
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loading, setLoading] = useState(true);
@@ -123,6 +125,12 @@ export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ is
                     >
                         ANNOUNCE
                     </button>
+                    <button
+                        onClick={() => { setActiveTab('levels'); audioService.playSE('click'); }}
+                        className={`flex-1 py-3 text-sm font-bold transition-colors ${activeTab === 'levels' ? 'bg-neon-blue/10 text-neon-blue border-b-2 border-neon-blue' : 'text-gray-500 hover:text-white'}`}
+                    >
+                        LEVELS
+                    </button>
                 </div>
 
                 {/* Content */}
@@ -192,6 +200,52 @@ export const AdminManagementDialog: React.FC<AdminManagementDialogProps> = ({ is
 
                             {activeTab === 'announce' && (
                                 <AdminAnnouncementPanel />
+                            )}
+
+                            {activeTab === 'levels' && (
+                                <div className="flex flex-col items-center justify-center p-8 space-y-6">
+                                    <div className="text-center">
+                                        <h3 className="text-2xl font-bold text-white mb-2">Official Level Management</h3>
+                                        <p className="text-gray-400">Sync local level definitions to Firebase.</p>
+                                    </div>
+
+                                    <button
+                                        onClick={async () => {
+                                            if (!confirm(`Deploy ${OFFICIAL_LEVELS.length} official levels to Firebase? This will overwrite existing data if IDs match (or duplicate if not careful).`)) return;
+
+                                            setLoading(true);
+                                            let count = 0;
+                                            for (const level of OFFICIAL_LEVELS) {
+                                                // Ideally we should update if exists, but publishLevel uses addDoc.
+                                                // For "Sync", we might need a custom logic or just accept new docs for now and delete old ones manually?
+                                                // Or we refrain from complex logic and just "publish". 
+                                                // Ideally we should check if exists by some key?
+                                                // MVP: Just publish.
+                                                const success = await levelService.publishLevel(level);
+                                                if (success) count++;
+                                            }
+                                            audioService.playSE('save');
+                                            alert(`Deployed ${count} / ${OFFICIAL_LEVELS.length} levels.`);
+                                            setLoading(false);
+                                        }}
+                                        className="px-8 py-4 bg-neon-blue/20 border-2 border-neon-blue text-neon-blue font-bold rounded-xl hover:bg-neon-blue/30 transition-all flex items-center gap-3 transform hover:scale-105"
+                                    >
+                                        <Send size={24} />
+                                        SEED OFFICIAL LEVELS
+                                    </button>
+
+                                    <div className="bg-black/40 p-4 rounded-lg border border-gray-800 w-full max-w-md">
+                                        <h4 className="font-bold text-gray-300 mb-2 border-b border-gray-700 pb-1">Included Levels:</h4>
+                                        <ul className="text-xs text-gray-400 space-y-1 max-h-48 overflow-y-auto">
+                                            {OFFICIAL_LEVELS.map(l => (
+                                                <li key={l.id} className="flex justify-between">
+                                                    <span>{l.name}</span>
+                                                    <span className="text-gray-600">ID: {l.id}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
                             )}
                         </>
                     )}

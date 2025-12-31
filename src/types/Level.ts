@@ -22,6 +22,7 @@ export interface CircleConstraint {
     center: Point;
     radius: number;
     condition?: string;
+    color?: string;
 }
 
 export interface RectConstraint {
@@ -32,6 +33,7 @@ export interface RectConstraint {
     width: number;
     height: number;
     condition?: string;
+    color?: string;
 }
 
 // Piecewise Function Rule
@@ -44,6 +46,9 @@ export interface PiecewiseRule {
 export interface PlayerVariableConfig {
     enabled: boolean;
     speed: number; // Default 5.0
+    min?: number;
+    max?: number;
+    current?: number;
 }
 
 // Level Configuration

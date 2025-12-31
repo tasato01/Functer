@@ -1,55 +1,9 @@
 import type { ILevelService } from './LevelService';
 import { DEFAULT_LEVEL } from '../types/Level';
 import type { LevelConfig } from '../types/Level';
+import { OFFICIAL_LEVELS } from '../data/OfficialLevels';
 
 // Temporary hardcoded data moved from LevelBrowser
-const MOCK_OFFICIAL_LEVELS: LevelConfig[] = [
-    {
-        ...DEFAULT_LEVEL,
-        id: 'level_001',
-        name: '001: Hello Sine',
-        difficulty: '1',
-        description: 'Basic introduction to sine waves.',
-        isOfficial: true,
-        authorName: 'Functer Team',
-        likes: 120,
-        plays: 500
-    },
-    {
-        ...DEFAULT_LEVEL,
-        id: 'level_002',
-        name: '002: Parabola Jump',
-        difficulty: '2',
-        description: 'Crossing the gap using quadratics.',
-        g_raw: 'x^2',
-        isOfficial: true,
-        authorName: 'Functer Team',
-        likes: 85,
-        plays: 320
-    },
-    {
-        ...DEFAULT_LEVEL,
-        id: 'level_003',
-        name: '003: Step Function',
-        difficulty: '3',
-        description: 'Navigating discontinuous paths.',
-        isOfficial: true,
-        authorName: 'Functer Team',
-        likes: 45,
-        plays: 150
-    },
-    {
-        ...DEFAULT_LEVEL,
-        id: 'level_004',
-        name: '004: Tangent Tunnel',
-        difficulty: '4',
-        description: 'Precise oscillation needed.',
-        isOfficial: true,
-        authorName: 'Functer Team',
-        likes: 200,
-        plays: 800
-    },
-];
 
 const MOCK_USER_LEVELS: LevelConfig[] = [
     {
@@ -88,7 +42,7 @@ export class MockLevelService implements ILevelService {
         }
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 500));
-        this.officialCache = [...MOCK_OFFICIAL_LEVELS];
+        this.officialCache = [...OFFICIAL_LEVELS];
         return [...this.officialCache];
     }
 
@@ -119,7 +73,7 @@ export class MockLevelService implements ILevelService {
 
     async getLevelById(id: string): Promise<LevelConfig | null> {
         await new Promise(resolve => setTimeout(resolve, 300));
-        const all = [...MOCK_OFFICIAL_LEVELS, ...MOCK_USER_LEVELS];
+        const all = [...OFFICIAL_LEVELS, ...MOCK_USER_LEVELS];
         return all.find(l => l.id === id) || null;
     }
 
