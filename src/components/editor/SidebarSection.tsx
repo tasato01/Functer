@@ -21,7 +21,7 @@ export const SidebarSection: React.FC<SidebarSectionProps> = ({
     return (
         <div className="border-t border-white/10 first:border-t-0">
             <div
-                className="flex items-center justify-between p-4 gap-4 cursor-pointer hover:bg-white/5 transition-colors select-none"
+                className="flex items-center justify-between p-4 gap-4 cursor-pointer bg-white/5 hover:bg-white/10 transition-colors select-none"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <div className="flex items-center gap-2 text-sm font-bold text-gray-300">

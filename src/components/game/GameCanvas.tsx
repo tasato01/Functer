@@ -267,24 +267,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                     ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
                     ctx.font = 'bold 20px monospace';
                     ctx.textAlign = 'left';
-                    ctx.textBaseline = 'top';
+                    ctx.textBaseline = 'bottom';
                     ctx.shadowColor = '#00ffff';
                     ctx.shadowBlur = 4;
-                    ctx.fillText(`a = ${a.toFixed(2)}`, 10, 10);
+                    // Position at bottom-left
+                    ctx.fillText(`a = ${a.toFixed(2)}`, 10, height - 10);
                     ctx.restore();
                 }
 
-                // Render Player Coordinates
-                if (player && !isStatic) {
-                    ctx.save();
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-                    ctx.font = '12px monospace';
-                    ctx.textAlign = 'left';
-                    ctx.textBaseline = 'top';
-                    const yPos = (level.playerVar?.enabled) ? 40 : 10;
-                    ctx.fillText(`P:(${player.x.toFixed(2)}, ${player.y.toFixed(2)})`, 10, yPos);
-                    ctx.restore();
-                }
+                // Player Coordinate Display REMOVED as per request.
+
 
                 // Draw Coordinate Labels
                 const showCoords = level.showCoordinates !== false;

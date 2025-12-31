@@ -161,9 +161,9 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
     // Auto-scroll to selected item - DISABLED to prevent jumping when clicking inputs
     React.useEffect(() => {
-        // if (selectedId && itemRefs.current[selectedId]) {
-        //     itemRefs.current[selectedId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // }
+        if (selectedId && itemRefs.current[selectedId]) {
+            itemRefs.current[selectedId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }, [selectedId]);
 
     const handlePointUpdate = (targetId: string, field: 'x' | 'y', valStr: string) => {
@@ -514,9 +514,26 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                             </div>
                         </div>
 
-                        <div className="mt-4">
-                            <label className="text-gray-400 text-sm mb-1 block">Test f(x) (Player)</label>
+                        <div className="mt-4 space-y-2">
+                            <label className="text-gray-400 text-sm block">Test f(x) (Player)</label>
                             <MathInput value={testF} onChange={setTestF} />
+
+                            <label className="text-xs text-gray-300 flex items-center gap-2 mt-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={level.playerVar?.enabled ?? false}
+                                    onChange={(e) => setLevel(prev => ({
+                                        ...prev,
+                                        playerVar: {
+                                            speed: 1.0,
+                                            ...(prev.playerVar || {}),
+                                            enabled: e.target.checked
+                                        }
+                                    }))}
+                                    className="accent-neon-blue"
+                                />
+                                Enable Parameter 'a' to f(x)
+                            </label>
                         </div>
                     </SidebarSection>
 
@@ -577,27 +594,123 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
                         {/* Shapes in Forbidden List */}
                         <div className="mt-4 space-y-2">
-                            <div className="text-xs text-gray-400">Shapes</div>
-                            {level.shapes?.map((shape) => (
-                                <div key={shape.id} className="bg-white/5 rounded p-2 border border-white/10">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                                            {shape.type === 'rect' ? <Square size={10} /> : <Circle size={10} />}
-                                            {shape.type === 'rect' ? 'RECT' : 'CIRCLE'} (Object)
-                                        </span>
-                                        <button onClick={() => { audioService.playSE('click'); handleDeleteItem(shape.id); }} className="text-red-500 hover:text-red-400 text-xs"><Trash2 size={12} /></button>
-                                    </div>
-                                    <div className="pl-2 border-l border-white/10 ml-1 text-xs text-gray-400">
-                                        <button onClick={() => { audioService.playSE('click'); setSelectedId(shape.id); }} className="hover:text-neon-blue underline text-left">
-                                            Select to Edit Properties
-                                        </button>
-                                        <div className="mt-1 text-[10px] text-gray-500">
-                                            {shape.conditions?.length ? `Complex Logic (${shape.conditions.length} groups)` :
-                                                shape.condition ? `Condition: ${shape.condition}` : 'Always Active'}
+                            <div className="text-xs text-gray-400 font-bold">Shapes</div>
+                            {level.shapes?.map((shape, i) => {
+                                const isSelected = selectedId === shape.id;
+                                return (
+                                    <div
+                                        key={shape.id}
+                                        ref={el => { itemRefs.current[shape.id] = el; }}
+                                        className={`p-2 rounded border ${isSelected ? 'bg-red-500/10 border-red-500' : 'bg-white/5 border-white/10'} transition-colors`}
+                                        onClick={() => setSelectedId(shape.id)}
+                                    >
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className={`text-[10px] uppercase tracking-wider flex items-center gap-1 font-bold ${isSelected ? 'text-red-400' : 'text-gray-500'}`}>
+                                                {shape.type === 'rect' ? <Square size={10} /> : <Circle size={10} />}
+                                                {shape.type === 'rect' ? 'RECT' : 'CIRCLE'}
+                                            </span>
+                                            <button onClick={(e) => { e.stopPropagation(); audioService.playSE('click'); handleDeleteItem(shape.id); }} className="text-gray-600 hover:text-red-500"><Trash2 size={12} /></button>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 mb-1">
+                                            {/* Center X / Rect X */}
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-[10px] text-gray-500 w-3 text-center">X</span>
+                                                <input
+                                                    type="number" step={snapStep}
+                                                    className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-red-500 focus:outline-none"
+                                                    value={shape.type === 'circle' ? (shape as any).center.x : (shape as any).x}
+                                                    onChange={(e) => {
+                                                        const val = parseFloat(e.target.value);
+                                                        setLevel(prev => ({
+                                                            ...prev,
+                                                            shapes: prev.shapes.map(s => {
+                                                                if (s.id !== shape.id) return s;
+                                                                if (s.type === 'circle') return { ...s, center: { ...s.center, x: val } };
+                                                                return { ...s, x: val };
+                                                            })
+                                                        }));
+                                                    }}
+                                                />
+                                            </div>
+                                            {/* Center Y / Rect Y */}
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-[10px] text-gray-500 w-3 text-center">Y</span>
+                                                <input
+                                                    type="number" step={snapStep}
+                                                    className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-red-500 focus:outline-none"
+                                                    value={shape.type === 'circle' ? (shape as any).center.y : (shape as any).y}
+                                                    onChange={(e) => {
+                                                        const val = parseFloat(e.target.value);
+                                                        setLevel(prev => ({
+                                                            ...prev,
+                                                            shapes: prev.shapes.map(s => {
+                                                                if (s.id !== shape.id) return s;
+                                                                if (s.type === 'circle') return { ...s, center: { ...s.center, y: val } };
+                                                                return { ...s, y: val };
+                                                            })
+                                                        }));
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {shape.type === 'circle' ? (
+                                                <div className="flex items-center gap-1 col-span-2">
+                                                    <span className="text-[10px] text-gray-500 w-3 text-center">R</span>
+                                                    <input
+                                                        type="number" step={snapStep} min="0.1"
+                                                        className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-red-500 focus:outline-none"
+                                                        value={(shape as any).radius}
+                                                        onChange={(e) => {
+                                                            const val = parseFloat(e.target.value);
+                                                            setLevel(prev => ({
+                                                                ...prev,
+                                                                shapes: prev.shapes.map(s => (s.id === shape.id ? { ...s, radius: val } : s))
+                                                            }));
+                                                        }}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-[10px] text-gray-500 w-3 text-center">W</span>
+                                                        <input
+                                                            type="number" step={snapStep} min="0.1"
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-red-500 focus:outline-none"
+                                                            value={(shape as any).width}
+                                                            onChange={(e) => {
+                                                                const val = parseFloat(e.target.value);
+                                                                setLevel(prev => ({
+                                                                    ...prev,
+                                                                    shapes: prev.shapes.map(s => (s.id === shape.id ? { ...s, width: val } : s))
+                                                                }));
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-[10px] text-gray-500 w-3 text-center">H</span>
+                                                        <input
+                                                            type="number" step={snapStep} min="0.1"
+                                                            className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-red-500 focus:outline-none"
+                                                            value={(shape as any).height}
+                                                            onChange={(e) => {
+                                                                const val = parseFloat(e.target.value);
+                                                                setLevel(prev => ({
+                                                                    ...prev,
+                                                                    shapes: prev.shapes.map(s => (s.id === shape.id ? { ...s, height: val } : s))
+                                                                }));
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
+                            {(!level.shapes || level.shapes.length === 0) && <div className="text-[10px] text-gray-600 italic text-center py-2">No shapes</div>}
                         </div>
                     </SidebarSection>
 
@@ -613,7 +726,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                 title="Toggle Coordinates Display"
                             >
                                 <Hash size={10} />
-                                {level.showCoordinates !== false ? "ON" : "OFF"}
+                                {level.showCoordinates !== false ? "VISIBLE" : "HIDDEN"}
                             </button>
                         }
                     >
@@ -784,58 +897,36 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                 />
                             </div>
 
-                            {/* Parameters Section (Moved here) */}
-                            <div>
-                                <label className="text-gray-400 text-sm mb-1 block font-bold">Parameters</label>
-                                <div className="bg-white/5 rounded p-2 border border-white/10">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <label className="text-xs text-gray-300 flex items-center gap-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={level.playerVar?.enabled ?? false}
-                                                onChange={(e) => setLevel(prev => ({
-                                                    ...prev,
-                                                    playerVar: {
-                                                        speed: 1.0,
-                                                        ...(prev.playerVar || {}),
-                                                        enabled: e.target.checked
-                                                    }
-                                                }))}
-                                                className="accent-neon-blue"
-                                            />
-                                            Enable Parameter 'a' to f(x)
-                                        </label>
-                                    </div>
-                                    {(level.playerVar?.enabled) && (
-                                        <div className="flex items-center gap-2 pl-5">
-                                            <span className="text-[10px] text-gray-500">Speed</span>
-                                            <input
-                                                type="number"
-                                                className="bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white w-16 focus:border-neon-blue focus:outline-none"
-                                                value={level.playerVar.speed ?? 5.0}
-                                                onChange={(e) => {
-                                                    const v = parseFloat(e.target.value);
-                                                    setLevel(prev => ({ ...prev, playerVar: { ...prev.playerVar!, speed: isNaN(v) ? 0 : v } }));
-                                                }}
-                                                step={0.5}
-                                            />
-                                            <span className="text-[10px] text-gray-600">/sec</span>
-                                        </div>
-                                    )}
-                                    <div className="text-[10px] text-gray-500 mt-1 pl-5 italic">
-                                        Use Up/Down keys to control 'a'.
-                                    </div>
+                            {/* Parameters Section (Moved to Function) */}
+                            {/* Only Speed uses this */}
+                            {(level.playerVar?.enabled) && (
+                                <div className="flex items-center gap-2 pl-5">
+                                    <span className="text-[10px] text-gray-500">Speed</span>
+                                    <input
+                                        type="number"
+                                        className="bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white w-16 focus:border-neon-blue focus:outline-none"
+                                        value={level.playerVar.speed ?? 5.0}
+                                        onChange={(e) => {
+                                            const v = parseFloat(e.target.value);
+                                            setLevel(prev => ({ ...prev, playerVar: { ...prev.playerVar!, speed: isNaN(v) ? 0 : v } }));
+                                        }}
+                                        step={0.5}
+                                    />
+                                    <span className="text-[10px] text-gray-600">/sec</span>
                                 </div>
+                            )}
+                            <div className="text-[10px] text-gray-500 mt-1 pl-5 italic">
+                                Use Up/Down keys to control 'a'.
                             </div>
                         </div>
                     </SidebarSection>
                 </div>
 
                 {/* Math Tool (Pull-up) */}
-                <div className={`bg-black/90 border-t border-neon-blue/30 shrink-0 z-30 flex flex-col transition-all duration-300 ${showMathTool ? 'h-64' : 'h-[4.5rem]'}`}>
+                <div className={`bg-black/90 border-t border-neon-blue/30 shrink-0 z-30 flex flex-col transition-all duration-300 ${showMathTool ? 'h-64' : 'h-[54px]'}`}>
                     <button
                         onClick={() => { audioService.playSE('click'); setShowMathTool(!showMathTool); }}
-                        className="w-full flex items-center justify-center h-[4.5rem] bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue transition-colors gap-2"
+                        className="w-full flex items-center justify-center h-[54px] bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue transition-colors gap-2"
                     >
                         {showMathTool ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                         <span className="text-[10px] font-bold tracking-widest">MATH TOOL</span>
@@ -881,7 +972,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 </div>
 
                 {/* Close Sidebar Wrapper */}
-            </div >
+            </div>
         </>
     );
 };
