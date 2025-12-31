@@ -178,7 +178,7 @@ export class FirebaseLevelService implements ILevelService {
                 data: JSON.stringify(level),
                 solution: solution || null,
                 tier: isOfficial ? 'official' : 'user',
-                ...(isOfficial ? { order: 9999 } : {}), // Only add order if official
+                order: isOfficial ? Date.now() : undefined, // Official stages append to end
                 createdAt: Timestamp.now(),
                 likes: 0,
                 plays: 0,

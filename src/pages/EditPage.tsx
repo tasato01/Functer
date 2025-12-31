@@ -351,7 +351,7 @@ export const EditPage: React.FC = () => {
                         onRightClick={handleRightClick}
                         snapStep={snapStep}
                         refreshTrigger={refreshCount}
-                        showForbiddenOverlay={level.showInequalities ?? true}
+                        showForbiddenOverlay={true} // Always show in Editor (User Request)
 
                         className="w-full h-full"
                         activeShapeIds={gameState.status === 'idle' ? undefined : activeShapeIds}

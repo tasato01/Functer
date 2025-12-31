@@ -362,7 +362,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         // 0 step means no snap? User said default 0.5.
         const step = (snapStep > 0) ? snapStep : 0.0001;
         const val = Math.round(v / step) * step;
-        return Math.round(val * 1e10) / 1e10; // Avoid fp errors
+        return parseFloat(val.toFixed(5)); // Round to 5 decimals as requested
     };
 
     useEffect(() => {

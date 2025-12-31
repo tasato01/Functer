@@ -60,7 +60,7 @@ export const PlayPage: React.FC = () => {
     const fFn = useMemo(() => MathEngine.compile(fRaw || '0'), [fRaw]);
     const gFn = useMemo(() => MathEngine.compile(level?.g_raw || '0'), [level?.g_raw]);
 
-    const { gameState, startGame, stopGame, activeShapeIds } = useGameLoop(fFn, gFn, level || DEFAULT_LEVEL);
+    const { gameState, startGame, stopGame, resetGame, setA } = useGameLoop(fFn, gFn, level || DEFAULT_LEVEL);
 
     // List Context for "Next Stage"
     const listContextIds = location.state?.listContextIds as string[] | undefined;
@@ -129,7 +129,12 @@ export const PlayPage: React.FC = () => {
                 return;
             }
 
-
+            // Check 'a' usage permission
+            // If playerVar is NOT enabled, 'f' cannot use 'a'
+            if (!level.playerVar?.enabled && MathEngine.usesVariable(fRaw, 'a')) {
+                alert("Variable 'a' is NOT allowed in f(x) for this level.");
+                return;
+            }
 
             // Check if f(x) passes through Start Point
             let startY = 0;
@@ -431,10 +436,44 @@ export const PlayPage: React.FC = () => {
                         onShowSolutions={() => { audioService.playSE('click'); setShowSolutions(true); }}
                         isLiked={isLiked}
                         userRating={null} // TODO: Fetch user rating
-                        hasNextLevel={hasNextLevel}
                     />
                 )}
 
+                {/* Dynamic Variable Controls - Show if enabled OR used in level */}
+                {(() => {
+                    const isAEnabled = level?.playerVar?.enabled ?? false;
+                    const usedInLevel = level && (
+                        (level.g_raw && MathEngine.usesVariable(level.g_raw, 'a')) ||
+                        (level.constraints && level.constraints.some(g => g.some(c => MathEngine.usesVariable(c, 'a')))) ||
+                        (level.shapes && level.shapes.some(s =>
+                            (s.conditions && s.conditions.some(g => g.some(c => MathEngine.usesVariable(c, 'a')))) ||
+                            (s.condition && MathEngine.usesVariable(s.condition, 'a'))
+                        ))
+                    );
+
+                    if (isAEnabled || usedInLevel) {
+                        return (
+                            <div className="absolute bottom-24 right-4 bg-gray-900/80 backdrop-blur border border-gray-700 p-4 rounded-xl shadow-lg flex flex-col gap-2 w-48 z-40">
+                                <label className="text-neon-pink text-xs font-bold flex justify-between">
+                                    <span>PARAMETER 'a'</span>
+                                    <span>{gameState.a.toFixed(2)}</span>
+                                </label>
+                                <input
+                                    type="range"
+                                    min="-10" max="10" step="0.1"
+                                    value={gameState.a}
+                                    onChange={(e) => {
+                                        setA(parseFloat(e.target.value));
+                                    }}
+                                    className="accent-neon-pink h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                                />
+                            </div>
+                        );
+                    }
+                    return null;
+                })()}
+
+                {/* Game Over / Clear Overlay */}
                 {gameState.status === 'lost' && (
                     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
                         <div className="bg-neon-surface border border-white/10 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">

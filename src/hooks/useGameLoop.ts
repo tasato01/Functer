@@ -325,5 +325,9 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         requestRef.current = requestAnimationFrame(updateKey);
     };
 
-    return { gameState, startGame, stopGame, activeShapeIds };
+    const setA = (val: number) => {
+        setGameState(prev => ({ ...prev, a: val }));
+    };
+
+    return { gameState, startGame, stopGame, setA, activeShapeIds };
 };

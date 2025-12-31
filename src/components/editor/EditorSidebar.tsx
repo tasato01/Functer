@@ -565,7 +565,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                 title={(level.showInequalities !== false) ? "Play Mode: INFO SHOWN" : "Play Mode: INFO HIDDEN"}
                             >
                                 {(level.showInequalities !== false) ? <Eye size={10} /> : <EyeOff size={10} />}
-                                {(level.showInequalities !== false) ? "HIDE" : "SHOW"}
+                                {(level.showInequalities !== false) ? "VISIBLE" : "HIDDEN"}
                             </button>
                         }
                     >
@@ -638,7 +638,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                                     className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-red-500 focus:outline-none"
                                                     value={shape.type === 'circle' ? (shape as any).center.x : (shape as any).x}
                                                     onChange={(e) => {
-                                                        const val = parseFloat(e.target.value);
+                                                        const val = parseFloat(parseFloat(e.target.value).toFixed(5));
                                                         setLevel(prev => ({
                                                             ...prev,
                                                             shapes: prev.shapes.map(s => {
@@ -658,7 +658,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                                     className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-red-500 focus:outline-none"
                                                     value={shape.type === 'circle' ? (shape as any).center.y : (shape as any).y}
                                                     onChange={(e) => {
-                                                        const val = parseFloat(e.target.value);
+                                                        const val = parseFloat(parseFloat(e.target.value).toFixed(5));
                                                         setLevel(prev => ({
                                                             ...prev,
                                                             shapes: prev.shapes.map(s => {
@@ -681,7 +681,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                                         className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-red-500 focus:outline-none"
                                                         value={(shape as any).radius}
                                                         onChange={(e) => {
-                                                            const val = parseFloat(e.target.value);
+                                                            const val = parseFloat(parseFloat(e.target.value).toFixed(5));
                                                             setLevel(prev => ({
                                                                 ...prev,
                                                                 shapes: prev.shapes.map(s => (s.id === shape.id ? { ...s, radius: val } : s))
@@ -698,7 +698,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                                             className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-red-500 focus:outline-none"
                                                             value={(shape as any).width}
                                                             onChange={(e) => {
-                                                                const val = parseFloat(e.target.value);
+                                                                const val = parseFloat(parseFloat(e.target.value).toFixed(5));
                                                                 setLevel(prev => ({
                                                                     ...prev,
                                                                     shapes: prev.shapes.map(s => (s.id === shape.id ? { ...s, width: val } : s))
@@ -713,7 +713,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                                             className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-red-500 focus:outline-none"
                                                             value={(shape as any).height}
                                                             onChange={(e) => {
-                                                                const val = parseFloat(e.target.value);
+                                                                const val = parseFloat(parseFloat(e.target.value).toFixed(5));
                                                                 setLevel(prev => ({
                                                                     ...prev,
                                                                     shapes: prev.shapes.map(s => (s.id === shape.id ? { ...s, height: val } : s))
@@ -858,7 +858,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                             className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-neon-green focus:outline-none"
                                             value={level.startPoint.x}
                                             onChange={(e) => {
-                                                const v = parseFloat(e.target.value);
+                                                const v = parseFloat(parseFloat(e.target.value).toFixed(5));
                                                 setLevel(prev => ({ ...prev, startPoint: { ...prev.startPoint, x: v } }));
                                             }}
                                         />
@@ -870,7 +870,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                             className="w-full bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-neon-green focus:outline-none"
                                             value={level.startPoint.y}
                                             onChange={(e) => {
-                                                const v = parseFloat(e.target.value);
+                                                const v = parseFloat(parseFloat(e.target.value).toFixed(5));
                                                 setLevel(prev => ({ ...prev, startPoint: { ...prev.startPoint, y: v } }));
                                             }}
                                         />
