@@ -641,6 +641,25 @@ export class MathEngine {
         return boundaries;
     }
 
+    // Check if an expression uses a specific variable symbol
+    public static usesVariable(expr: string, variable: string): boolean {
+        try {
+            if (!expr) return false;
+            // Basic check to avoid parsing if not present as substring (perf)
+            // But be careful of "tax" containing "a"
+            if (!expr.includes(variable)) return false;
+
+            const node = math.parse(expr);
+            let found = false;
+            node.traverse((n: any) => {
+                if (n.isSymbolNode && n.name === variable) found = true;
+            });
+            return found;
+        } catch {
+            return false;
+        }
+    }
+
     static evaluateScalar(expr: string, scope: any): number {
         try {
             const cleaned = MathEngine.cleanExpression(expr);

@@ -60,7 +60,7 @@ export const PlayPage: React.FC = () => {
     const fFn = useMemo(() => MathEngine.compile(fRaw || '0'), [fRaw]);
     const gFn = useMemo(() => MathEngine.compile(level?.g_raw || '0'), [level?.g_raw]);
 
-    const { gameState, startGame, stopGame, resetGame, setA } = useGameLoop(fFn, gFn, level || DEFAULT_LEVEL);
+    const { gameState, startGame, stopGame, setA, activeShapeIds } = useGameLoop(fFn, gFn, level || DEFAULT_LEVEL);
 
     // List Context for "Next Stage"
     const listContextIds = location.state?.listContextIds as string[] | undefined;
@@ -436,6 +436,7 @@ export const PlayPage: React.FC = () => {
                         onShowSolutions={() => { audioService.playSE('click'); setShowSolutions(true); }}
                         isLiked={isLiked}
                         userRating={null} // TODO: Fetch user rating
+                        hasNextLevel={hasNextLevel}
                     />
                 )}
 
