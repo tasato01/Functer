@@ -63,7 +63,8 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, label, di
         const onCopy = (e: ClipboardEvent) => {
             // Override default copy to remove "$$" delimiters
             const selection = mf.selection;
-            if (!selection.isCollapsed) {
+            // Type assertion to handle possible mismatch in CI environment
+            if (!(selection as any).isCollapsed) {
                 try {
                     // Get raw LaTeX of the selection
                     const latex = mf.getValue(selection, 'latex');
