@@ -39,7 +39,7 @@ export const SidebarSection: React.FC<SidebarSectionProps> = ({
             </div>
 
             {isOpen && (
-                <div className="p-2 pt-0 animate-in slide-in-from-top-2 fade-in duration-200">
+                <div className="px-4 pb-4 pt-4">
                     {children}
                 </div>
             )}

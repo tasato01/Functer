@@ -707,6 +707,32 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                                 </>
                                             )}
                                         </div>
+
+                                        {/* Activation Condition */}
+                                        <div className="mt-2 pt-2 border-t border-white/5">
+                                            <div className="flex items-center gap-1 mb-1">
+                                                <span className="text-[10px] text-gray-500">Active When (Formula)</span>
+                                            </div>
+                                            <MathInput
+                                                value={(shape.conditions && shape.conditions[0] && shape.conditions[0][0]) || shape.condition || ''}
+                                                onChange={(val) => {
+                                                    setLevel(prev => ({
+                                                        ...prev,
+                                                        shapes: prev.shapes.map(s => {
+                                                            if (s.id !== shape.id) return s;
+                                                            // Store as conditions[0][0] (Simple AND group)
+                                                            // Future: Support full UI, but for now single input maps to first condition
+                                                            const newConditions = s.conditions ? [...s.conditions] : [];
+                                                            if (newConditions.length === 0) newConditions.push([]);
+                                                            newConditions[0] = [val]; // Set first item of first group
+
+                                                            return { ...s, conditions: newConditions, condition: undefined }; // Clear legacy condition
+                                                        })
+                                                    }));
+                                                }}
+                                                placeholder="Always Active"
+                                            />
+                                        </div>
                                     </div>
                                 );
                             })}
