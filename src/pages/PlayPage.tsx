@@ -291,15 +291,15 @@ export const PlayPage: React.FC = () => {
                 {/* Game Info Overlay */}
                 <div className="absolute top-4 left-4 z-30 flex flex-col gap-2 max-w-[300px] pointer-events-none">
                     {/* g(f)(x) display */}
-                    <div className="bg-black/60 backdrop-blur-md border border-neon-blue/30 p-3 rounded-lg overflow-hidden">
-                        <span className="text-gray-400 text-xs font-mono block mb-1">TRANSFORMATION</span>
+                    <div className="bg-black/60 backdrop-blur-md border border-neon-blue/30 p-3 rounded-lg overflow-hidden flex flex-col gap-1 max-h-[30vh]">
+                        <span className="text-gray-400 text-xs font-mono block shrink-0">TRANSFORMATION</span>
 
-                        <div className="flex flex-col gap-1 max-h-[150px] overflow-y-auto">
+                        <div className="flex flex-col gap-1 overflow-y-auto min-h-0">
                             {/* Piecewise Rules */}
                             {level.gRules?.map((rule, i) => {
                                 const MathFieldTag = 'math-field' as any;
                                 return (
-                                    <div key={`rule-${i}`} className="text-[11px] bg-white/5 p-1 rounded border-l-2 border-neon-yellow/50">
+                                    <div key={`rule-${i}`} className="text-[11px] bg-white/5 p-1 rounded border-l-2 border-neon-yellow/50 shrink-0">
                                         <div className="flex gap-2 items-center text-neon-yellow/80 mb-0.5 overflow-x-auto whitespace-nowrap scrollbar-thin">
                                             <span className="font-bold shrink-0">IF:</span>
                                             <MathFieldTag read-only style={{ display: 'inline-block', bg: 'transparent', color: 'inherit', border: 'none', fontSize: '0.9em' }}>
@@ -344,10 +344,10 @@ export const PlayPage: React.FC = () => {
                     </div>
 
                     {/* Constraints & Forbidden Shapes display */}
-                    {((level!.constraints && level!.constraints.length > 0) || (level!.shapes && level!.shapes.length > 0)) && (
-                        <div className="bg-black/60 backdrop-blur-md border border-red-500/30 p-3 rounded-lg overflow-hidden max-h-[200px] overflow-y-auto">
-                            <span className="text-gray-400 text-xs font-mono block mb-1">FORBIDDEN</span>
-                            <div className="flex flex-col gap-2">
+                    {(level.showInequalities !== false) && ((level!.constraints && level!.constraints.length > 0) || (level!.shapes && level!.shapes.length > 0)) && (
+                        <div className="bg-black/60 backdrop-blur-md border border-red-500/30 p-3 rounded-lg overflow-hidden flex flex-col gap-1 max-h-[40vh]">
+                            <span className="text-gray-400 text-xs font-mono block shrink-0">FORBIDDEN</span>
+                            <div className="flex flex-col gap-2 overflow-y-auto min-h-0">
                                 {/* Inequality Constraints */}
                                 {level!.constraints?.map((group, i) => (
                                     <div key={`const-${i}`} className="text-center border-b border-red-500/20 last:border-0 pb-1 mb-1 last:mb-0 block">

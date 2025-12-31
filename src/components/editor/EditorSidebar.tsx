@@ -557,12 +557,17 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                         icon={<Ban size={16} className="text-red-500" />}
                         rightElement={
                             <button
-                                onClick={(e) => { e.stopPropagation(); audioService.playSE('click'); setShowForbidden(!showForbidden); }}
-                                className={`px-2 py-0.5 rounded transition-colors text-[10px] font-bold flex items-center gap-1 ${showForbidden ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}
-                                title={showForbidden ? "Hide Forbidden Areas" : "Show Forbidden Areas"}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    audioService.playSE('click');
+                                    // Toggle Level Setting for Play Mode
+                                    setLevel(prev => ({ ...prev, showInequalities: !(prev.showInequalities !== false) })); // Default is true, so toggle. Logic: false->true, undefined(true)->false
+                                }}
+                                className={`px-2 py-0.5 rounded transition-colors text-[10px] font-bold flex items-center gap-1 ${(level.showInequalities !== false) ? 'bg-neon-yellow/10 text-neon-yellow hover:bg-neon-yellow/20' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}
+                                title={(level.showInequalities !== false) ? "Play Mode: INFO SHOWN" : "Play Mode: INFO HIDDEN"}
                             >
-                                {showForbidden ? <Eye size={10} /> : <EyeOff size={10} />}
-                                {showForbidden ? "VISIBLE" : "HIDDEN"}
+                                {(level.showInequalities !== false) ? <Eye size={10} /> : <EyeOff size={10} />}
+                                {(level.showInequalities !== false) ? "PLAY INFO: ON" : "PLAY INFO: OFF"}
                             </button>
                         }
                     >
@@ -762,7 +767,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                         rightElement={
                             <button
                                 onClick={(e) => { e.stopPropagation(); audioService.playSE('click'); setLevel(l => ({ ...l, showCoordinates: !(l.showCoordinates !== false) })); }}
-                                className={`px-2 py-0.5 rounded transition-colors text-[10px] font-bold flex items-center gap-1 ${level.showCoordinates !== false ? 'bg-neon-blue/10 text-neon-blue border border-neon-blue/30' : 'bg-gray-800 text-gray-500 border border-transparent'}`}
+                                className={`px-2 py-0.5 rounded transition-colors text-[10px] font-bold flex items-center gap-1 ${level.showCoordinates !== false ? 'bg-neon-yellow/10 text-neon-yellow border border-neon-yellow/30' : 'bg-gray-800 text-gray-500 border border-transparent'}`}
                                 title="Toggle Coordinates Display"
                             >
                                 <Hash size={10} />
