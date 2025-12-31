@@ -470,15 +470,15 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                     <SidebarSection
                         title="Game Function"
                         icon={<Hash size={16} className="text-neon-blue" />}
-                        rightElement={
-                            <button onClick={(e) => { e.stopPropagation(); audioService.playSE('click'); addGRule(); }} className="text-[10px] flex items-center gap-1 bg-neon-blue/10 border border-neon-blue/30 px-1 rounded text-neon-blue hover:bg-neon-blue/20">
-                                <Plus size={8} /> Add Condition
-                            </button>
-                        }
                     >
                         <div className="bg-neon-surface/50 p-2 rounded border border-white/10">
                             <div className="text-[10px] text-gray-400 mb-2">Use 'f', 'x', 't', 'a'. Evaluates top-down.</div>
                             <div className="space-y-2">
+                                {/* Add Rule Button (New Location) */}
+                                <button onClick={() => { audioService.playSE('click'); addGRule(); }} className="w-full py-2 border border-dashed border-neon-blue/50 text-neon-blue hover:bg-neon-blue/10 hover:border-solid rounded flex items-center justify-center gap-2 text-xs transition-all shadow-neon-blue/20 hover:shadow-lg hover:shadow-neon-blue/20 mb-2">
+                                    <Plus size={14} /> Add Condition
+                                </button>
+
                                 {/* Rules */}
                                 {level.gRules?.map((rule, i) => (
                                     <div key={i} className="bg-black/30 p-2 rounded border border-white/10 relative">
@@ -536,6 +536,20 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                             </label>
                         </div>
                     </SidebarSection>
+
+                    {/* ... (Forbidden Section Unchanged) ... */}
+
+                    {/* ... (Objects Section Unchanged) ... */}
+
+                    {/* 4. Game Settings Section - SKIP TO CONTENT */}
+
+                    {/* 4. Game Settings Section */}
+                    {/* Note: I am not replacing Forbidden/Objects sections here, but due to file size limits/context, I need to be careful with targeting. 
+                        The user asked for 'a' Speed change in Settings. 
+                        I will make a separate replace call for Settings to avoid replacing the huge blocks in between if possible, 
+                        BUT the previous context view was contiguous. 
+                        Let me try to target the Function section specifically first.
+                    */}
 
                     {/* 2. Forbidden Area Section */}
                     <SidebarSection
@@ -912,36 +926,34 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                     >
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 bg-white/5 rounded border border-white/10 p-2">
-                                <span className="text-gray-400 text-xs">Player Speed</span>
+                                <span className="text-gray-400 text-xs text-center w-8">Player<br />Speed</span>
                                 <input
                                     type="number"
                                     value={level.playerSpeed ?? 5.0}
                                     onChange={(e) => setLevel(l => ({ ...l, playerSpeed: parseFloat(e.target.value) || 1.0 }))}
                                     step={0.5}
                                     min={0.5}
-                                    className="bg-transparent text-white text-xs w-full focus:outline-none text-right"
+                                    className="bg-transparent text-white text-xs w-full focus:outline-none text-right font-mono"
                                 />
                             </div>
 
-                            {/* Parameters Section (Moved to Function) */}
-                            {/* Only Speed uses this */}
-                            {(level.playerVar?.enabled) && (
-                                <div className="flex items-center gap-2 pl-5">
-                                    <span className="text-[10px] text-gray-500">Speed</span>
-                                    <input
-                                        type="number"
-                                        className="bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white w-16 focus:border-neon-blue focus:outline-none"
-                                        value={level.playerVar.speed ?? 5.0}
-                                        onChange={(e) => {
-                                            const v = parseFloat(e.target.value);
-                                            setLevel(prev => ({ ...prev, playerVar: { ...prev.playerVar!, speed: isNaN(v) ? 0 : v } }));
-                                        }}
-                                        step={0.5}
-                                    />
-                                    <span className="text-[10px] text-gray-600">/sec</span>
-                                </div>
-                            )}
-                            <div className="text-[10px] text-gray-500 mt-1 pl-5 italic">
+                            {/* 'a' Speed (Always Visible) */}
+                            <div className="flex items-center gap-2 bg-white/5 rounded border border-white/10 p-2">
+                                <span className="text-gray-400 text-xs text-center w-8">'a'<br />Speed</span>
+                                <input
+                                    type="number"
+                                    className="bg-transparent text-white text-xs w-full focus:outline-none text-right font-mono"
+                                    value={level.playerVar?.speed ?? 1.0}
+                                    onChange={(e) => {
+                                        const v = parseFloat(e.target.value);
+                                        setLevel(prev => ({ ...prev, playerVar: { ...(prev.playerVar || { enabled: false }), speed: isNaN(v) ? 0 : v } }));
+                                    }}
+                                    step={0.5}
+                                />
+                                <span className="text-[10px] text-gray-600">/s</span>
+                            </div>
+
+                            <div className="text-[10px] text-gray-500 mt-1 pl-1 italic">
                                 Use Up/Down keys to control 'a'.
                             </div>
                         </div>
