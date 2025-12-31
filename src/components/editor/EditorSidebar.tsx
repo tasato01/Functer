@@ -832,10 +832,10 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 </div>
 
                 {/* Math Tool (Pull-up) */}
-                <div className={`bg-black/90 border-t border-neon-blue/30 shrink-0 z-30 flex flex-col transition-all duration-300 ${showMathTool ? 'h-40' : 'h-8'}`}>
+                <div className={`bg-black/90 border-t border-neon-blue/30 shrink-0 z-30 flex flex-col transition-all duration-300 ${showMathTool ? 'h-64' : 'h-[4.5rem]'}`}>
                     <button
                         onClick={() => { audioService.playSE('click'); setShowMathTool(!showMathTool); }}
-                        className="w-full flex items-center justify-center h-8 bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue transition-colors gap-2"
+                        className="w-full flex items-center justify-center h-[4.5rem] bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue transition-colors gap-2"
                     >
                         {showMathTool ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                         <span className="text-[10px] font-bold tracking-widest">MATH TOOL</span>
