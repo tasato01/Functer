@@ -51,8 +51,7 @@ interface EditorSidebarProps {
     isVerifying: boolean;
     setIsVerifying: (v: boolean) => void;
 
-    showForbidden: boolean;
-    setShowForbidden: (v: boolean) => void;
+
 }
 
 export const EditorSidebar: React.FC<EditorSidebarProps> = ({
@@ -62,8 +61,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
     snapStep, setSnapStep,
     gameState, handleTogglePlay, stopGame,
     onHelpClick,
-    isVerifying, setIsVerifying,
-    showForbidden, setShowForbidden
+    isVerifying, setIsVerifying
 }) => {
     const [showSettings, setShowSettings] = useState(false);
     const [user, setUser] = useState<User | null>(null);

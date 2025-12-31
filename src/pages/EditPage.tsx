@@ -84,7 +84,7 @@ export const EditPage: React.FC = () => {
 
     const [showHelp, setShowHelp] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false); // Verification for Publish
-    const [showForbidden, setShowForbidden] = useState(true); // Toggle visibility of Forbidden Areas
+
     const [refreshCount, setRefreshCount] = useState(0);
 
 
@@ -308,8 +308,6 @@ export const EditPage: React.FC = () => {
                     onHelpClick={() => setShowHelp(true)}
                     isVerifying={isVerifying}
                     setIsVerifying={setIsVerifying}
-                    showForbidden={showForbidden}
-                    setShowForbidden={setShowForbidden}
                 />
 
                 {/* Main Graph Area */}
@@ -353,7 +351,7 @@ export const EditPage: React.FC = () => {
                         onRightClick={handleRightClick}
                         snapStep={snapStep}
                         refreshTrigger={refreshCount}
-                        showForbiddenOverlay={showForbidden}
+                        showForbiddenOverlay={level.showInequalities ?? true}
 
                         className="w-full h-full"
                         activeShapeIds={gameState.status === 'idle' ? undefined : activeShapeIds}
