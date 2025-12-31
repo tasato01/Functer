@@ -5,7 +5,7 @@ import { levelService } from '../../services/FirebaseLevelService';
 import { audioService } from '../../services/AudioService';
 import { auth } from '../../services/firebase';
 import { ADMIN_UIDS } from '../../constants/admin';
-import { Play, User, Clock, Heart, RefreshCw, Trash2, PenSquare, Copy, Save, CheckCircle } from 'lucide-react';
+import { Play, User, Clock, Heart, RefreshCw, Trash2, PenSquare, Copy, Save } from 'lucide-react';
 import { StageThumbnail } from './StageThumbnail';
 import { MathBackground } from '../common/MathBackground';
 import { LevelEditDialog } from '../editor/LevelEditDialog';
