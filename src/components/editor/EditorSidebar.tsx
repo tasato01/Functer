@@ -6,6 +6,7 @@ import type { LevelConfig } from '../../types/Level';
 import { MathInput } from '../math/MathInput';
 import { ObjectInspector } from './ObjectInspector';
 import { SettingsPanel } from './SettingsPanel';
+import { SidebarSection } from './SidebarSection';
 import { MathEngine } from '../../core/math/MathEngine';
 import { LevelManager } from '../../utils/LevelManager';
 import { LevelLoadDialog } from './LevelLoadDialog';
@@ -465,115 +466,75 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                         snapStep={snapStep}
                     />
 
-                    {/* Function Section */}
-                    <div className="bg-neon-surface/50 p-2 rounded border border-white/10">
-                        <div className="flex justify-between items-center mb-1">
-                            <label className="text-xs text-neon-blue font-bold">Game Function g(f)(x)</label>
-                            <button onClick={() => { audioService.playSE('click'); addGRule(); }} className="text-[10px] flex items-center gap-1 bg-neon-blue/10 border border-neon-blue/30 px-1 rounded text-neon-blue hover:bg-neon-blue/20">
+                    {/* 1. Game Function Section */}
+                    <SidebarSection
+                        title="Game Function"
+                        icon={<Hash size={16} className="text-neon-blue" />}
+                        rightElement={
+                            <button onClick={(e) => { e.stopPropagation(); audioService.playSE('click'); addGRule(); }} className="text-[10px] flex items-center gap-1 bg-neon-blue/10 border border-neon-blue/30 px-1 rounded text-neon-blue hover:bg-neon-blue/20">
                                 <Plus size={8} /> Add Condition
                             </button>
-                        </div>
-                        <div className="text-[10px] text-gray-400 mb-2">Use 'f', 'x', 't', 'a'. Evaluates top-down.</div>
+                        }
+                    >
+                        <div className="bg-neon-surface/50 p-2 rounded border border-white/10">
+                            <div className="text-[10px] text-gray-400 mb-2">Use 'f', 'x', 't', 'a'. Evaluates top-down.</div>
+                            <div className="space-y-2">
+                                {/* Rules */}
+                                {level.gRules?.map((rule, i) => (
+                                    <div key={i} className="bg-black/30 p-2 rounded border border-white/10 relative">
+                                        <button onClick={() => { audioService.playSE('click'); removeGRule(i); }} className="absolute top-1 right-1 text-gray-600 hover:text-red-500"><Trash2 size={10} /></button>
 
-                        <div className="space-y-2">
-                            {/* Rules */}
-                            {level.gRules?.map((rule, i) => (
-                                <div key={i} className="bg-black/30 p-2 rounded border border-white/10 relative">
-                                    <button onClick={() => { audioService.playSE('click'); removeGRule(i); }} className="absolute top-1 right-1 text-gray-600 hover:text-red-500"><Trash2 size={10} /></button>
-
-                                    <div className="mb-1">
-                                        <div className="text-[10px] text-gray-500 mb-0.5">Then... (Value)</div>
-                                        <MathInput value={rule.expression} onChange={v => updateGRule(i, 'expression', v)} placeholder="e.g. sin(f)" />
-                                    </div>
-                                    <div className="mb-0.5">
-                                        <div className="text-[10px] text-gray-500 mb-0.5 font-bold text-neon-yellow/80">When... (Condition)</div>
-                                        <div className="border-l-2 border-neon-yellow/50 pl-1">
-                                            <MathInput value={rule.condition || ''} onChange={v => updateGRule(i, 'condition', v)} placeholder="e.g. t < 5" />
+                                        <div className="mb-1">
+                                            <div className="text-[10px] text-gray-500 mb-0.5">Then... (Value)</div>
+                                            <MathInput value={rule.expression} onChange={v => updateGRule(i, 'expression', v)} placeholder="e.g. sin(f)" />
+                                        </div>
+                                        <div className="mb-0.5">
+                                            <div className="text-[10px] text-gray-500 mb-0.5 font-bold text-neon-yellow/80">When... (Condition)</div>
+                                            <div className="border-l-2 border-neon-yellow/50 pl-1">
+                                                <MathInput value={rule.condition || ''} onChange={v => updateGRule(i, 'condition', v)} placeholder="e.g. t < 5" />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
 
-                            {/* Default */}
-                            <div className="p-1">
-                                <div className="text-[10px] text-gray-500 mb-0.5 font-bold">Else... (Default)</div>
-                                <MathInput
-                                    value={level.g_raw || ''}
-                                    onChange={onGChange}
-                                />
-                                {!gFunc.isValid && (
-                                    <div className="text-red-500 text-[10px] mt-1 flex items-center gap-1">
-                                        <AlertTriangle size={10} />
-                                        {gFunc.error || "Invalid Expression"}
-                                    </div>
-                                )}
+                                {/* Default */}
+                                <div className="p-1">
+                                    <div className="text-[10px] text-gray-500 mb-0.5 font-bold">Else... (Default)</div>
+                                    <MathInput
+                                        value={level.g_raw || ''}
+                                        onChange={onGChange}
+                                    />
+                                    {!gFunc.isValid && (
+                                        <div className="text-red-500 text-[10px] mt-1 flex items-center gap-1">
+                                            <AlertTriangle size={10} />
+                                            {gFunc.error || "Invalid Expression"}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="mt-4">
-                        <label className="text-gray-400 text-sm mb-1 block">Test f(x) (Player)</label>
-                        <MathInput value={testF} onChange={setTestF} />
-                    </div>
-
-                    {/* Parameters Section */}
-                    <div className="mt-4">
-                        <label className="text-gray-400 text-sm mb-1 block font-bold">Parameters</label>
-                        <div className="bg-white/5 rounded p-2 border border-white/10">
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="text-xs text-gray-300 flex items-center gap-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={level.playerVar?.enabled ?? false}
-                                        onChange={(e) => setLevel(prev => ({
-                                            ...prev,
-                                            playerVar: {
-                                                speed: 1.0,
-                                                ...(prev.playerVar || {}),
-                                                enabled: e.target.checked
-                                            }
-                                        }))}
-                                        className="accent-neon-blue"
-                                    />
-                                    Enable Parameter 'a' to f(x)
-                                </label>
-                            </div>
-                            {(level.playerVar?.enabled) && (
-                                <div className="flex items-center gap-2 pl-5">
-                                    <span className="text-[10px] text-gray-500">Speed</span>
-                                    <input
-                                        type="number"
-                                        className="bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white w-16 focus:border-neon-blue focus:outline-none"
-                                        value={level.playerVar.speed ?? 5.0}
-                                        onChange={(e) => {
-                                            const v = parseFloat(e.target.value);
-                                            setLevel(prev => ({ ...prev, playerVar: { ...prev.playerVar!, speed: isNaN(v) ? 0 : v } }));
-                                        }}
-                                        step={0.5}
-                                    />
-                                    <span className="text-[10px] text-gray-600">/sec</span>
-                                </div>
-                            )}
-                            <div className="text-[10px] text-gray-500 mt-1 pl-5 italic">
-                                Use Up/Down keys to control 'a'.
-                            </div>
+                        <div className="mt-4">
+                            <label className="text-gray-400 text-sm mb-1 block">Test f(x) (Player)</label>
+                            <MathInput value={testF} onChange={setTestF} />
                         </div>
-                    </div>
+                    </SidebarSection>
 
-                    {/* Forbidden Areas */}
-                    <div className="border-t border-white/10 pt-4">
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-red-500 font-bold flex items-center gap-2"><Ban size={18} /> Forbidden Areas</h3>
+                    {/* 2. Forbidden Area Section */}
+                    <SidebarSection
+                        title="Forbidden Area"
+                        icon={<Ban size={16} className="text-red-500" />}
+                        rightElement={
                             <button
-                                onClick={() => { audioService.playSE('click'); setShowForbidden(!showForbidden); }}
-                                className={`px-2 py-1 rounded transition-colors text-xs font-bold flex items-center gap-1 ${showForbidden ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}
+                                onClick={(e) => { e.stopPropagation(); audioService.playSE('click'); setShowForbidden(!showForbidden); }}
+                                className={`px-2 py-0.5 rounded transition-colors text-[10px] font-bold flex items-center gap-1 ${showForbidden ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}
                                 title={showForbidden ? "Hide Forbidden Areas" : "Show Forbidden Areas"}
                             >
-                                {showForbidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                                {showForbidden ? <Eye size={10} /> : <EyeOff size={10} />}
                                 {showForbidden ? "VISIBLE" : "HIDDEN"}
                             </button>
-                        </div>
-
+                        }
+                    >
                         <div className="grid grid-cols-2 gap-2 mb-4">
                             <button onClick={() => { audioService.playSE('click'); setMode('create_rect'); }} className={`p-2 rounded border flex items-center gap-2 justify-center text-xs transition-all ${mode === 'create_rect' ? 'bg-red-500 text-black border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'border-dashed border-red-500/50 text-red-500 hover:bg-red-500/10 hover:border-solid hover:shadow-[0_0_10px_rgba(239,68,68,0.2)]'} `}>
                                 <Square size={14} /> Rect
@@ -582,8 +543,6 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                 <Circle size={14} /> Circle
                             </button>
                         </div>
-
-
 
                         <div className="space-y-4">
                             <div className="flex justify-between items-center text-xs text-gray-400">
@@ -615,45 +574,49 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                 </div>
                             ))}
                         </div>
-                    </div>
 
-                    {/* Shapes in Forbidden List */}
-                    {level.shapes?.map((shape) => (
-                        <div key={shape.id} className="bg-white/5 rounded p-2 border border-white/10">
-                            <div className="flex justify-between items-center mb-1">
-                                <span className="text-[10px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                                    {shape.type === 'rect' ? <Square size={10} /> : <Circle size={10} />}
-                                    {shape.type === 'rect' ? 'RECT' : 'CIRCLE'} (Object)
-                                </span>
-                                <button onClick={() => { audioService.playSE('click'); handleDeleteItem(shape.id); }} className="text-red-500 hover:text-red-400 text-xs"><Trash2 size={12} /></button>
-                            </div>
-                            <div className="pl-2 border-l border-white/10 ml-1 text-xs text-gray-400">
-                                <button onClick={() => { audioService.playSE('click'); setSelectedId(shape.id); }} className="hover:text-neon-blue underline text-left">
-                                    Select to Edit Properties
-                                </button>
-                                <div className="mt-1 text-[10px] text-gray-500">
-                                    {shape.conditions?.length ? `Complex Logic (${shape.conditions.length} groups)` :
-                                        shape.condition ? `Condition: ${shape.condition}` : 'Always Active'}
+                        {/* Shapes in Forbidden List */}
+                        <div className="mt-4 space-y-2">
+                            <div className="text-xs text-gray-400">Shapes</div>
+                            {level.shapes?.map((shape) => (
+                                <div key={shape.id} className="bg-white/5 rounded p-2 border border-white/10">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                                            {shape.type === 'rect' ? <Square size={10} /> : <Circle size={10} />}
+                                            {shape.type === 'rect' ? 'RECT' : 'CIRCLE'} (Object)
+                                        </span>
+                                        <button onClick={() => { audioService.playSE('click'); handleDeleteItem(shape.id); }} className="text-red-500 hover:text-red-400 text-xs"><Trash2 size={12} /></button>
+                                    </div>
+                                    <div className="pl-2 border-l border-white/10 ml-1 text-xs text-gray-400">
+                                        <button onClick={() => { audioService.playSE('click'); setSelectedId(shape.id); }} className="hover:text-neon-blue underline text-left">
+                                            Select to Edit Properties
+                                        </button>
+                                        <div className="mt-1 text-[10px] text-gray-500">
+                                            {shape.conditions?.length ? `Complex Logic (${shape.conditions.length} groups)` :
+                                                shape.condition ? `Condition: ${shape.condition}` : 'Always Active'}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            ))}
                         </div>
-                    ))}
+                    </SidebarSection>
 
 
-                    {/* Objects Section */}
-                    <div className="border-t border-white/10 pt-4 pb-4">
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-neon-blue font-bold flex items-center gap-2"><Target size={18} /> Objects</h3>
+                    {/* 3. Objects Section */}
+                    <SidebarSection
+                        title="Objects"
+                        icon={<Target size={16} className="text-neon-yellow" />}
+                        rightElement={
                             <button
-                                onClick={() => { audioService.playSE('click'); setLevel(l => ({ ...l, showCoordinates: !(l.showCoordinates !== false) })); }}
-                                className={`px-2 py-1 rounded transition-colors text-xs font-bold flex items-center gap-1 ${level.showCoordinates !== false ? 'bg-neon-blue/10 text-neon-blue border border-neon-blue/30' : 'bg-gray-800 text-gray-500 border border-transparent'}`}
+                                onClick={(e) => { e.stopPropagation(); audioService.playSE('click'); setLevel(l => ({ ...l, showCoordinates: !(l.showCoordinates !== false) })); }}
+                                className={`px-2 py-0.5 rounded transition-colors text-[10px] font-bold flex items-center gap-1 ${level.showCoordinates !== false ? 'bg-neon-blue/10 text-neon-blue border border-neon-blue/30' : 'bg-gray-800 text-gray-500 border border-transparent'}`}
                                 title="Toggle Coordinates Display"
                             >
-                                <Hash size={14} />
-                                {level.showCoordinates !== false ? "COORDS ON" : "COORDS OFF"}
+                                <Hash size={10} />
+                                {level.showCoordinates !== false ? "ON" : "OFF"}
                             </button>
-                        </div>
-
+                        }
+                    >
                         <div className="flex flex-col gap-4">
                             {/* Waypoints List */}
                             <div className="space-y-2">
@@ -707,35 +670,9 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                                     className="flex-1 bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white focus:border-neon-blue focus:outline-none"
                                                     value={wp.radius ?? 0.1}
                                                     onChange={(e) => {
-                                                        // The original change request was syntactically incorrect and semantically odd for a number input.
-                                                        // Assuming the intent was to ensure the value is a valid number and provide a fallback.
-                                                        // The original code already handles parsing and fallback to 0.1.
-                                                        // If `MathEngine.validateCondition` was intended for the *value* of the input,
-                                                        // it would typically be used for a MathInput component, not a simple number input.
-                                                        // Given the instruction "Ensure a fallback empty string is provided" and the snippet
-                                                        // `MathEngine.validateCondition(c || '');`, it seems `c` was meant to be the input value.
-                                                        // However, `c` is not defined here.
-                                                        // To faithfully apply the *syntactically correct part* of the instruction
-                                                        // (which is `MathEngine.validateCondition(c || '')` and "fallback empty string"),
-                                                        // and assuming `c` was a placeholder for `e.target.value`,
-                                                        // I'll add a validation check for the input string, though it's unusual for type="number".
-                                                        // If the intent was to validate a *condition string* associated with the radius,
-                                                        // that logic is missing and cannot be inferred.
-                                                        const inputValue = e.target.value;
-                                                        // This line is added based on the instruction, assuming 'c' refers to the input value.
-                                                        // However, for a number input, parseFloat is usually sufficient.
-                                                        // MathEngine.validateCondition is typically for complex math expressions.
-                                                        // This might be a misinterpretation of the user's intent if they meant to validate a *formula* for radius.
-                                                        // But as per instruction, I'm adding the validation with a fallback empty string.
-                                                        // Validation removed as MathEngine.validateCondition does not exist.
-                                                        // We rely on parseFloat below.
-
-                                                        let val = parseFloat(inputValue);
-                                                        if (isNaN(val)) {
-                                                            val = 0.1; // Fallback to default if not a valid number
-                                                        }
-                                                        val = Math.max(0.1, val); // Ensure minimum radius
-
+                                                        let val = parseFloat(e.target.value);
+                                                        if (isNaN(val)) val = 0.1;
+                                                        val = Math.max(0.1, val);
                                                         const newWps = [...level.waypoints];
                                                         newWps[i] = { ...newWps[i], radius: val };
                                                         setLevel(prev => ({ ...prev, waypoints: newWps }));
@@ -766,7 +703,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                             value={level.startPoint.x}
                                             onChange={(e) => {
                                                 const v = parseFloat(e.target.value);
-                                                setLevel(prev => ({ ...prev, startPoint: { ...prev.startPoint, x: v } })); // No formula
+                                                setLevel(prev => ({ ...prev, startPoint: { ...prev.startPoint, x: v } }));
                                             }}
                                         />
                                     </div>
@@ -778,12 +715,11 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                             value={level.startPoint.y}
                                             onChange={(e) => {
                                                 const v = parseFloat(e.target.value);
-                                                setLevel(prev => ({ ...prev, startPoint: { ...prev.startPoint, y: v } })); // No formula
+                                                setLevel(prev => ({ ...prev, startPoint: { ...prev.startPoint, y: v } }));
                                             }}
                                         />
                                     </div>
                                 </div>
-                                {/* Start Radius removed per spec, or kept? User said "Start... dynamic rendering...". Reverted radius. */}
                             </div>
 
                             {/* Goal Point (Dynamic) */}
@@ -828,63 +764,110 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </SidebarSection>
 
-                    {/* Level Settings (Speed) */}
-                    <div className="border-t border-white/10 pt-4 pb-4">
-                        <div className="flex items-center gap-2 bg-white/5 rounded border border-white/10 p-2">
-                            <Settings size={14} className="text-gray-400" />
-                            <span className="text-gray-400 text-xs">Player Speed</span>
-                            <input
-                                type="number"
-                                value={level.playerSpeed ?? 5.0}
-                                onChange={(e) => setLevel(l => ({ ...l, playerSpeed: parseFloat(e.target.value) || 1.0 }))}
-                                step={0.5}
-                                min={0.5}
-                                className="bg-transparent text-white text-xs w-full focus:outline-none text-right"
-                            />
-                            {/* Math Tool (Pull-up) */}
-                            <div className={`bg-black/90 border-t border-neon-blue/30 transition-all duration-300 z-30 flex flex-col ${showMathTool ? 'h-40' : 'h-12'}`}>
-                                <button
-                                    onClick={() => { audioService.playSE('click'); setShowMathTool(!showMathTool); }}
-                                    className="w-full flex items-center justify-center h-12 bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue transition-colors gap-2"
-                                >
-                                    {showMathTool ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-                                    <span className="text-[10px] font-bold tracking-widest">MATH TOOL</span>
-                                </button>
+                    {/* 4. Game Settings Section */}
+                    <SidebarSection
+                        title="Game Setting"
+                        icon={<Settings size={16} className="text-gray-400" />}
+                    >
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 bg-white/5 rounded border border-white/10 p-2">
+                                <span className="text-gray-400 text-xs">Player Speed</span>
+                                <input
+                                    type="number"
+                                    value={level.playerSpeed ?? 5.0}
+                                    onChange={(e) => setLevel(l => ({ ...l, playerSpeed: parseFloat(e.target.value) || 1.0 }))}
+                                    step={0.5}
+                                    min={0.5}
+                                    className="bg-transparent text-white text-xs w-full focus:outline-none text-right"
+                                />
+                            </div>
 
-                                {/* Tool Content */}
-                                <div className={`flex-1 p-2 overflow-hidden flex flex-col gap-2 ${showMathTool ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                                    <div className="flex gap-2 items-center">
-                                        <div className="flex-1">
-                                            <MathInput
-                                                value={mathToolValue}
-                                                onChange={setMathToolValue}
-                                                placeholder="Type formula (e.g. sin(x)^2)"
+                            {/* Parameters Section (Moved here) */}
+                            <div>
+                                <label className="text-gray-400 text-sm mb-1 block font-bold">Parameters</label>
+                                <div className="bg-white/5 rounded p-2 border border-white/10">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-xs text-gray-300 flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={level.playerVar?.enabled ?? false}
+                                                onChange={(e) => setLevel(prev => ({
+                                                    ...prev,
+                                                    playerVar: {
+                                                        speed: 1.0,
+                                                        ...(prev.playerVar || {}),
+                                                        enabled: e.target.checked
+                                                    }
+                                                }))}
+                                                className="accent-neon-blue"
                                             />
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                audioService.playSE('click');
-                                                navigator.clipboard.writeText(mathToolValue);
-                                                setMathToolValue(''); // Clear input
-                                            }}
-                                            className="p-2 bg-white/10 rounded hover:bg-white/20 text-white transition-colors"
-                                            title="Copy to Clipboard"
-                                        >
-                                            <Copy size={16} />
-                                        </button>
+                                            Enable Parameter 'a' to f(x)
+                                        </label>
                                     </div>
-                                    <div className="text-[10px] text-gray-500 text-center">
-                                        Use this scratchpad to construct complex formulas.
+                                    {(level.playerVar?.enabled) && (
+                                        <div className="flex items-center gap-2 pl-5">
+                                            <span className="text-[10px] text-gray-500">Speed</span>
+                                            <input
+                                                type="number"
+                                                className="bg-black/30 border border-white/10 rounded px-1 py-0.5 text-xs text-white w-16 focus:border-neon-blue focus:outline-none"
+                                                value={level.playerVar.speed ?? 5.0}
+                                                onChange={(e) => {
+                                                    const v = parseFloat(e.target.value);
+                                                    setLevel(prev => ({ ...prev, playerVar: { ...prev.playerVar!, speed: isNaN(v) ? 0 : v } }));
+                                                }}
+                                                step={0.5}
+                                            />
+                                            <span className="text-[10px] text-gray-600">/sec</span>
+                                        </div>
+                                    )}
+                                    <div className="text-[10px] text-gray-500 mt-1 pl-5 italic">
+                                        Use Up/Down keys to control 'a'.
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </SidebarSection>
                 </div>
 
+                {/* Math Tool (Pull-up) */}
+                <div className={`bg-black/90 border-t border-neon-blue/30 shrink-0 z-30 flex flex-col transition-all duration-300 ${showMathTool ? 'h-40' : 'h-8'}`}>
+                    <button
+                        onClick={() => { audioService.playSE('click'); setShowMathTool(!showMathTool); }}
+                        className="w-full flex items-center justify-center h-8 bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue transition-colors gap-2"
+                    >
+                        {showMathTool ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                        <span className="text-[10px] font-bold tracking-widest">MATH TOOL</span>
+                    </button>
 
+                    {/* Tool Content */}
+                    <div className={`flex-1 p-2 overflow-hidden flex flex-col gap-2 ${showMathTool ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                        <div className="flex gap-2 items-center">
+                            <div className="flex-1">
+                                <MathInput
+                                    value={mathToolValue}
+                                    onChange={setMathToolValue}
+                                    placeholder="Type formula (e.g. sin(x)^2)"
+                                />
+                            </div>
+                            <button
+                                onClick={() => {
+                                    audioService.playSE('click');
+                                    navigator.clipboard.writeText(mathToolValue);
+                                    setMathToolValue(''); // Clear input
+                                }}
+                                className="p-2 bg-white/10 rounded hover:bg-white/20 text-white transition-colors"
+                                title="Copy to Clipboard"
+                            >
+                                <Copy size={16} />
+                            </button>
+                        </div>
+                        <div className="text-[10px] text-gray-500 text-center">
+                            Use this scratchpad to construct complex formulas.
+                        </div>
+                    </div>
+                </div>
 
                 {/* Play Button - Always Interactive */}
                 <div className="p-4 shadow-lg bg-black border-t border-white/10 shrink-0 z-20">

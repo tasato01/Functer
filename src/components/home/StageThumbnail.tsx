@@ -80,7 +80,7 @@ export const StageThumbnail: React.FC<StageThumbnailProps> = ({ level, width = 1
         <div ref={ref} style={{ width, height }} className={`relative overflow-hidden bg-black border border-gray-800 rounded lg ${className}`}>
             {inView ? (
                 <GameCanvas
-                    level={level}
+                    level={{ ...level, showCoordinates: false }}
                     f={fFn}
                     g={gFn}
                     t={0}
