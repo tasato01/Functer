@@ -30,13 +30,14 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
     const [activeShapeIds, setActiveShapeIds] = useState<Set<string>>(new Set());
     const activeShapeIdsRef = useRef<Set<string>>(new Set());
 
-    const [gRulesFunctions, setGRulesFunctions] = useState<{ fn: MathFunction, cond: string }[]>([]);
+    const [gRulesFunctions, setGRulesFunctions] = useState<{ fn: MathFunction, cond?: string, conditions?: string[][] }[]>([]);
 
     useEffect(() => {
         if (level.gRules && level.gRules.length > 0) {
             const compiled = level.gRules.map(r => ({
                 fn: MathEngine.compile(r.expression),
-                cond: r.condition
+                cond: r.condition,
+                conditions: r.conditions
             }));
             setGRulesFunctions(compiled);
         } else {
@@ -76,11 +77,42 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
         };
     }, []);
 
-    const decideG = (x: number, y: number, t: number, a: number, defaultG: MathFunction, rules: { fn: MathFunction, cond: string }[]) => {
+    const evaluateComplex = (cond: string | undefined, conditions: string[][] | undefined, scope: any) => {
+        // Priority: conditions (complex) > cond (legacy)
+        if (conditions && conditions.length > 0) {
+            // OR of AND groups
+            for (const group of conditions) {
+                let groupMatch = true;
+                for (const c of group) {
+                    if (!MathEngine.evaluateCondition(c, scope)) {
+                        groupMatch = false;
+                        break;
+                    }
+                }
+                if (groupMatch && group.length > 0) return true;
+            }
+            return false;
+        }
+        if (cond && cond.trim() !== '') {
+            return MathEngine.evaluateCondition(cond, scope);
+        }
+        // If neither exists, usually it implies "always true" unless logic dictates otherwise. 
+        // For piecewise, if condition is empty it might be "else", but gRules usually requires condition.
+        // Returning true here might be dangerous if empty means "true". 
+        // Let's assume for rules/shapes if condition is present check it, otherwise true?
+        // Actually for shapes, empty means true. For gRules, empty usually means true (default).
+        return true;
+    };
+
+    const decideG = (x: number, y: number, t: number, a: number, defaultG: MathFunction, rules: { fn: MathFunction, cond?: string, conditions?: string[][] }[]) => {
         if (!rules || rules.length === 0) return defaultG;
         const scope = { x, y, X: x, Y: y, t, T: t, a };
         for (const rule of rules) {
-            if (MathEngine.evaluateCondition(rule.cond, scope)) {
+            // If explicit conditions exist, check them
+            const hasCond = (rule.cond && rule.cond.trim() !== '') || (rule.conditions && rule.conditions.length > 0);
+            if (!hasCond) continue; // Skip rules without conditions (should be caught by default but safe to skip)
+
+            if (evaluateComplex(rule.cond, rule.conditions, scope)) {
                 return rule.fn;
             }
         }
@@ -203,10 +235,8 @@ export const useGameLoop = (f: MathFunction, g: MathFunction, level: LevelConfig
             for (const shape of level.shapes) {
                 // Condition Check
                 let isActive = true;
-                if (shape.condition && shape.condition.trim() !== '') {
-                    if (!MathEngine.evaluateCondition(shape.condition, scope)) {
-                        isActive = false;
-                    }
+                if (!evaluateComplex(shape.condition, shape.conditions, scope)) {
+                    isActive = false;
                 }
 
                 // Logic for Sound Effect on State Change

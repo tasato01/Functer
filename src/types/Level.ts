@@ -21,7 +21,8 @@ export interface CircleConstraint {
     id: string;
     center: Point;
     radius: number;
-    condition?: string;
+    condition?: string; // @deprecated use conditions
+    conditions?: string[][]; // Complex logic: (A and B) or (C and D)
     color?: string;
 }
 
@@ -32,14 +33,16 @@ export interface RectConstraint {
     y: number;
     width: number;
     height: number;
-    condition?: string;
+    condition?: string; // @deprecated use conditions
+    conditions?: string[][]; // Complex logic
     color?: string;
 }
 
 // Piecewise Function Rule
 export interface PiecewiseRule {
     expression: string;
-    condition: string;
+    condition?: string; // @deprecated use conditions
+    conditions?: string[][]; // Complex logic
 }
 
 // Player Variable 'a' Configuration

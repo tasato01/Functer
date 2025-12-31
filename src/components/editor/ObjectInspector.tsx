@@ -39,6 +39,7 @@ export const ObjectInspector: React.FC<ObjectInspectorProps> = ({
             {selectedObject.type === 'shape' && (
                 <div className="flex flex-col gap-2">
                     {selectedObject.label === 'CIRCLE' ? (
+                        /* CIRCLE Inspector */
                         <>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="flex items-center gap-1"><label className="text-gray-400 text-xs">cX</label>
@@ -69,15 +70,73 @@ export const ObjectInspector: React.FC<ObjectInspectorProps> = ({
                                     }}
                                 />
                             </div>
+
                             <div className="mt-2 text-xs border-t border-white/10 pt-2">
-                                <label className="text-neon-yellow mb-1 block">Active Condition</label>
-                                <MathInput
-                                    value={(selectedObject.val as CircleConstraint).condition || ''}
-                                    onChange={v => {
-                                        setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, condition: v } : s) }));
-                                    }}
-                                    placeholder="Always active (e.g. t < 5)"
-                                />
+                                <label className="text-neon-yellow mb-1 block font-bold">Active Conditions (OR groups)</label>
+
+                                {/* Complex Conditions List */}
+                                <div className="space-y-2">
+                                    {((selectedObject.val as CircleConstraint).conditions || []).map((group, gIdx) => (
+                                        <div key={gIdx} className="bg-black/30 p-2 rounded border border-white/10">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-[9px] text-gray-500">Group {gIdx + 1} (AND)</span>
+                                                <button onClick={() => {
+                                                    const newConds = [...((selectedObject.val as CircleConstraint).conditions || [])];
+                                                    newConds.splice(gIdx, 1);
+                                                    setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, conditions: newConds } : s) }));
+                                                }} className="text-gray-500 hover:text-red-500"><Trash2 size={10} /></button>
+                                            </div>
+                                            <div className="space-y-1">
+                                                {group.map((c, cIdx) => (
+                                                    <div key={cIdx} className="flex gap-1 items-center">
+                                                        <div className="flex-1"><MathInput value={c} onChange={v => {
+                                                            const newConds = [...((selectedObject.val as CircleConstraint).conditions || [])];
+                                                            newConds[gIdx] = [...newConds[gIdx]];
+                                                            newConds[gIdx][cIdx] = v;
+                                                            setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, conditions: newConds } : s) }));
+                                                        }} placeholder="e.g. t < 5" /></div>
+                                                        <button onClick={() => {
+                                                            const newConds = [...((selectedObject.val as CircleConstraint).conditions || [])];
+                                                            newConds[gIdx] = newConds[gIdx].filter((_, i) => i !== cIdx);
+                                                            if (newConds[gIdx].length === 0) newConds.splice(gIdx, 1);
+                                                            setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, conditions: newConds } : s) }));
+                                                        }} className="text-gray-600 hover:text-red-500"><Trash2 size={10} /></button>
+                                                    </div>
+                                                ))}
+                                                <button onClick={() => {
+                                                    const newConds = [...((selectedObject.val as CircleConstraint).conditions || [])];
+                                                    newConds[gIdx] = [...newConds[gIdx], ''];
+                                                    setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, conditions: newConds } : s) }));
+                                                }} className="text-[10px] text-neon-blue hover:underline">+ AND Condition</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Fallback Legacy Condition Display */}
+                                {!(selectedObject.val as CircleConstraint).conditions?.length && (selectedObject.val as CircleConstraint).condition && (
+                                    <div className="mb-2 bg-yellow-500/10 border border-yellow-500/30 p-2 rounded">
+                                        <div className="text-[10px] text-yellow-500 mb-1">Legacy Condition:</div>
+                                        <MathInput
+                                            value={(selectedObject.val as CircleConstraint).condition || ''}
+                                            onChange={v => {
+                                                setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, condition: v } : s) }));
+                                            }}
+                                        />
+                                        <button onClick={() => {
+                                            const old = (selectedObject.val as CircleConstraint).condition;
+                                            setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, condition: undefined, conditions: [[old || '']] } : s) }));
+                                        }} className="text-[10px] text-neon-yellow underline mt-1">Convert to Complex Logic</button>
+                                    </div>
+                                )}
+
+                                <button onClick={() => {
+                                    const newConds = [...((selectedObject.val as CircleConstraint).conditions || [])];
+                                    newConds.push(['']);
+                                    setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, conditions: newConds } : s) }));
+                                }} className="w-full mt-2 py-1 border border-dashed border-white/20 hover:bg-white/5 text-[10px] text-gray-400 rounded">
+                                    + Add Condition Group (OR)
+                                </button>
                             </div>
                         </>
                     ) : (
@@ -133,14 +192,71 @@ export const ObjectInspector: React.FC<ObjectInspectorProps> = ({
                                 </div>
                             </div>
                             <div className="mt-2 text-xs border-t border-white/10 pt-2">
-                                <label className="text-neon-yellow mb-1 block">Active Condition</label>
-                                <MathInput
-                                    value={(selectedObject.val as RectConstraint).condition || ''}
-                                    onChange={v => {
-                                        setLevel(l => ({ ...l, shapes: l.shapes.map(sh => sh.id === selectedId ? { ...sh, condition: v } : sh) }));
-                                    }}
-                                    placeholder="Always active (e.g. t < 5)"
-                                />
+                                <label className="text-neon-yellow mb-1 block font-bold">Active Conditions (OR groups)</label>
+
+                                {/* Complex Conditions List */}
+                                <div className="space-y-2">
+                                    {((selectedObject.val as RectConstraint).conditions || []).map((group, gIdx) => (
+                                        <div key={gIdx} className="bg-black/30 p-2 rounded border border-white/10">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-[9px] text-gray-500">Group {gIdx + 1} (AND)</span>
+                                                <button onClick={() => {
+                                                    const newConds = [...((selectedObject.val as RectConstraint).conditions || [])];
+                                                    newConds.splice(gIdx, 1);
+                                                    setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, conditions: newConds } : s) }));
+                                                }} className="text-gray-500 hover:text-red-500"><Trash2 size={10} /></button>
+                                            </div>
+                                            <div className="space-y-1">
+                                                {group.map((c, cIdx) => (
+                                                    <div key={cIdx} className="flex gap-1 items-center">
+                                                        <div className="flex-1"><MathInput value={c} onChange={v => {
+                                                            const newConds = [...((selectedObject.val as RectConstraint).conditions || [])];
+                                                            newConds[gIdx] = [...newConds[gIdx]];
+                                                            newConds[gIdx][cIdx] = v;
+                                                            setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, conditions: newConds } : s) }));
+                                                        }} placeholder="e.g. t < 5" /></div>
+                                                        <button onClick={() => {
+                                                            const newConds = [...((selectedObject.val as RectConstraint).conditions || [])];
+                                                            newConds[gIdx] = newConds[gIdx].filter((_, i) => i !== cIdx);
+                                                            if (newConds[gIdx].length === 0) newConds.splice(gIdx, 1);
+                                                            setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, conditions: newConds } : s) }));
+                                                        }} className="text-gray-600 hover:text-red-500"><Trash2 size={10} /></button>
+                                                    </div>
+                                                ))}
+                                                <button onClick={() => {
+                                                    const newConds = [...((selectedObject.val as RectConstraint).conditions || [])];
+                                                    newConds[gIdx] = [...newConds[gIdx], ''];
+                                                    setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, conditions: newConds } : s) }));
+                                                }} className="text-[10px] text-neon-blue hover:underline">+ AND Condition</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Fallback Legacy Condition Display */}
+                                {!(selectedObject.val as RectConstraint).conditions?.length && (selectedObject.val as RectConstraint).condition && (
+                                    <div className="mb-2 bg-yellow-500/10 border border-yellow-500/30 p-2 rounded">
+                                        <div className="text-[10px] text-yellow-500 mb-1">Legacy Condition:</div>
+                                        <MathInput
+                                            value={(selectedObject.val as RectConstraint).condition || ''}
+                                            onChange={v => {
+                                                setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, condition: v } : s) }));
+                                            }}
+                                        />
+                                        <button onClick={() => {
+                                            const old = (selectedObject.val as RectConstraint).condition;
+                                            setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, condition: undefined, conditions: [[old || '']] } : s) }));
+                                        }} className="text-[10px] text-neon-yellow underline mt-1">Convert to Complex Logic</button>
+                                    </div>
+                                )}
+
+                                <button onClick={() => {
+                                    const newConds = [...((selectedObject.val as RectConstraint).conditions || [])];
+                                    newConds.push(['']);
+                                    setLevel(l => ({ ...l, shapes: l.shapes.map(s => s.id === selectedId ? { ...s, conditions: newConds } : s) }));
+                                }} className="w-full mt-2 py-1 border border-dashed border-white/20 hover:bg-white/5 text-[10px] text-gray-400 rounded">
+                                    + Add Condition Group (OR)
+                                </button>
                             </div>
                         </>
                     )}

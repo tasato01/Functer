@@ -268,36 +268,24 @@ export const PlayPage: React.FC = () => {
                         {gameState.isPlaying ? <Square size={24} fill="currentColor" /> : <Play size={28} fill="currentColor" className="ml-1" />}
                     </button>
 
-                    {/* Reset (Re-center?) */}
-                    <button
-                        onClick={() => {
-                            if (!level) return; // Guard clause for level
-                            const cx = (level.startPoint.x + level.goalPoint.x) / 2;
-                            const cy = (level.startPoint.y + level.goalPoint.y) / 2;
-                            setViewOffset({ x: -cx * scale, y: cy * scale });
-                        }}
-                        className="h-[50px] w-[50px] rounded-full bg-gray-800 border border-white/20 text-white flex items-center justify-center hover:bg-gray-700 transition-all"
-                        title="Reset View"
-                    >
-                        <RefreshCw size={20} />
-                    </button>
+
                 </div>
 
-                {/* Zoom Controls */}
-                <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-                    <ZoomControls onZoomIn={() => setScale(s => Math.min(s * 1.2, 200))} onZoomOut={() => setScale(s => Math.max(s / 1.2, 5))} />
+                {/* Zoom Controls & Reset - Moved to Top Right to avoid overlap */}
+                <div className="absolute top-16 right-4 flex flex-col gap-2 z-40">
                     <button
                         onClick={() => {
-                            if (!level) return; // Guard clause for level
+                            if (!level) return;
                             const cx = (level.startPoint.x + level.goalPoint.x) / 2;
                             const cy = (level.startPoint.y + level.goalPoint.y) / 2;
                             setViewOffset({ x: -cx * scale, y: cy * scale });
                         }}
-                        className="w-10 h-10 bg-gray-800 border border-gray-600 rounded flex items-center justify-center text-neon-blue hover:bg-gray-700 transition-colors"
+                        className="w-10 h-10 bg-gray-800 border border-gray-600 rounded flex items-center justify-center text-neon-blue hover:bg-gray-700 transition-colors shadow-lg"
                         title="Reset View"
                     >
                         <RefreshCw size={20} />
                     </button>
+                    <ZoomControls onZoomIn={() => setScale(s => Math.min(s * 1.2, 200))} onZoomOut={() => setScale(s => Math.max(s / 1.2, 5))} />
                 </div>
 
                 {/* Game Info Overlay */}

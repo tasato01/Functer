@@ -97,7 +97,7 @@ export const EditPage: React.FC = () => {
         // Compile rules
         const rules = level.gRules.map(r => ({
             fn: MathEngine.compile(r.expression),
-            cond: MathEngine.compileCondition(r.condition)
+            cond: MathEngine.compileCondition(r.condition || ''),
         }));
 
         // Return wrapped function
