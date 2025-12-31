@@ -595,7 +595,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                         {/* Shapes in Forbidden List */}
                         <div className="mt-4 space-y-2">
                             <div className="text-xs text-gray-400 font-bold">Shapes</div>
-                            {level.shapes?.map((shape, i) => {
+                            {level.shapes?.map((shape) => {
                                 const isSelected = selectedId === shape.id;
                                 return (
                                     <div
