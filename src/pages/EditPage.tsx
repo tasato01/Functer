@@ -340,18 +340,18 @@ export const EditPage: React.FC = () => {
 
                         onShapeCreate={(s) => {
                             setLevel(prev => ({ ...prev, shapes: [...(prev.shapes || []), s] }));
-                            setMode('select');
+                            // setMode('select'); // Removed to allow continuous input
                             audioService.playSE('click');
                         }}
                         onWaypointCreate={(p) => {
                             setLevel(prev => ({ ...prev, waypoints: [...(prev.waypoints || []), p] }));
-                            setMode('select');
+                            // setMode('select'); // Removed to allow continuous input
                             audioService.playSE('click');
                         }}
                         onObjectClick={() => { /* ... */ }}
 
                         onRightClick={handleRightClick}
-                        snapStep={0.5}
+                        snapStep={snapStep}
                         refreshTrigger={refreshCount}
                         showForbiddenOverlay={showForbidden}
 
