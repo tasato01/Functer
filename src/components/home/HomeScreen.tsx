@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PenTool, Database, Trophy, User as UserIcon, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize, Bell, AlertTriangle } from 'lucide-react';
+import { PenTool, Database, Trophy, User as UserIcon, ShieldCheck, BookOpen, Settings, X, Volume2, Maximize, Bell, AlertTriangle, Target } from 'lucide-react';
 
 import { levelService } from '../../services/FirebaseLevelService';
 import { audioService } from '../../services/AudioService';
@@ -13,6 +13,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { UserService } from '../../services/UserService';
 import { FloatingMathBackground } from './FloatingMathBackground';
 import { AnnouncementDialog } from './AnnouncementDialog';
+import { SettingsService } from '../../services/SettingsService';
 
 export const HomeScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -26,6 +27,7 @@ export const HomeScreen: React.FC = () => {
 
     const [bgmVolume, setBgmVolume] = useState(audioService.getBGMVolume() * 100);
     const [seVolume, setSeVolume] = useState(audioService.getSEVolume() * 100);
+    const [moveSpeed, setMoveSpeed] = useState(SettingsService.getMoveSpeed());
     const [isAdmin, setIsAdmin] = useState(false);
     const [hasUnreadNews, setHasUnreadNews] = useState(false);
 
@@ -297,6 +299,29 @@ export const HomeScreen: React.FC = () => {
                                     }}
                                     onMouseUp={() => audioService.playSE('click')}
                                     className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-neon-blue hover:accent-neon-blue/80 transition-all"
+                                />
+                            </div>
+
+                            {/* Camera Speed */}
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="flex items-center gap-3 text-sm font-bold text-gray-300 tracking-wider">
+                                        <Target size={18} className="text-neon-yellow" /> CAMERA SPEED
+                                    </span>
+                                    <span className="text-neon-yellow font-mono font-bold bg-neon-yellow/10 px-2 py-0.5 rounded text-xs">{moveSpeed}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="50"
+                                    value={moveSpeed}
+                                    onChange={(e) => {
+                                        const val = Number(e.target.value);
+                                        setMoveSpeed(val);
+                                        SettingsService.setMoveSpeed(val);
+                                    }}
+                                    onMouseUp={() => audioService.playSE('click')}
+                                    className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-neon-yellow hover:accent-neon-yellow/80 transition-all"
                                 />
                             </div>
 

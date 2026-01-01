@@ -12,6 +12,7 @@ import { audioService } from '../services/AudioService';
 import { HelpDialog } from '../components/common/HelpDialog';
 import { SolutionDisplayDialog } from '../components/game/SolutionDisplayDialog';
 import { LevelClearDialog } from '../components/game/LevelClearDialog';
+import { useKeyboardPan } from '../hooks/useKeyboardPan';
 
 
 export const PlayPage: React.FC = () => {
@@ -56,6 +57,9 @@ export const PlayPage: React.FC = () => {
     const [fRaw, setFRaw] = useState('0'); // Player's Function
     const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
     const [scale, setScale] = useState(40);
+
+    // WASD Movement
+    useKeyboardPan(setViewOffset);
 
     const fFn = useMemo(() => MathEngine.compile(fRaw || '0'), [fRaw]);
     const gFn = useMemo(() => MathEngine.compile(level?.g_raw || '0'), [level?.g_raw]);

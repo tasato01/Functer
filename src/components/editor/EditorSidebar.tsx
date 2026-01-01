@@ -42,6 +42,8 @@ interface EditorSidebarProps {
 
     snapStep: number;
     setSnapStep: (n: number) => void;
+    moveSpeed: number;
+    setMoveSpeed: (n: number) => void;
 
     gameState: { isPlaying: boolean; status: string }; // Simplified
     handleTogglePlay: () => void;
@@ -59,6 +61,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
     undo, redo, canUndo, canRedo, reset, DEFAULT_LEVEL, resetView,
     testF, setTestF,
     snapStep, setSnapStep,
+    moveSpeed, setMoveSpeed,
     gameState, handleTogglePlay, stopGame,
     onHelpClick,
     isVerifying, setIsVerifying
@@ -452,7 +455,14 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
                     {/* Settings Modal */}
                     {showSettings && (
-                        <SettingsPanel snapStep={snapStep} setSnapStep={setSnapStep} level={level} setLevel={setLevel} />
+                        <SettingsPanel
+                            snapStep={snapStep}
+                            setSnapStep={setSnapStep}
+                            moveSpeed={moveSpeed}
+                            setMoveSpeed={setMoveSpeed}
+                            level={level}
+                            setLevel={setLevel}
+                        />
                     )}
 
                     {/* Selected Object Inspector */}

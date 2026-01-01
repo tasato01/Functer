@@ -66,17 +66,34 @@ function useHistory<T>(initialState: T) {
     };
 }
 
+import { useKeyboardPan } from '../hooks/useKeyboardPan';
+import { SettingsService } from '../services/SettingsService';
+
+
+// ...
+
 export const EditPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { state: level, setState: setLevel, undo, redo, canUndo, canRedo, reset } = useHistory<LevelConfig>(EMPTY_LEVEL);
 
-    const [testF, setTestF] = useState('0'); // Default 0
-    const [snapStep, setSnapStep] = useState(0.5); // Default 0.5
+    const [testF, setTestF] = useState('0');
+    const [snapStep, setSnapStep] = useState(0.5);
+    const [moveSpeed, setMoveSpeed] = useState(SettingsService.getMoveSpeed());
+
+    const updateMoveSpeed = (s: number) => {
+        setMoveSpeed(s);
+        SettingsService.setMoveSpeed(s);
+    };
 
     // View State
     const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
     const [scale, setScale] = useState(40);
+
+    // WASD Pan
+    useKeyboardPan(setViewOffset);
+
+    // ...
 
     // Interaction State
     const [mode, setMode] = useState<InteractionMode>('select');
@@ -302,6 +319,8 @@ export const EditPage: React.FC = () => {
                     setTestF={setTestF}
                     snapStep={snapStep}
                     setSnapStep={setSnapStep}
+                    moveSpeed={moveSpeed}
+                    setMoveSpeed={updateMoveSpeed}
                     gameState={gameState}
                     handleTogglePlay={handleTogglePlay}
                     stopGame={stopGame}
