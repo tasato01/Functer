@@ -18,7 +18,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ isOpen, onClose }) => {
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0 bg-black/40">
                     <h2 className="text-xl font-bold text-neon-blue tracking-wider flex items-center gap-2">
-                        <BookOpen size={24} /> MANUAL
+                        <BookOpen size={24} /> HELP
                     </h2>
                     <button onClick={() => { audioService.playSE('click'); onClose(); }} className="text-gray-400 hover:text-white transition-colors">
                         <X size={24} />
@@ -91,7 +91,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ isOpen, onClose }) => {
                                         <AlertTriangle className="text-red-500 shrink-0" size={20} />
                                         <div>
                                             <div className="font-bold text-red-400">Forbidden Areas</div>
-                                            <div className="text-gray-400 text-sm">Touching red zones results in immediate failure.</div>
+                                            <div className="text-gray-400 text-sm">Touching red zones results in immediate failure. <br />Some zones may activate only under certain conditions (check Editor Help).</div>
                                         </div>
                                     </li>
                                     <li className="bg-cyan-900/10 border border-cyan-500/20 p-3 rounded-lg flex gap-3">
@@ -113,7 +113,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ isOpen, onClose }) => {
                                     <Calculator size={18} /> Writing Functions
                                 </h3>
                                 <p className="text-sm text-gray-300">
-                                    You can use standard math notation. The input is processed by a custom math engine supporting advanced features.
+                                    You can use standard math notation.
                                 </p>
                             </div>
 
@@ -121,7 +121,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ isOpen, onClose }) => {
 
 
                                 <section>
-                                    <h4 className="font-bold text-white mb-2 border-b border-white/10 pb-1">Constants</h4>
+                                    <h4 className="font-bold text-white mb-2 border-b border-white/10 pb-1">Constants & Variables</h4>
                                     <dl className="space-y-2 text-sm">
                                         <div className="flex justify-between">
                                             <dt className="font-mono text-neon-yellow">pi, π</dt>
@@ -131,24 +131,32 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ isOpen, onClose }) => {
                                             <dt className="font-mono text-neon-yellow">e</dt>
                                             <dd className="text-gray-400">Euler's number</dd>
                                         </div>
+                                        <div className="flex justify-between">
+                                            <dt className="font-mono text-neon-yellow">x</dt>
+                                            <dd className="text-gray-400">Coordinate Variable</dd>
+                                        </div>
                                     </dl>
                                 </section>
 
                                 <section>
-                                    <h4 className="font-bold text-white mb-2 border-b border-white/10 pb-1">Functions</h4>
+                                    <h4 className="font-bold text-white mb-2 border-b border-white/10 pb-1">Special Functions</h4>
                                     <ul className="grid grid-cols-2 gap-2 text-sm font-mono text-neon-blue">
-                                        <li>sin(x)</li>
-                                        <li>cos(x)</li>
+                                        <li>sin(x), cos(x)</li>
                                         <li>tan(x)</li>
                                         <li>abs(x)</li>
-                                        <li>log(x)</li>
-                                        <li>ln(x)</li>
+                                        <li>log(x), ln(x)</li>
                                         <li>sqrt(x)</li>
-                                        <li>cbtr(x)</li>
+                                        <li>min(a,b), max(a,b)</li>
                                     </ul>
                                 </section>
 
-
+                                <section className="col-span-1 md:col-span-2">
+                                    <h4 className="font-bold text-white mb-2 border-b border-white/10 pb-1 flex items-center gap-2 text-neon-blue"><i className="fas fa-sliders-h"></i> Parameter 'a'</h4>
+                                    <p className="text-sm text-gray-400 mb-2">
+                                        Some levels enable a slider variable <b>'a'</b> (-10 to 10).
+                                        <br />If enabled, you can use 'a' in your function <code className="text-neon-pink">f(x) = a * sin(x)</code> to interactively change the graph!
+                                    </p>
+                                </section>
                             </div>
                         </div>
                     )}
@@ -161,58 +169,35 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ isOpen, onClose }) => {
                                     Creating Stages
                                 </h3>
                                 <p className="text-gray-300 text-sm mb-4">
-                                    In Editor Mode, you define the world rules and place objects.
+                                    Define the world rules and place objects to create puzzles.
                                 </p>
                             </section>
 
                             <div className="space-y-4">
                                 <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-                                    <h4 className="font-bold text-neon-blue mb-1">World Transformation: g(f)</h4>
+                                    <h4 className="font-bold text-neon-blue mb-1">Piecewise Functions</h4>
                                     <p className="text-sm text-gray-400">
-                                        This defines how the player's input <code className="text-neon-pink">f(x)</code> is distorted or transformed by the world.
-                                        Default is <code className="text-green-400">f</code> (no change).
-                                        Try <code className="text-green-400">f(x) + sin(x)</code> or <code className="text-green-400">f'(x)</code>!
+                                        You can create piecewise definitions for <code className="text-neon-pink">g(f)</code>.
+                                        Click "Add Condition" to specify different formulas for different ranges (e.g., IF x &gt; 0).
                                     </p>
                                 </div>
 
                                 <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-                                    <h4 className="font-bold text-neon-blue mb-1">Publishing</h4>
+                                    <h4 className="font-bold text-neon-blue mb-1">Activation Conditions (Shapes)</h4>
                                     <p className="text-sm text-gray-400">
-                                        To publish a level, you must <span className="text-white font-bold">Clear It Yourself</span> first.
-                                        This proves the level is possible. Click 'Publish', then the system will ask you to perform a Verification Play.
+                                        Forbidden Areas (Shapes) can have <b>conditions</b>.
+                                        <br />Example: <code className="text-red-400">x &gt; 0</code> &rarr; The shape only kills the player if x &gt; 0.
+                                        <br />Useful for moving traps or state-based hazards!
                                     </p>
                                 </div>
-                            </div>
 
-                            {/* Advanced Editor Features Moved Here */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/10">
-                                <section>
-                                    <h4 className="font-bold text-white mb-2 border-b border-white/10 pb-1">Variables</h4>
-                                    <dl className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <dt className="font-mono text-neon-yellow">x</dt>
-                                            <dd className="text-gray-400">Current horizontal position</dd>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <dt className="font-mono text-neon-yellow">t</dt>
-                                            <dd className="text-gray-400">Time elapsed (seconds)</dd>
-                                        </div>
-                                    </dl>
-                                </section>
-
-                                <section>
-                                    <h4 className="font-bold text-white mb-2 border-b border-white/10 pb-1">Advanced (World Function)</h4>
-                                    <ul className="space-y-2 text-sm">
-                                        <li className="flex flex-col">
-                                            <code className="text-neon-pink">f'(X)</code>
-                                            <span className="text-gray-500 text-xs">Derivative of player function at X</span>
-                                        </li>
-                                        <li className="flex flex-col">
-                                            <code className="text-neon-pink">\int_&#123;0&#125;^&#123;X&#125; f(x) dx</code>
-                                            <span className="text-gray-500 text-xs">Definite Integral (Latex notation)</span>
-                                        </li>
-                                    </ul>
-                                </section>
+                                <div className="bg-white/5 p-3 rounded-lg border border-white/10">
+                                    <h4 className="font-bold text-neon-blue mb-1">Variable 'Y' & 'a'</h4>
+                                    <p className="text-sm text-gray-400">
+                                        <b>Y</b>: Represents the player's current Y coordinate. Usable in conditions.
+                                        <br /><b>a</b>: Player-controllable variable. <span className="text-neon-yellow">MUST check "Enable 'a'" in Settings</span> to use it in ANY formula.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     )}

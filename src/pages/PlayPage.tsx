@@ -129,11 +129,35 @@ export const PlayPage: React.FC = () => {
                 return;
             }
 
-            // Check 'a' usage permission
-            // If playerVar is NOT enabled, 'f' cannot use 'a'
-            if (!level.playerVar?.enabled && MathEngine.usesVariable(fRaw, 'a')) {
-                alert("Variable 'a' is NOT allowed in f(x) for this level.");
-                return;
+            // Check 'a' usage permission GLOBALLY
+            // If playerVar is NOT enabled, 'a' cannot be used ANYWHERE (f, g, constraints, shapes, waypoints, goal)
+            // User feedback: "If check is off, disallow usage in ALL formulas."
+            if (!level.playerVar?.enabled) {
+                // Check f(x)
+                if (MathEngine.usesVariable(fRaw, 'a')) {
+                    alert("Variable 'a' is NOT enabled for this level (cannot use in f(x)).");
+                    return;
+                }
+
+                // We should also check if the level ITSELF is valid, but maybe just warn or block play if *f* is fine but *g* uses it?
+                // The user said "If check is off... player cannot operate... so better to make it unusable in all formulas".
+                // Since user cannot change g/shapes, this implies the LEVEL AUTHOR made a mistake.
+                // We should block play and warn.
+                const usesAInLevel = (
+                    (level.g_raw && MathEngine.usesVariable(level.g_raw, 'a')) ||
+                    (level.constraints && level.constraints.some(g => g.some(c => MathEngine.usesVariable(c, 'a')))) ||
+                    (level.shapes && level.shapes.some(s =>
+                        (s.conditions && s.conditions.some(g => g.some(c => MathEngine.usesVariable(c, 'a')))) ||
+                        (s.condition && MathEngine.usesVariable(s.condition, 'a'))
+                    )) ||
+                    (level.waypoints && level.waypoints.some(wp => MathEngine.usesVariable(wp.xFormula || '', 'a') || MathEngine.usesVariable(wp.yFormula || '', 'a'))) ||
+                    (level.goalPoint && (MathEngine.usesVariable(level.goalPoint.xFormula || '', 'a') || MathEngine.usesVariable(level.goalPoint.yFormula || '', 'a')))
+                );
+
+                if (usesAInLevel) {
+                    alert("Level Error: Variable 'a' is used in Level Data but NOT enabled in settings.\n(Contact the author to fix this level).");
+                    return;
+                }
             }
 
             // Check if f(x) passes through Start Point
@@ -350,7 +374,11 @@ export const PlayPage: React.FC = () => {
 
                     {/* Constraints & Forbidden Shapes display */}
                     {(level.showInequalities !== false) && ((level!.constraints && level!.constraints.length > 0) || (level!.shapes && level!.shapes.length > 0)) && (
-                        <div className="bg-black/60 backdrop-blur-md border border-red-500/30 p-3 rounded-lg overflow-hidden flex flex-col gap-1 max-h-[40vh]">
+                        <div
+                            className="bg-black/60 backdrop-blur-md border border-red-500/30 p-3 rounded-lg overflow-hidden flex flex-col gap-1 max-h-[40vh]"
+                            onWheel={(e) => e.stopPropagation()}
+                            onTouchMove={(e) => e.stopPropagation()}
+                        >
                             <span className="text-gray-400 text-xs font-mono block shrink-0">FORBIDDEN</span>
                             <div className="flex flex-col gap-2 overflow-y-auto min-h-0">
                                 {/* Inequality Constraints */}

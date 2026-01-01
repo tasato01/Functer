@@ -213,9 +213,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                         // Check if active. Default to true if no condition or if static/editor mode?
                         // In Editor (isStatic?), conditions might not be evaluating continuously. 
                         // If isStatic is true, activeShapeIds might be undefined? 
-                        // If activeShapeIds is provided, use it. If not, assume active (filled).
-                        // Or maybe assume active if no activeShapeIds passed.
-                        const isActive = activeShapeIds ? activeShapeIds.has(s.id) : true;
+                        // If not running (e.g. inputting formula), show as active (filled) so user can see what to avoid!
+                        // Otherwise respect activeShapeIds (conditional logic)
+                        const isGameRunning = !!player && !isStatic;
+                        const isActive = (!isGameRunning)
+                            ? true
+                            : (activeShapeIds ? activeShapeIds.has(s.id) : true);
                         // If shape has NO condition, it is always active (logic in useGameLoop confirms this: !isActive only if condition checks fail).
                         // useGameLoop: "activeShapeIds" only tracks shape.id IF isActive is true.
                         // So has(s.id) is correct check.

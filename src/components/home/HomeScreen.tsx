@@ -11,7 +11,7 @@ import { UserMenuDialog } from './UserMenuDialog';
 import { auth } from '../../services/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { UserService } from '../../services/UserService';
-import { MathBackground } from '../common/MathBackground';
+import { FloatingMathBackground } from './FloatingMathBackground';
 import { AnnouncementDialog } from './AnnouncementDialog';
 
 export const HomeScreen: React.FC = () => {
@@ -68,7 +68,7 @@ export const HomeScreen: React.FC = () => {
 
     return (
         <div className="h-full flex flex-col items-center relative overflow-y-auto text-white font-sans bg-black">
-            <MathBackground />
+            <FloatingMathBackground />
 
             {/* Title / Header */}
             <div className="z-10 text-center flex-none pt-24 pb-12 animate-in fade-in zoom-in duration-700">
