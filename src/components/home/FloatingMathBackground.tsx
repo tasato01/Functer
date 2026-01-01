@@ -1,23 +1,49 @@
+
 import React, { useEffect, useRef } from 'react';
 
 export const FloatingMathBackground: React.FC = () => {
-    // Pure Math formulas (No Physics)
+    // User-specified Math formulas
     const formulas = [
-        "e^{i\\pi} + 1 = 0",
-        "f(x) = \\sin(x)",
-        "\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}",
-        "x^2 + y^2 = r^2",
-        "\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}",
-        "\\frac{d}{dx}e^x = e^x",
-        "\\lim_{x\\to 0} \\frac{\\sin x}{x} = 1",
+        "(a \\pm b)^2 = a^2 \\pm 2ab + b^2",
+        "(a + b)(a - b) = a^2 - b^2",
+        "(x + a)(x + b) = x^2 + (a + b)x + ab",
+        "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}",
         "a^2 + b^2 = c^2",
-        "\\chi(G) \\le \\Delta(G) + 1",
-        "V - E + F = 2",
-        "\\zeta(s) = \\sum_{n=1}^{\\infty} n^{-s}",
-        "\\det(AB) = \\det(A)\\det(B)",
-        "\\nabla \\times (\\nabla f) = 0",
-        "\\oint_C \\vec{F} \\cdot d\\vec{r} = 0",
-        "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
+        "y = ax + b",
+        "y = ax^2",
+        "V = \\frac{1}{3}Sh",
+        "S = 4\\pi r^2",
+        "V = \\frac{4}{3}\\pi r^3",
+        "x^3 \\pm y^3 = (x \\pm y)(x^2 \\mp xy + y^2)",
+        "D = b^2 - 4ac",
+        "\\tan \\theta = \\frac{\\sin \\theta}{\\cos \\theta}",
+        "\\sin^2 \\theta + \\cos^2 \\theta = 1",
+        "1 + \\tan^2 \\theta = \\frac{1}{\\cos^2 \\theta}",
+        "\\frac{a}{\\sin A} = \\frac{b}{\\sin B} = \\frac{c}{\\sin C} = 2R",
+        "a^2 = b^2 + c^2 - 2bc \\cos A",
+        "S = \\frac{1}{2}bc \\sin A",
+        "P(n,r) = \\frac{n!}{(n-r)!}",
+        "C(n,r) = \\frac{n!}{r!(n-r)!}",
+        "\\sin(\\alpha \\pm \\beta) = \\sin \\alpha \\cos \\beta \\pm \\cos \\alpha \\sin \\beta",
+        "\\cos(\\alpha \\pm \\beta) = \\cos \\alpha \\cos \\beta \\mp \\sin \\alpha \\sin \\beta",
+        "\\sin 2\\theta = 2 \\sin \\theta \\cos \\theta",
+        "\\cos 2\\theta = \\cos^2 \\theta - \\sin^2 \\theta",
+        "\\log_a MN = \\log_a M + \\log_a N",
+        "a_n = a + (n-1)d",
+        "S_n = \\frac{1}{2}n(a+l)",
+        "a_n = ar^{n-1}",
+        "S_n = \\frac{a(r^n - 1)}{r-1}",
+        "\\sum_{k=1}^n k = \\frac{1}{2}n(n+1)",
+        "\\lim_{x\\to 0} \\frac{\\sin x}{x} = 1",
+        "\\{f(g(x))\\}' = f'(g(x))g'(x)",
+        "(\\sin x)' = \\cos x",
+        "(\\cos x)' = -\\sin x",
+        "(e^x)' = e^x",
+        "(\\log x)' = \\frac{1}{x}",
+        "\\int \\log x dx = x \\log x - x + C",
+        "V = \\pi \\int_a^b \\{f(x)\\}^2 dx",
+        "z = r(\\cos \\theta + i \\sin \\theta)",
+        "(\\cos \\theta + i \\sin \\theta)^n = \\cos n\\theta + i \\sin n\\theta"
     ];
 
     const renderMath = (latex: string) => {
@@ -25,30 +51,31 @@ export const FloatingMathBackground: React.FC = () => {
         const content = latex
             .replace(/\\sin/g, 'sin')
             .replace(/\\cos/g, 'cos')
+            .replace(/\\tan/g, 'tan')
+            .replace(/\\log/g, 'log')
+            .replace(/\\lim/g, 'lim')
+            .replace(/\\pm/g, '±')
+            .replace(/\\mp/g, '∓')
             .replace(/\\pi/g, 'π')
+            .replace(/\\theta/g, 'θ')
+            .replace(/\\alpha/g, 'α')
+            .replace(/\\beta/g, 'β')
             .replace(/\\int/g, '∫')
             .replace(/\\sum/g, '∑')
             .replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1/$2)')
             .replace(/\^2/g, '²')
+            .replace(/\^3/g, '³')
             .replace(/_0/g, '₀')
             .replace(/\\to/g, '→')
             .replace(/\\infty/g, '∞')
             .replace(/\\le/g, '≤')
-            .replace(/\\pm/g, '±')
             .replace(/\\sqrt/g, '√')
-            .replace(/\\chi/g, 'χ')
-            .replace(/\\Delta/g, 'Δ')
-            .replace(/\\zeta/g, 'ζ')
-            .replace(/\\det/g, 'det')
-            .replace(/\\nabla/g, '∇')
-            .replace(/\\times/g, '×')
-            .replace(/\\oint/g, '∮')
-            .replace(/\\cdot/g, '·')
-            .replace(/\\vec/g, '')
+            .replace(/\\{/g, '{')
+            .replace(/\\}/g, '}')
             .replace(/[{}]/g, '')
             .replace(/\\/g, '');
 
-        return <span className="font-serif italic">{content}</span>;
+        return <span className="font-serif italic text-gray-600/40">{content}</span>;
     };
 
     // JS-driven state for particles to ensuring strictly constant velocity and wrapping
