@@ -1,137 +1,110 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export const FloatingMathBackground: React.FC = () => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    // Math formulas in "natural" (LaTeX-like) visual form
+    const formulas = [
+        "e^{i\\pi} + 1 = 0",
+        "f(x) = \\sin(x)",
+        "\\int f(x)dx",
+        "x^2 + y^2 = r^2",
+        "E = mc^2",
+        "\\frac{d}{dx}e^x = e^x",
+        "F = ma",
+        "\\sum \\frac{1}{n^2} = \\frac{\\pi^2}{6}"
+    ];
+
+    // Simple parser to render basic LaTeX-like strings purely with HTML/CSS
+    // This is much lighter than loading MathJax/KaTeX for a simple background
+    const renderMath = (latex: string) => {
+        // Basic replacements for visual "LaTeX-ness"
+        const content = latex
+            .replace(/\\sin/g, 'sin')
+            .replace(/\\cos/g, 'cos')
+            .replace(/\\pi/g, 'π')
+            .replace(/\\int/g, '∫')
+            .replace(/\\sum/g, '∑')
+            .replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1/$2)') // Simplify frac for background
+            .replace(/\^2/g, '²')
+            .replace(/_0/g, '₀')
+            .replace(/\\to/g, '→')
+            .replace(/\\infty/g, '∞')
+            .replace(/\\{/g, '{')
+            .replace(/\\}/g, '}')
+            .replace(/\\/g, ''); // Remove remaining backslashes
+
+        return <span className="font-serif italic">{content}</span>;
+    };
+
+    // Use CSS animations for performance (GPU acceleration)
+    // We generate random particles that float around
+    const [particles, setParticles] = useState<CSSParticle[]>([]);
+
+    interface CSSParticle {
+        id: number;
+        text: string;
+        left: string;
+        top: string;
+        duration: string;
+        delay: string;
+        opacity: number;
+        scale: number;
+        tx: string; // Transform X
+        ty: string; // Transform Y
+    }
 
     useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        let animationFrameId: number;
-        let time = 0;
-
-        // Formulas to display
-        const formulas = [
-            "e^{i\\pi} + 1 = 0",
-            "f(x) = \\sin(x)",
-            "\\int f(x)dx",
-            "x^2 + y^2 = r^2",
-            "\\nabla \\cdot E = \\frac{\\rho}{\\epsilon_0}",
-            "E = mc^2",
-            "\\frac{d}{dx}e^x = e^x",
-            "\\lim_{x\\to 0} \\frac{\\sin x}{x} = 1",
-            "F = ma",
-            "\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}",
-            "\\mathcal{F}(\\omega) = \\int_{-\\infty}^{\\infty} f(t)e^{-i\\omega t}dt"
-        ];
-
-        // Particle class-like structure
-        interface FormulaParticle {
-            text: string;
-            x: number;
-            y: number;
-            z: number; // For depth effect
-            vx: number;
-            vy: number;
-            vz: number;
-            rotation: number;
-            rotationSpeed: number;
-        }
-
-        const particles: FormulaParticle[] = [];
-        const PARTICLE_COUNT = 15;
-
-        const resize = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-
-            // Init particles
-            particles.length = 0;
-            for (let i = 0; i < PARTICLE_COUNT; i++) {
-                particles.push(createParticle());
-            }
-        };
-
-        const createParticle = (): FormulaParticle => {
-            return {
+        const count = 15;
+        const newParticles: CSSParticle[] = [];
+        for (let i = 0; i < count; i++) {
+            newParticles.push({
+                id: i,
                 text: formulas[Math.floor(Math.random() * formulas.length)],
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                z: Math.random() * 2 + 1, // Depth scale 1 to 3
-                vx: (Math.random() - 0.5) * 0.5,
-                vy: (Math.random() - 0.5) * 0.5,
-                vz: (Math.random() - 0.5) * 0.01,
-                rotation: Math.random() * Math.PI * 2,
-                rotationSpeed: (Math.random() - 0.5) * 0.005
-            };
-        };
-
-        window.addEventListener('resize', resize);
-        resize();
-
-        const render = () => {
-            time += 0.01;
-
-            // Clear with slight fade for trails? No, just clear
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw Background Gradient (subtle)
-            // ctx.fillStyle = '#000000';
-            // ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-
-            particles.forEach((p) => {
-                // Update
-                p.x += p.vx;
-                p.y += p.vy;
-                p.z += p.vz;
-                p.rotation += p.rotationSpeed;
-
-                // Wrap around
-                if (p.x < -100) p.x = canvas.width + 100;
-                if (p.x > canvas.width + 100) p.x = -100;
-                if (p.y < -50) p.y = canvas.height + 50;
-                if (p.y > canvas.height + 50) p.y = -50;
-                if (p.z < 0.5 || p.z > 4) p.vz *= -1;
-
-                // Draw
-                const scale = 1 / p.z;
-                const alpha = Math.min(0.3, Math.max(0.05, (1 - (p.z - 1) / 3) * 0.3)); // Fade out max z
-
-                ctx.save();
-                ctx.translate(p.x, p.y);
-                ctx.rotate(p.rotation);
-                ctx.scale(scale, scale);
-
-                ctx.fillStyle = `rgba(100, 200, 255, ${alpha})`;
-                ctx.font = 'italic 20px "Times New Roman", serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
-                ctx.fillText(p.text, 0, 0);
-
-                ctx.restore();
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                duration: `${20 + Math.random() * 20}s`, // Slower, calmer
+                delay: `-${Math.random() * 20}s`, // Start at random times
+                opacity: 0.1 + Math.random() * 0.2, // Subtle
+                scale: 0.8 + Math.random() * 0.5,
+                // Random drift direction
+                tx: `${(Math.random() - 0.5) * 50}vw`,
+                ty: `${(Math.random() - 0.5) * 50}vh`
             });
-
-            animationFrameId = requestAnimationFrame(render);
-        };
-
-        render();
-
-        return () => {
-            window.removeEventListener('resize', resize);
-            cancelAnimationFrame(animationFrameId);
-        };
+        }
+        setParticles(newParticles);
     }, []);
 
     return (
-        <canvas
-            ref={canvasRef}
-            className="fixed inset-0 z-0 pointer-events-none"
-            style={{ background: 'black' }}
-        />
+        <div className="fixed inset-0 z-0 bg-black overflow-hidden pointer-events-none select-none">
+            {particles.map(p => (
+                <div
+                    key={p.id}
+                    style={{
+                        position: 'absolute',
+                        left: p.left,
+                        top: p.top,
+                        opacity: p.opacity,
+                        transform: `scale(${p.scale})`,
+                        color: 'rgba(100, 200, 255, 0.8)',
+                        fontSize: '1.5rem',
+                        textShadow: '0 0 5px rgba(100,200,255,0.3)',
+                        // Animation definition
+                        animation: `float-${p.id} ${p.duration} ease-in-out infinite alternate`
+                    }}
+                >
+                    {renderMath(p.text)}
+                    <style>
+                        {`
+                            @keyframes float-${p.id} {
+                                0% { transform: translate(0, 0) scale(${p.scale}) rotate(-5deg); }
+                                100% { transform: translate(${p.tx}, ${p.ty}) scale(${p.scale}) rotate(5deg); }
+                            }
+                        `}
+                    </style>
+                </div>
+            ))}
+
+            {/* Vignette */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)]" />
+        </div>
     );
 };
