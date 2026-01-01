@@ -1,5 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
+import { MathBackground } from '../common/MathBackground';
 
 export const FloatingMathBackground: React.FC = () => {
     // User-specified Math formulas
@@ -97,9 +98,11 @@ export const FloatingMathBackground: React.FC = () => {
 
     const particlesData = useRef<Particle[]>([]);
 
+
+
     useEffect(() => {
         // Init particles
-        const count = 12; // Fewer items, nice and spaced out
+        const count = 12;
         particlesData.current = Array.from({ length: count }).map(() => initParticle(true));
 
         const animate = () => {
@@ -118,18 +121,16 @@ export const FloatingMathBackground: React.FC = () => {
                 p.rotation += p.rotationSpeed;
 
                 // Wrap around (enter/exit logic)
-                // Allow them to go fully off screen before wrapping
-                const margin = 200;
+                // Increased margin to prevent visible disappearing of long formulas
+                const margin = 500;
                 if (p.x > width + margin) p.x = -margin;
                 if (p.x < -margin) p.x = width + margin;
                 if (p.y > height + margin) p.y = -margin;
                 if (p.y < -margin) p.y = height + margin;
 
                 // Apply transforms
-                // Use 3D transform for hardware accel
-                // Z determines scale and opacity
-                const scale = 0.5 + p.z * 1.0; // 0.5 to 1.5
-                const opacity = 0.1 + p.z * 0.4; // 0.1 to 0.5
+                const scale = 0.5 + p.z * 1.0;
+                const opacity = 0.1 + p.z * 0.4;
 
                 el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) rotate(${p.rotation}deg) scale(${scale})`;
                 el.style.opacity = opacity.toString();
@@ -146,22 +147,27 @@ export const FloatingMathBackground: React.FC = () => {
         const w = window.innerWidth;
         const h = window.innerHeight;
         return {
-            x: randomPos ? Math.random() * w : -200, // Initial random scatter
+            x: randomPos ? Math.random() * w : -500, // Initial random scatter
             y: randomPos ? Math.random() * h : Math.random() * h,
-            z: Math.random(), // 0 to 1
-            vx: (Math.random() - 0.5) * 1.5, // Constant velocity x
-            vy: (Math.random() - 0.5) * 1.5, // Constant velocity y
+            z: Math.random(),
+            // Halved velocity
+            vx: (Math.random() - 0.5) * 0.75,
+            vy: (Math.random() - 0.5) * 0.75,
             rotation: Math.random() * 360,
-            rotationSpeed: (Math.random() - 0.5) * 0.2, // Constant angular velocity
+            rotationSpeed: (Math.random() - 0.5) * 0.1, // Halved rotation
             text: formulas[Math.floor(Math.random() * formulas.length)]
         };
     };
 
-    // We render the DIVs once, and update them via refs
     return (
         <div ref={containerRef} className="fixed inset-0 z-0 bg-black overflow-hidden pointer-events-none select-none">
-            {/* Dark Vignette Background */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#1a1a1a_0%,#000000_100%)] opacity-50" />
+            {/* Space Particles Background */}
+            <div className="absolute inset-0 z-[-1] opacity-60">
+                <MathBackground />
+            </div>
+
+            {/* Dark Vignette Background (Adjusted opacity to show stars) */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000000_100%)] opacity-80" />
 
             {Array.from({ length: 12 }).map((_, i) => (
                 <div
