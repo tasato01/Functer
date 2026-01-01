@@ -1,110 +1,157 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 export const FloatingMathBackground: React.FC = () => {
-    // Math formulas in "natural" (LaTeX-like) visual form
+    // Pure Math formulas (No Physics)
     const formulas = [
         "e^{i\\pi} + 1 = 0",
         "f(x) = \\sin(x)",
-        "\\int f(x)dx",
+        "\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}",
         "x^2 + y^2 = r^2",
-        "E = mc^2",
+        "\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}",
         "\\frac{d}{dx}e^x = e^x",
-        "F = ma",
-        "\\sum \\frac{1}{n^2} = \\frac{\\pi^2}{6}"
+        "\\lim_{x\\to 0} \\frac{\\sin x}{x} = 1",
+        "a^2 + b^2 = c^2",
+        "\\chi(G) \\le \\Delta(G) + 1",
+        "V - E + F = 2",
+        "\\zeta(s) = \\sum_{n=1}^{\\infty} n^{-s}",
+        "\\det(AB) = \\det(A)\\det(B)",
+        "\\nabla \\times (\\nabla f) = 0",
+        "\\oint_C \\vec{F} \\cdot d\\vec{r} = 0",
+        "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
     ];
 
-    // Simple parser to render basic LaTeX-like strings purely with HTML/CSS
-    // This is much lighter than loading MathJax/KaTeX for a simple background
     const renderMath = (latex: string) => {
-        // Basic replacements for visual "LaTeX-ness"
+        // Visual approximation for background aesthetic
         const content = latex
             .replace(/\\sin/g, 'sin')
             .replace(/\\cos/g, 'cos')
             .replace(/\\pi/g, 'π')
             .replace(/\\int/g, '∫')
             .replace(/\\sum/g, '∑')
-            .replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1/$2)') // Simplify frac for background
+            .replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1/$2)')
             .replace(/\^2/g, '²')
             .replace(/_0/g, '₀')
             .replace(/\\to/g, '→')
             .replace(/\\infty/g, '∞')
-            .replace(/\\{/g, '{')
-            .replace(/\\}/g, '}')
-            .replace(/\\/g, ''); // Remove remaining backslashes
+            .replace(/\\le/g, '≤')
+            .replace(/\\pm/g, '±')
+            .replace(/\\sqrt/g, '√')
+            .replace(/\\chi/g, 'χ')
+            .replace(/\\Delta/g, 'Δ')
+            .replace(/\\zeta/g, 'ζ')
+            .replace(/\\det/g, 'det')
+            .replace(/\\nabla/g, '∇')
+            .replace(/\\times/g, '×')
+            .replace(/\\oint/g, '∮')
+            .replace(/\\cdot/g, '·')
+            .replace(/\\vec/g, '')
+            .replace(/[{}]/g, '')
+            .replace(/\\/g, '');
 
         return <span className="font-serif italic">{content}</span>;
     };
 
-    // Use CSS animations for performance (GPU acceleration)
-    // We generate random particles that float around
-    const [particles, setParticles] = useState<CSSParticle[]>([]);
+    // JS-driven state for particles to ensuring strictly constant velocity and wrapping
+    // Using refs for animation loop performance to avoid React re-renders every frame
+    const containerRef = useRef<HTMLDivElement>(null);
+    const requestRef = useRef<number>(0);
+    const particleRefs = useRef<HTMLDivElement[]>([]);
 
-    interface CSSParticle {
-        id: number;
+    interface Particle {
+        x: number;
+        y: number;
+        z: number; // Scale/Opacity factor
+        vx: number;
+        vy: number;
+        rotation: number;
+        rotationSpeed: number;
         text: string;
-        left: string;
-        top: string;
-        duration: string;
-        delay: string;
-        opacity: number;
-        scale: number;
-        tx: string; // Transform X
-        ty: string; // Transform Y
     }
 
+    const particlesData = useRef<Particle[]>([]);
+
     useEffect(() => {
-        const count = 15;
-        const newParticles: CSSParticle[] = [];
-        for (let i = 0; i < count; i++) {
-            newParticles.push({
-                id: i,
-                text: formulas[Math.floor(Math.random() * formulas.length)],
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                duration: `${20 + Math.random() * 20}s`, // Slower, calmer
-                delay: `-${Math.random() * 20}s`, // Start at random times
-                opacity: 0.1 + Math.random() * 0.2, // Subtle
-                scale: 0.8 + Math.random() * 0.5,
-                // Random drift direction
-                tx: `${(Math.random() - 0.5) * 50}vw`,
-                ty: `${(Math.random() - 0.5) * 50}vh`
+        // Init particles
+        const count = 12; // Fewer items, nice and spaced out
+        particlesData.current = Array.from({ length: count }).map(() => initParticle(true));
+
+        const animate = () => {
+            if (!containerRef.current) return;
+
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            particlesData.current.forEach((p, i) => {
+                const el = particleRefs.current[i];
+                if (!el) return;
+
+                // Move
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rotation += p.rotationSpeed;
+
+                // Wrap around (enter/exit logic)
+                // Allow them to go fully off screen before wrapping
+                const margin = 200;
+                if (p.x > width + margin) p.x = -margin;
+                if (p.x < -margin) p.x = width + margin;
+                if (p.y > height + margin) p.y = -margin;
+                if (p.y < -margin) p.y = height + margin;
+
+                // Apply transforms
+                // Use 3D transform for hardware accel
+                // Z determines scale and opacity
+                const scale = 0.5 + p.z * 1.0; // 0.5 to 1.5
+                const opacity = 0.1 + p.z * 0.4; // 0.1 to 0.5
+
+                el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) rotate(${p.rotation}deg) scale(${scale})`;
+                el.style.opacity = opacity.toString();
             });
-        }
-        setParticles(newParticles);
+
+            requestRef.current = requestAnimationFrame(animate);
+        };
+
+        requestRef.current = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(requestRef.current);
     }, []);
 
+    const initParticle = (randomPos: boolean): Particle => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        return {
+            x: randomPos ? Math.random() * w : -200, // Initial random scatter
+            y: randomPos ? Math.random() * h : Math.random() * h,
+            z: Math.random(), // 0 to 1
+            vx: (Math.random() - 0.5) * 1.5, // Constant velocity x
+            vy: (Math.random() - 0.5) * 1.5, // Constant velocity y
+            rotation: Math.random() * 360,
+            rotationSpeed: (Math.random() - 0.5) * 0.2, // Constant angular velocity
+            text: formulas[Math.floor(Math.random() * formulas.length)]
+        };
+    };
+
+    // We render the DIVs once, and update them via refs
     return (
-        <div className="fixed inset-0 z-0 bg-black overflow-hidden pointer-events-none select-none">
-            {particles.map(p => (
+        <div ref={containerRef} className="fixed inset-0 z-0 bg-black overflow-hidden pointer-events-none select-none">
+            {/* Dark Vignette Background */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#1a1a1a_0%,#000000_100%)] opacity-50" />
+
+            {Array.from({ length: 12 }).map((_, i) => (
                 <div
-                    key={p.id}
+                    key={i}
+                    ref={el => { if (el) particleRefs.current[i] = el; }}
+                    className="absolute whitespace-nowrap text-neon-blue/80 will-change-transform"
                     style={{
-                        position: 'absolute',
-                        left: p.left,
-                        top: p.top,
-                        opacity: p.opacity,
-                        transform: `scale(${p.scale})`,
-                        color: 'rgba(100, 200, 255, 0.8)',
-                        fontSize: '1.5rem',
-                        textShadow: '0 0 5px rgba(100,200,255,0.3)',
-                        // Animation definition
-                        animation: `float-${p.id} ${p.duration} ease-in-out infinite alternate`
+                        top: 0,
+                        left: 0,
+                        // Initial hidden state, updated by JS immediately
+                        transform: 'translate3d(-1000px, -1000px, 0)',
+                        fontSize: '2rem',
                     }}
                 >
-                    {renderMath(p.text)}
-                    <style>
-                        {`
-                            @keyframes float-${p.id} {
-                                0% { transform: translate(0, 0) scale(${p.scale}) rotate(-5deg); }
-                                100% { transform: translate(${p.tx}, ${p.ty}) scale(${p.scale}) rotate(5deg); }
-                            }
-                        `}
-                    </style>
+                    {renderMath(particlesData.current[i]?.text || "")}
                 </div>
             ))}
-
-            {/* Vignette */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)]" />
         </div>
     );
 };

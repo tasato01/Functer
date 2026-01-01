@@ -6,7 +6,7 @@ import { useGameLoop } from '../hooks/useGameLoop';
 import { MathEngine } from '../core/math/MathEngine';
 import { DEFAULT_LEVEL } from '../types/Level';
 import type { LevelConfig } from '../types/Level';
-import { Play, Square, Home, List, RefreshCw, AlertTriangle, HelpCircle, Plus, Minus } from 'lucide-react';
+import { Play, Square, Home, List, RefreshCw, AlertTriangle, HelpCircle, Plus, Minus, ChevronRight, ChevronDown } from 'lucide-react';
 import { levelService } from '../services/FirebaseLevelService';
 import { audioService } from '../services/AudioService';
 import { HelpDialog } from '../components/common/HelpDialog';
@@ -68,12 +68,14 @@ export const PlayPage: React.FC = () => {
     const hasNextLevel = listContextIds ? currentListIndex !== -1 && currentListIndex < listContextIds.length - 1 : false;
 
     const [isLiked, setIsLiked] = useState(false);
+    const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
 
     // Reset interactions and game state on new level load
     useEffect(() => {
         setFRaw('0'); // Reset player function input
         stopGame();
         setIsLiked(false);
+        setIsOverlayCollapsed(false); // Reset collapse state
     }, [level?.id, stopGame]); // Only reset if level ID changes
 
 
@@ -100,6 +102,7 @@ export const PlayPage: React.FC = () => {
             }
         }
     }, [gameState.status, level?.id, fRaw, fFn.isValid]);
+
 
     const handleNext = () => {
         audioService.playSE('click');
@@ -317,140 +320,155 @@ export const PlayPage: React.FC = () => {
                     <ZoomControls onZoomIn={() => setScale(s => Math.min(s * 1.2, 200))} onZoomOut={() => setScale(s => Math.max(s / 1.2, 5))} />
                 </div>
 
-                {/* Game Info Overlay */}
-                <div className="absolute top-4 left-4 z-30 flex flex-col gap-2 max-w-[300px] pointer-events-none">
-                    {/* g(f)(x) display */}
-                    <div className="bg-black/60 backdrop-blur-md border border-neon-blue/30 p-3 rounded-lg overflow-hidden flex flex-col gap-1 max-h-[30vh]">
-                        <span className="text-gray-400 text-xs font-mono block shrink-0">TRANSFORMATION</span>
-
-                        <div className="flex flex-col gap-1 overflow-y-auto min-h-0">
-                            {/* Piecewise Rules */}
-                            {level.gRules?.map((rule, i) => {
-                                const MathFieldTag = 'math-field' as any;
-                                return (
-                                    <div key={`rule-${i}`} className="text-[11px] bg-white/5 p-1 rounded border-l-2 border-neon-yellow/50 shrink-0">
-                                        <div className="flex gap-2 items-center text-neon-yellow/80 mb-0.5 overflow-x-auto whitespace-nowrap scrollbar-thin">
-                                            <span className="font-bold shrink-0">IF:</span>
-                                            <MathFieldTag read-only style={{ display: 'inline-block', bg: 'transparent', color: 'inherit', border: 'none', fontSize: '0.9em' }}>
-                                                {rule.condition}
-                                            </MathFieldTag>
-                                        </div>
-                                        <div className="flex gap-2 items-center text-neon-pink overflow-x-auto whitespace-nowrap scrollbar-thin">
-                                            <span className="font-bold shrink-0">THEN:</span>
-                                            <MathFieldTag read-only style={{ display: 'inline-block', bg: 'transparent', color: 'inherit', border: 'none', fontSize: '0.9em' }}>
-                                                {rule.expression}
-                                            </MathFieldTag>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-
-                            {/* Default Case */}
-                            <div className="overflow-x-auto whitespace-nowrap scrollbar-thin">
-                                {level.gRules && level.gRules.length > 0 && <span className="text-[10px] text-gray-500 mr-1">ELSE:</span>}
-                                {(() => {
-                                    const MathFieldTag = 'math-field' as any;
-                                    return (
-                                        <MathFieldTag
-                                            read-only
-                                            style={{
-                                                display: 'block',
-                                                backgroundColor: 'transparent',
-                                                color: '#f472b6', // neon-pink
-                                                fontSize: '0.9em',
-                                                padding: '4px 0',
-                                                border: 'none',
-                                                minWidth: '100%',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >
-                                            {`g(f) = ${level?.g_raw || 'f'}`}
-                                        </MathFieldTag>
-                                    );
-                                })()}
-                            </div>
+                {/* Game Info Overlay - Hidden when playing */}
+                {!gameState.isPlaying && (
+                    <div className="absolute top-4 left-4 z-30 flex flex-col gap-2 max-w-[300px] pointer-events-auto transition-opacity duration-300">
+                        {/* Header / Collapse Toggle */}
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setIsOverlayCollapsed(!isOverlayCollapsed)}
+                                className="bg-black/80 backdrop-blur border border-neon-blue/50 text-neon-blue px-3 py-1.5 rounded textxs font-bold hover:bg-neon-blue/20 transition-colors flex items-center gap-2 text-xs"
+                            >
+                                {isOverlayCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                                {isOverlayCollapsed ? "SHOW INFO" : "HIDE INFO"}
+                            </button>
                         </div>
-                    </div>
 
-                    {/* Constraints & Forbidden Shapes display */}
-                    {(level.showInequalities !== false) && ((level!.constraints && level!.constraints.length > 0) || (level!.shapes && level!.shapes.length > 0)) && (
-                        <div
-                            className="bg-black/60 backdrop-blur-md border border-red-500/30 p-3 rounded-lg overflow-hidden flex flex-col gap-1 max-h-[40vh]"
-                            onWheel={(e) => e.stopPropagation()}
-                            onTouchMove={(e) => e.stopPropagation()}
-                        >
-                            <span className="text-gray-400 text-xs font-mono block shrink-0">FORBIDDEN</span>
-                            <div className="flex flex-col gap-2 overflow-y-auto min-h-0">
-                                {/* Inequality Constraints */}
-                                {level!.constraints?.map((group, i) => (
-                                    <div key={`const-${i}`} className="text-center border-b border-red-500/20 last:border-0 pb-1 mb-1 last:mb-0 block">
-                                        {group.map((c, j) => {
+                        {!isOverlayCollapsed && (
+                            <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                                {/* g(f)(x) display */}
+                                <div className="bg-black/60 backdrop-blur-md border border-neon-blue/30 p-3 rounded-lg flex flex-col gap-1">
+                                    <span className="text-gray-400 text-xs font-mono block shrink-0">TRANSFORMATION</span>
+
+                                    <div className="flex flex-col gap-1">
+                                        {/* Piecewise Rules */}
+                                        {level.gRules?.map((rule, i) => {
                                             const MathFieldTag = 'math-field' as any;
                                             return (
-                                                <div key={j} className="inline-block max-w-full overflow-x-auto whitespace-nowrap scrollbar-thin">
-                                                    {j > 0 && <span className="text-red-400 text-xs mx-1 font-bold">AND</span>}
-                                                    <MathFieldTag
-                                                        read-only
-                                                        style={{
-                                                            display: 'inline-block',
-                                                            backgroundColor: 'transparent',
-                                                            color: '#f87171', // red-400
-                                                            border: 'none',
-                                                            fontSize: '0.85em',
-                                                            padding: '2px'
-                                                        }}
-                                                    >
-                                                        {c}
-                                                    </MathFieldTag>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ))}
-
-                                {/* Shape Constraints */}
-                                {level!.shapes?.map((shape, i) => {
-                                    const MathFieldTag = 'math-field' as any;
-                                    const condition = (shape.conditions && shape.conditions[0] && shape.conditions[0][0]) || shape.condition;
-
-                                    return (
-                                        <div key={`shape-${i}`} className="bg-white/5 p-1 rounded border border-white/10 flex flex-col gap-1">
-                                            <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase">
-                                                {shape.type === 'rect' ? <Square size={10} /> : <div className="w-2.5 h-2.5 rounded-full border border-gray-400" />}
-                                                {shape.type}
-                                                {/* Dimensions info if needed, e.g. R=... */}
-                                            </div>
-
-                                            {/* Condition if exists */}
-                                            {condition && (
-                                                <div className="border-t border-white/5 pt-1 mt-1">
-                                                    <span className="text-[9px] text-red-400 mr-1">IF:</span>
-                                                    <div className="overflow-x-auto whitespace-nowrap scrollbar-thin inline-block w-full align-bottom">
-                                                        <MathFieldTag read-only style={{ display: 'inline-block', bg: 'transparent', color: '#f87171', border: 'none', fontSize: '0.8em' }}>
-                                                            {condition}
+                                                <div key={`rule-${i}`} className="text-[11px] bg-white/5 p-1 rounded border-l-2 border-neon-yellow/50 shrink-0">
+                                                    <div className="flex gap-2 items-center text-neon-yellow/80 mb-0.5 overflow-x-auto whitespace-nowrap scrollbar-none">
+                                                        <span className="font-bold shrink-0">IF:</span>
+                                                        <MathFieldTag read-only style={{ display: 'inline-block', bg: 'transparent', color: 'inherit', border: 'none', fontSize: '0.9em' }}>
+                                                            {rule.condition}
+                                                        </MathFieldTag>
+                                                    </div>
+                                                    <div className="flex gap-2 items-center text-neon-pink overflow-x-auto whitespace-nowrap scrollbar-none">
+                                                        <span className="font-bold shrink-0">THEN:</span>
+                                                        <MathFieldTag read-only style={{ display: 'inline-block', bg: 'transparent', color: 'inherit', border: 'none', fontSize: '0.9em' }}>
+                                                            {rule.expression}
                                                         </MathFieldTag>
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
+                                            );
+                                        })}
 
-                    {/* Hint Button (if exists) */}
-                    {level!.hint && (
-                        <div className="pointer-events-auto">
-                            <button
-                                onClick={() => alert(`HINT: ${level!.hint}`)} // Simple alert for now, can be modal
-                                className="bg-neon-yellow/10 border border-neon-yellow text-neon-yellow px-3 py-1 rounded text-xs font-bold hover:bg-neon-yellow/20 transition-colors"
-                            >
-                                💡 SHOW HINT
-                            </button>
-                        </div>
-                    )}
-                </div>
+                                        {/* Default Case */}
+                                        <div className="overflow-x-auto whitespace-nowrap scrollbar-none">
+                                            {level.gRules && level.gRules.length > 0 && <span className="text-[10px] text-gray-500 mr-1">ELSE:</span>}
+                                            {(() => {
+                                                const MathFieldTag = 'math-field' as any;
+                                                return (
+                                                    <MathFieldTag
+                                                        read-only
+                                                        style={{
+                                                            display: 'block',
+                                                            backgroundColor: 'transparent',
+                                                            color: '#f472b6', // neon-pink
+                                                            fontSize: '0.9em',
+                                                            padding: '4px 0',
+                                                            border: 'none',
+                                                            minWidth: '100%',
+                                                            fontWeight: 'bold'
+                                                        }}
+                                                    >
+                                                        {`g(f) = ${level?.g_raw || 'f'}`}
+                                                    </MathFieldTag>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Constraints & Forbidden Shapes display */}
+                                {(level.showInequalities !== false) && ((level!.constraints && level!.constraints.length > 0) || (level!.shapes && level!.shapes.length > 0)) && (
+                                    <div
+                                        className="bg-black/60 backdrop-blur-md border border-red-500/30 p-3 rounded-lg flex flex-col gap-1"
+                                    >
+                                        <span className="text-gray-400 text-xs font-mono block shrink-0">FORBIDDEN</span>
+                                        <div className="flex flex-col gap-2">
+                                            {/* Inequality Constraints */}
+                                            {level!.constraints?.map((group, i) => (
+                                                <div key={`const-${i}`} className="text-center border-b border-red-500/20 last:border-0 pb-1 mb-1 last:mb-0 block">
+                                                    {group.map((c, j) => {
+                                                        const MathFieldTag = 'math-field' as any;
+                                                        return (
+                                                            <div key={j} className="inline-block max-w-full overflow-x-auto whitespace-nowrap scrollbar-none">
+                                                                {j > 0 && <span className="text-red-400 text-xs mx-1 font-bold">AND</span>}
+                                                                <MathFieldTag
+                                                                    read-only
+                                                                    style={{
+                                                                        display: 'inline-block',
+                                                                        backgroundColor: 'transparent',
+                                                                        color: '#f87171', // red-400
+                                                                        border: 'none',
+                                                                        fontSize: '0.85em',
+                                                                        padding: '2px'
+                                                                    }}
+                                                                >
+                                                                    {c}
+                                                                </MathFieldTag>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ))}
+
+                                            {/* Shape Constraints */}
+                                            {level!.shapes?.map((shape, i) => {
+                                                const MathFieldTag = 'math-field' as any;
+                                                const condition = (shape.conditions && shape.conditions[0] && shape.conditions[0][0]) || shape.condition;
+
+                                                return (
+                                                    <div key={`shape-${i}`} className="bg-white/5 p-1 rounded border border-white/10 flex flex-col gap-1">
+                                                        <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase">
+                                                            {shape.type === 'rect' ? <Square size={10} /> : <div className="w-2.5 h-2.5 rounded-full border border-gray-400" />}
+                                                            {shape.type}
+                                                            {/* Dimensions info if needed, e.g. R=... */}
+                                                        </div>
+
+                                                        {/* Condition if exists */}
+                                                        {condition && (
+                                                            <div className="border-t border-white/5 pt-1 mt-1">
+                                                                <span className="text-[9px] text-red-400 mr-1">IF:</span>
+                                                                <div className="overflow-x-auto whitespace-nowrap scrollbar-none inline-block w-full align-bottom">
+                                                                    <MathFieldTag read-only style={{ display: 'inline-block', bg: 'transparent', color: '#f87171', border: 'none', fontSize: '0.8em' }}>
+                                                                        {condition}
+                                                                    </MathFieldTag>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Hint Button (if exists) */}
+                                {level!.hint && (
+                                    <div className="pointer-events-auto">
+                                        <button
+                                            onClick={() => alert(`HINT: ${level!.hint}`)} // Simple alert for now, can be modal
+                                            className="bg-neon-yellow/10 border border-neon-yellow text-neon-yellow px-3 py-1 rounded text-xs font-bold hover:bg-neon-yellow/20 transition-colors w-full"
+                                        >
+                                            💡 SHOW HINT
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Game Over / Clear Overlay */}
                 {/* Game Over / Clear Overlay */}
