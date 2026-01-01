@@ -106,7 +106,9 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, label, di
                     color: 'white',
                     border: '1px solid rgba(0, 243, 255, 0.3)',
                     borderRadius: '4px',
-                    fontSize: '1.2em'
+                    fontSize: '1.2em',
+                    display: 'block', // Removes inline-block baseline gap
+                    marginBottom: 0
                 }}
             >
                 {value}

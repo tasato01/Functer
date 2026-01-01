@@ -44,10 +44,10 @@ export const useKeyboardPan = (
             let dx = 0;
             let dy = 0;
 
-            if (keys.current['KeyW'] || keys.current['ArrowUp']) dy += speed;
-            if (keys.current['KeyS'] || keys.current['ArrowDown']) dy -= speed;
-            if (keys.current['KeyA'] || keys.current['ArrowLeft']) dx += speed;
-            if (keys.current['KeyD'] || keys.current['ArrowRight']) dx -= speed;
+            if (keys.current['KeyW']) dy += speed;
+            if (keys.current['KeyS']) dy -= speed;
+            if (keys.current['KeyA']) dx += speed;
+            if (keys.current['KeyD']) dx -= speed;
 
             if (dx !== 0 || dy !== 0) {
                 setViewOffset(prev => ({

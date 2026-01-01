@@ -67,6 +67,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const lastCacheKeyRef = useRef<string>('');
 
     const [rotation, setRotation] = useState({ w: 800, h: 600 });
 
@@ -202,8 +204,42 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                     const pX = player?.x ?? level.startPoint.x ?? 0;
                     const pY = player?.y ?? level.startPoint.y ?? 0;
 
-                    // Overlay
-                    drawConstraintsOverlay(ctx, width, height, toWorldX, toWorldY, compiledConstraints, t, pX, pY);
+                    // --- Offscreen Caching for Performance ---
+                    // Constraints are expensive to calculate per-pixel.
+                    // We cache the result to an offscreen canvas and only re-draw if:
+                    // 1. View changes (offset/scale)
+                    // 2. Canvas size changes
+                    // 3. Constraints definition changes
+                    // 4. Time 't' changes (AND constraints actually depend on it? We'll assume yes for now if t changes)
+
+                    // Helper to check if cache is valid
+                    // For now, we invalidate if t changes at all. 
+                    // Optimization: Check if string includes 't'? For now, aggressive invalidation on t change is safer for correctness.
+                    // BUT, if isStatic (Editor) or t is paused, t doesn't change! So this solves the "fan noise while editing" issue perfectly.
+
+                    if (!offscreenCanvasRef.current) {
+                        offscreenCanvasRef.current = document.createElement('canvas');
+                    }
+                    const osCanvas = offscreenCanvasRef.current;
+                    const osCtx = osCanvas.getContext('2d');
+
+                    if (osCtx) {
+                        const cacheKey = `${width},${height},${viewOffset.x},${viewOffset.y},${scale},${t},${JSON.stringify(level.constraints)}`;
+
+                        if (lastCacheKeyRef.current !== cacheKey) {
+                            // Re-render to cache
+                            if (osCanvas.width !== width || osCanvas.height !== height) {
+                                osCanvas.width = width;
+                                osCanvas.height = height;
+                            }
+                            osCtx.clearRect(0, 0, width, height);
+                            drawConstraintsOverlay(osCtx, width, height, toWorldX, toWorldY, compiledConstraints, t, pX, pY);
+                            lastCacheKeyRef.current = cacheKey;
+                        }
+
+                        // Draw from Cache
+                        ctx.drawImage(osCanvas, 0, 0);
+                    }
                 }
 
                 drawGrid(ctx, width, height, scale, ORIGIN_X, ORIGIN_Y, toWorldX, toWorldY);
