@@ -530,7 +530,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                     }))}
                                     className="accent-neon-blue"
                                 />
-                                Enable Parameter 'a' to f(x)
+                                Enable Parameter 'a'
                             </label>
                         </div>
                     </SidebarSection>

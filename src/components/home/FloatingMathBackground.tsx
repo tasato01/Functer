@@ -75,7 +75,7 @@ export const FloatingMathBackground: React.FC = () => {
             .replace(/[{}]/g, '')
             .replace(/\\/g, '');
 
-        return <span className="font-serif italic text-gray-600/40">{content}</span>;
+        return <span className="font-serif italic text-gray-400/50">{content}</span>;
     };
 
     // JS-driven state for particles to ensuring strictly constant velocity and wrapping
